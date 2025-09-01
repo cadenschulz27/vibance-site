@@ -98,6 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Call the new function to load the news when the page is ready
+    // Call the function once when the page first loads
     fetchFinancialNews();
+
+    // Set an interval to call the function again every 15 minutes 🔄
+    // 15 minutes * 60 seconds/minute * 1000 milliseconds/second = 900000
+    setInterval(fetchFinancialNews, 60000);
 });
