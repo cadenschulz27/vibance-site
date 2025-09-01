@@ -103,5 +103,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set an interval to call the function again every 15 minutes 🔄
     // 15 minutes * 60 seconds/minute * 1000 milliseconds/second = 900000
-    setInterval(fetchFinancialNews, 60000);
+    setInterval(fetchFinancialNews, 900000);
 });
