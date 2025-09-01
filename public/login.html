@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #000; color: #FFF; font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Lora', serif; }
+        .btn-neon { background-color: #CCFF00; color: #000; font-weight: 700; transition: transform 0.2s ease; }
+        .btn-neon:hover { transform: translateY(-2px); }
+        .input-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
+        .input-field:focus { border-color: #CCFF00; outline: none; }
+        #webgl-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .form-card {
+            background-color: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <canvas id="webgl-canvas"></canvas>
+    <div class="w-full max-w-md p-8 space-y-8 form-card rounded-lg shadow-lg">
+        <div class="text-center">
+            <a href="index.html">
+                <img src="images/logo_white.png" alt="Vibance Logo" class="h-12 w-12 mx-auto mb-4">
+            </a>
+            <h1 class="font-headline text-3xl font-bold">Welcome Back</h1>
+            <p class="text-gray-400 mt-2">Log in to continue your financial journey.</p>
+        </div>
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label for="email" class="text-sm font-medium text-gray-300">Email</label>
+                <input id="login-email" type="email" required class="w-full px-4 py-3 mt-1 text-white rounded-md input-field">
+            </div>
+            <div>
+                <label for="password" class="text-sm font-medium text-gray-300">Password</label>
+                <input id="login-password" type="password" required class="w-full px-4 py-3 mt-1 text-white rounded-md input-field">
+            </div>
+            <p id="login-error" class="text-red-500 text-sm text-center h-5"></p>
+            <div>
+                <button type="submit" class="w-full py-3 rounded-full btn-neon">Log In</button>
+            </div>
+        </form>
+        <p class="text-sm text-center text-gray-500">
+            Don't have an account? <a href="./signup.html" class="font-medium text-[#CCFF00] hover:underline">Sign up</a>
+        </p>
+    </div>
+
+    <script type="module" src="api/firebase.js"></script>
+    <script type="module" src="auth/auth.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl-canvas'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const particlesGeometry = new THREE.BufferGeometry;
+        const particlesCnt = 5000;
+        const posArray = new Float32Array(particlesCnt * 3);
+        for (let i = 0; i < particlesCnt * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 10;
+        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        
+        const particlesMaterial = new THREE.PointsMaterial({ 
+            size: 0.005, 
+            color: 0xCCFF00,
+            transparent: true,
+            opacity: 0.5
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+        camera.position.z = 5;
+
+        let mouseX = 0;
+        let mouseY = 0;
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+        
+        const clock = new THREE.Clock();
+        const animate = () => {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            particlesMesh.rotation.y = elapsedTime * 0.05;
+            camera.position.x += (mouseX * 0.5 - camera.position.x) * 0.05;
+            camera.position.y += (mouseY * 0.5 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+            renderer.render(scene, camera);
+        };
+        animate();
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
+

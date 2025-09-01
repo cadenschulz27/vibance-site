@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Quill Rich Text Editor CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+    <style>
+        body { background-color: #101010; color: #FFF; font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Lora', serif; }
+        .text-neon { color: #CCFF00; }
+        .btn-neon { background-color: #CCFF00; color: #000; font-weight: 700; transition: opacity 0.2s ease; }
+        .btn-neon:hover { opacity: 0.9; }
+        .input-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
+        .input-field:focus { border-color: #CCFF00; outline: none; }
+        /* Quill Editor Styling */
+        .ql-toolbar { border-radius: 0.5rem 0.5rem 0 0; border-color: #3A3A3C !important; }
+        .ql-container { border-radius: 0 0 0.5rem 0.5rem; border-color: #3A3A3C !important; background-color: #1C1C1E; color: #FFF; min-height: 200px; font-size: 1rem;}
+        .ql-editor { font-family: 'Inter', sans-serif; }
+        .ql-snow .ql-stroke { stroke: #9CA3AF; }
+        .ql-snow .ql-picker-label { color: #9CA3AF; }
+        .drop-zone {
+            border: 2px dashed #3A3A3C;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+        .drop-zone.dragover {
+            border-color: #CCFF00;
+            background-color: #1c1c1e;
+        }
+        .drop-zone-text { font-size: 0.875rem; color: #9CA3AF; }
+        .progress-bar { background-color: #CCFF00; }
+    </style>
+</head>
+<body class="bg-black text-white">
+    <header class="bg-black sticky top-0 z-50 border-b border-gray-800">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="font-headline text-2xl font-bold">Admin Panel</h1>
+            <button id="logout-btn" class="text-sm font-medium hover:text-neon">Log Out</button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <!-- About Us Management -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">About Us Page</h2>
+            <div class="bg-gray-900 p-6 rounded-lg">
+                <form id="about-us-form">
+                    <label for="about-us-story" class="block mb-2">Our Story</label>
+                    <textarea id="about-us-story" rows="6" class="w-full p-2 rounded input-field"></textarea>
+                    <button type="submit" class="btn-neon px-4 py-2 mt-4 rounded">Save About Us</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Blog Management -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Blog Posts</h2>
+            <div class="bg-gray-900 p-6 rounded-lg">
+                <form id="blog-form" class="mb-6 space-y-4">
+                    <h3 class="text-lg font-semibold" id="blog-form-title">Add New Post</h3>
+                    <input type="hidden" id="blog-post-id">
+                    <input type="hidden" id="blog-cover-photo-url">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="blog-title">Title</label>
+                            <input id="blog-title" type="text" placeholder="Blog Post Title" class="w-full p-2 mt-1 rounded input-field">
+                        </div>
+                        <div>
+                            <label for="blog-author">Author</label>
+                            <input id="blog-author" type="text" placeholder="e.g., Jane Doe" class="w-full p-2 mt-1 rounded input-field">
+                        </div>
+                    </div>
+                    <div>
+                        <label>Cover Photo</label>
+                        <div id="blog-drop-zone" class="drop-zone w-full p-6 mt-1 rounded-lg text-center cursor-pointer">
+                            <p class="drop-zone-text">Drag & drop an image here, or click to select</p>
+                            <input type="file" id="blog-file-input" class="hidden" accept="image/*">
+                        </div>
+                        <div id="blog-upload-progress-container" class="w-full bg-gray-700 rounded-full h-2.5 mt-2 hidden">
+                            <div id="blog-upload-progress-bar" class="progress-bar h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div id="blog-file-preview" class="mt-2"></div>
+                    </div>
+                    <div>
+                        <label for="blog-content">Content</label>
+                        <div id="blog-editor" class="mt-1"></div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button type="submit" class="btn-neon px-4 py-2 rounded">Save Post</button>
+                        <button type="button" id="clear-blog-form" class="bg-gray-600 px-4 py-2 rounded">Clear</button>
+                    </div>
+                </form>
+                <h3 class="text-lg font-semibold border-t border-gray-700 pt-6">Existing Posts</h3>
+                <div id="blog-posts-list"></div>
+            </div>
+        </section>
+        
+        <!-- Careers Management -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Career Listings</h2>
+            <div class="bg-gray-900 p-6 rounded-lg">
+                <form id="career-form" class="mb-6">
+                    <h3 class="text-lg font-semibold mb-2" id="career-form-title">Add New Job</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="hidden" id="career-post-id">
+                        <div class="col-span-2">
+                            <label for="career-title">Job Title</label>
+                            <input id="career-title" type="text" placeholder="e.g., Senior Frontend Engineer" class="w-full p-2 mt-1 rounded input-field">
+                        </div>
+                        <div>
+                            <label for="career-location">Location</label>
+                            <input id="career-location" type="text" placeholder="e.g., Indianapolis, IN or Remote" class="w-full p-2 mt-1 rounded input-field">
+                        </div>
+                        <div>
+                            <label for="career-type">Type</label>
+                            <input id="career-type" type="text" placeholder="e.g., Engineering" class="w-full p-2 mt-1 rounded input-field">
+                        </div>
+                        <div class="col-span-2">
+                            <label for="career-description">Description</label>
+                            <div id="career-editor" class="mt-1"></div>
+                        </div>
+                        <div class="col-span-2 flex items-center space-x-2">
+                            <button type="submit" class="btn-neon px-4 py-2 mt-2 rounded">Save Job Listing</button>
+                            <button type="button" id="clear-career-form" class="bg-gray-600 px-4 py-2 mt-2 rounded">Clear</button>
+                        </div>
+                    </div>
+                </form>
+                <h3 class="text-lg font-semibold mb-2 border-t border-gray-700 pt-6">Existing Listings</h3>
+                <div id="careers-list"></div>
+            </div>
+        </section>
+        
+        <!-- Press Management -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Press Releases</h2>
+            <div class="bg-gray-900 p-6 rounded-lg">
+                <form id="press-form" class="mb-6 space-y-4">
+                    <h3 class="text-lg font-semibold" id="press-form-title">Add New Release</h3>
+                    <input type="hidden" id="press-post-id">
+                    <input type="hidden" id="press-cover-photo-url">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                           <label for="press-title">Title</label>
+                           <input id="press-title" type="text" placeholder="e.g., Vibance Launches New Platform" class="w-full p-2 mt-1 rounded input-field">
+                        </div>
+                        <div>
+                           <label for="press-source">Source/Author</label>
+                           <input id="press-source" type="text" placeholder="e.g., Vibance PR" class="w-full p-2 mt-1 rounded input-field">
+                        </div>
+                         <div>
+                            <label for="press-date">Date</label>
+                            <input id="press-date" type="date" class="w-full p-2 mt-1 rounded input-field">
+                        </div>
+                    </div>
+                    <div>
+                        <label>Cover Photo</label>
+                        <div id="press-drop-zone" class="drop-zone w-full p-6 mt-1 rounded-lg text-center cursor-pointer">
+                            <p class="drop-zone-text">Drag & drop an image here, or click to select</p>
+                            <input type="file" id="press-file-input" class="hidden" accept="image/*">
+                        </div>
+                        <div id="press-upload-progress-container" class="w-full bg-gray-700 rounded-full h-2.5 mt-2 hidden">
+                            <div id="press-upload-progress-bar" class="progress-bar h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div id="press-file-preview" class="mt-2"></div>
+                    </div>
+                    <div>
+                        <label for="press-summary">Summary/Content</label>
+                        <div id="press-editor" class="mt-1"></div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button type="submit" class="btn-neon px-4 py-2 rounded">Save Press Release</button>
+                        <button type="button" id="clear-press-form" class="bg-gray-600 px-4 py-2 rounded">Clear</button>
+                    </div>
+                </form>
+                <h3 class="text-lg font-semibold border-t border-gray-700 pt-6">Existing Releases</h3>
+                <div id="press-list"></div>
+            </div>
+        </section>
+    </main>
+    <script type="module" src="../api/firebase.js"></script>
+    <!-- Quill Rich Text Editor JS -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
+

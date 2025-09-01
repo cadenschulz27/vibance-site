@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers - Vibance</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+        }
+        .font-headline {
+            font-family: 'Lora', serif;
+        }
+        .bg-neon {
+            background-color: #CCFF00;
+        }
+        .text-neon {
+            color: #CCFF00;
+        }
+        .section-bg {
+            background-color: #101010;
+        }
+        .btn-neon {
+            background-color: #CCFF00;
+            color: #000000;
+            font-weight: 700;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2);
+        }
+        .job-listing {
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .job-listing:hover {
+            background-color: #1a1a1a;
+            border-color: #CCFF00;
+        }
+        /* Styles for expandable job description */
+        .job-description {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .job-listing.open .job-description {
+            max-height: 1000px;
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+        .job-listing.open .arrow {
+            transform: rotate(90deg);
+        }
+        .arrow {
+            transition: transform 0.3s ease;
+        }
+        /* Styles for Application Modal */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            transition: opacity 0.3s ease;
+        }
+        .input-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
+        .input-field:focus { border-color: #CCFF00; outline: none; }
+    </style>
+</head>
+<body class="bg-black text-white">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-black bg-opacity-80 backdrop-blur-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="flex items-center space-x-3">
+                <img src="../images/logo_white.png" alt="Vibance Logo" class="h-8 w-8">
+                <span class="text-xl font-bold">Vibance</span>
+            </a>
+            <div class="flex items-center space-x-4">
+                <a href="../login.html" class="text-sm font-medium hover:text-neon transition-colors">Log In</a>
+                <a href="../signup.html" class="btn-neon px-4 py-2 rounded-full text-sm">Sign Up</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ... (Hero and Why Work Here sections are unchanged) ... -->
+        <section class="py-20 md:py-32 text-center">
+            <div class="container mx-auto px-6">
+                <h1 class="font-headline text-4xl md:text-6xl font-bold max-w-4xl mx-auto">
+                    Help us build the future of finance.
+                </h1>
+                <p class="mt-6 text-lg text-gray-300 max-w-2xl mx-auto">
+                    We're a passionate team dedicated to making financial empowerment a reality for everyone. If you're driven by mission and innovation, you're in the right place.
+                </p>
+            </div>
+        </section>
+        <section class="py-20 md:py-24 section-bg">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="font-headline text-3xl font-bold mb-12">Life at Vibance</h2>
+                <div class="grid md:grid-cols-3 gap-10">
+                    <div>
+                        <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4">
+                             <svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">Make an Impact</h3>
+                        <p class="text-gray-400">Work on products that help millions of people improve their financial well-being.</p>
+                    </div>
+                    <div>
+                        <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4">
+                           <svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.002 3.002 0 013.42-2.322M12 12a3 3 0 11-6 0 3 3 0 016 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">People First</h3>
+                        <p class="text-gray-400">We foster a collaborative and inclusive culture where everyone's voice is heard.</p>
+                    </div>
+                    <div>
+                        <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4">
+                            <svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">Grow With Us</h3>
+                        <p class="text-gray-400">We invest in your professional development with continuous learning opportunities.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Open Positions -->
+        <section id="openings" class="py-20 md:py-24">
+            <div class="container mx-auto px-6">
+                <h2 class="font-headline text-3xl font-bold text-center mb-12">Open Positions</h2>
+                <div id="careers-list-container" class="max-w-3xl mx-auto space-y-4">
+                    <p class="text-center text-gray-500">Loading career opportunities...</p>
+                </div>
+                <div class="text-center pt-8">
+                    <p class="text-gray-500">Don't see a role that fits? <a href="#" class="text-neon hover:underline">Get in touch.</a></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ... (Footer is unchanged) ... -->
+
+    <!-- NEW: APPLICATION MODAL -->
+    <div id="application-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-gray-900 w-full max-w-lg rounded-lg shadow-lg p-8">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="font-headline text-2xl font-bold">Apply Now</h2>
+                    <p id="modal-job-title" class="text-neon font-semibold"></p>
+                </div>
+                <button id="close-modal-btn" class="text-gray-500 text-2xl">&times;</button>
+            </div>
+            <form id="application-form" class="space-y-4">
+                <input type="text" placeholder="Full Name" required class="w-full p-3 rounded input-field">
+                <input type="email" placeholder="Email Address" required class="w-full p-3 rounded input-field">
+                <div>
+                    <label class="text-sm text-gray-400">Resume/CV</label>
+                    <input type="file" required class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neon file:text-black hover:file:opacity-90">
+                </div>
+                <textarea rows="4" placeholder="Cover Letter (Optional)" class="w-full p-3 rounded input-field"></textarea>
+                <button type="submit" class="w-full btn-neon py-3 rounded-full font-bold">Submit Application</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="section-bg pt-16 pb-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+                 <div>
+                    <h3 class="font-bold mb-4">Product</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Budgeting</a></li>
+                        <li><a href="#" class="hover:text-white">Expense Tracking</a></li>
+                        <li><a href="#" class="hover:text-white">Goals</a></li>
+                        <li><a href="#" class="hover:text-white">Literacy</a></li>
+                        <li><a href="#" class="hover:text-white">Community</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Company</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="about.html" class="hover:text-white">About us</a></li>
+                        <li><a href="blog.html" class="hover:text-white">Blog</a></li>
+                        <li><a href="careers.html" class="hover:text-white">Careers</a></li>
+                        <li><a href="press.html" class="hover:text-white">Press</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Legal & Regulatory</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="terms.html" class="hover:text-white">Terms & Conditions</a></li>
+                        <li><a href="privacy.html" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="disclosures.html" class="hover:text-white">Disclosures</a></li>
+                    </ul>
+                </div>
+                <div>
+                     <h3 class="font-bold mb-4">Follow Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><img src="../images/Instagram_Logo.webp" alt="Instagram" class="h-6 w-6"></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><img src="../images/LinkedIn_Logo.webp" alt="LinkedIn" class="h-6 w-6"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2025 Vibance. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- DYNAMIC CONTENT SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4yxIaK9WDTwrk1riHfYxAvq9Z_v7wGDM",
+            authDomain: "vibanceco.firebaseapp.com",
+            projectId: "vibanceco",
+            storageBucket: "vibanceco.appspot.com",
+            messagingSenderId: "1068160687178",
+            appId: "1:1068160687178:web:3cbff24fe03c98fc521ab3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Modal Elements
+        const applicationModal = document.getElementById('application-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalJobTitle = document.getElementById('modal-job-title');
+        const applicationForm = document.getElementById('application-form');
+
+        function openModal(jobTitle) {
+            modalJobTitle.textContent = jobTitle;
+            applicationModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            applicationModal.classList.add('hidden');
+        }
+
+        async function loadCareersContent() {
+            const careersCollection = collection(db, 'siteContent', 'careers', 'jobs');
+            const careersContainer = document.getElementById('careers-list-container');
+            
+            try {
+                const q = query(careersCollection, orderBy('createdAt', 'desc'));
+                const querySnapshot = await getDocs(q);
+                const jobs = [];
+                querySnapshot.forEach(doc => jobs.push({ id: doc.id, ...doc.data() }));
+
+                if (jobs.length > 0) {
+                    careersContainer.innerHTML = '';
+                    jobs.forEach(job => {
+                        const jobElement = document.createElement('div');
+                        jobElement.className = 'job-listing border border-gray-800 rounded-lg cursor-pointer';
+                        
+                        const formattedDescription = job.description.replace(/\n/g, '<br>');
+
+                        jobElement.innerHTML = `
+                            <div class="p-6 flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-xl font-bold text-neon">${job.title}</h3>
+                                    <p class="text-gray-400">${job.type} &bull; ${job.location}</p>
+                                </div>
+                                <span class="text-gray-500 arrow transition-transform">&#10140;</span>
+                            </div>
+                            <div class="job-description px-6 text-gray-400 border-t border-gray-800">
+                                <div class="py-4">
+                                    ${formattedDescription}
+                                </div>
+                                <button data-job-title="${job.title}" class="apply-btn btn-neon inline-block px-6 py-2 rounded-full font-semibold text-sm my-4">Apply Now</button>
+                            </div>
+                        `;
+                        careersContainer.appendChild(jobElement);
+                    });
+
+                    careersContainer.addEventListener('click', (event) => {
+                        const target = event.target;
+                        const targetListing = target.closest('.job-listing');
+
+                        if (target.classList.contains('apply-btn')) {
+                            const jobTitle = target.dataset.jobTitle;
+                            openModal(jobTitle);
+                        } else if (targetListing) {
+                            document.querySelectorAll('.job-listing.open').forEach(openListing => {
+                                if (openListing !== targetListing) {
+                                    openListing.classList.remove('open');
+                                }
+                            });
+                            targetListing.classList.toggle('open');
+                        }
+                    });
+
+                } else {
+                    careersContainer.innerHTML = '<p class="text-center text-gray-500">No open positions at this time. Check back soon!</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching careers content:", error);
+                careersContainer.innerHTML = '<p class="text-center text-red-500">Could not load career opportunities.</p>';
+            }
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        applicationModal.addEventListener('click', (e) => {
+            if (e.target === applicationModal) {
+                closeModal();
+            }
+        });
+        applicationForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Thank you for your application! (This is a demo)');
+            closeModal();
+            applicationForm.reset();
+        });
+
+        document.addEventListener('DOMContentLoaded', loadCareersContent);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Press - Vibance</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+        }
+        .font-headline {
+            font-family: 'Lora', serif;
+        }
+        .bg-neon {
+            background-color: #CCFF00;
+        }
+        .text-neon {
+            color: #CCFF00;
+        }
+        .section-bg {
+            background-color: #101010;
+        }
+        .btn-neon {
+            background-color: #CCFF00;
+            color: #000000;
+            font-weight: 700;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2);
+        }
+        .press-item {
+            transition: background-color 0.3s ease;
+        }
+        .press-item:hover {
+            background-color: #1a1a1a;
+        }
+    </style>
+</head>
+<body class="bg-black text-white">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-black bg-opacity-80 backdrop-blur-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="flex items-center space-x-3">
+                <img src="../images/logo_white.png" alt="Vibance Logo" class="h-8 w-8">
+                <span class="text-xl font-bold">Vibance</span>
+            </a>
+            <div class="flex items-center space-x-4">
+                <a href="../login.html" class="text-sm font-medium hover:text-neon transition-colors">Log In</a>
+                <a href="../signup.html" class="btn-neon px-4 py-2 rounded-full text-sm">Sign Up</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="py-20 md:py-32 text-center">
+            <div class="container mx-auto px-6">
+                <h1 class="font-headline text-4xl md:text-6xl font-bold max-w-4xl mx-auto">
+                    Vibance in the News
+                </h1>
+                <p class="mt-6 text-lg text-gray-300 max-w-2xl mx-auto">
+                    The latest news, press releases, and media assets from the team working to empower financial futures.
+                </p>
+            </div>
+        </section>
+
+        <!-- Featured In -->
+        <section class="py-12 section-bg">
+            <div class="container mx-auto px-6">
+                <p class="text-center text-gray-400 text-sm font-bold uppercase tracking-wider">As Featured In</p>
+                <div class="flex justify-center items-center space-x-12 mt-6 opacity-60">
+                    <img src="https://placehold.co/120x40/101010/FFFFFF?text=TechCrunch" alt="TechCrunch Logo">
+                    <img src="https://placehold.co/120x40/101010/FFFFFF?text=Forbes" alt="Forbes Logo">
+                    <img src="https://placehold.co/120x40/101010/FFFFFF?text=The+Verge" alt="The Verge Logo">
+                </div>
+            </div>
+        </section>
+
+        <!-- Press Releases -->
+        <section class="py-20 md:py-24">
+            <div class="container mx-auto px-6">
+                <h2 class="font-headline text-3xl font-bold text-center mb-12">Latest News</h2>
+                <div id="press-list-container" class="max-w-3xl mx-auto divide-y divide-gray-800">
+                    <!-- Press releases will be loaded here -->
+                    <p class="text-center text-gray-500">Loading latest news...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Media Kit & Contact -->
+        <section class="py-20 section-bg">
+            <div class="container mx-auto px-6">
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div class="text-center md:text-left">
+                        <h2 class="font-headline text-3xl font-bold mb-4">Media Kit</h2>
+                        <p class="text-gray-400 mb-6">Download our comprehensive media kit, including our logo, brand guidelines, and executive headshots.</p>
+                        <a href="#" class="btn-neon inline-block px-8 py-3 rounded-full font-semibold">Download Media Kit</a>
+                    </div>
+                    <div class="text-center md:text-left">
+                        <h2 class="font-headline text-3xl font-bold mb-4">Contact Us</h2>
+                        <p class="text-gray-400 mb-2">For all press and media inquiries, please reach out to our communications team.</p>
+                        <a href="mailto:press@vibance.com" class="text-neon font-semibold text-lg hover:underline">press@vibance.com</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="section-bg pt-16 pb-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+                <div>
+                    <h3 class="font-bold mb-4">Product</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Budgeting</a></li>
+                        <li><a href="#" class="hover:text-white">Expense Tracking</a></li>
+                        <li><a href="#" class="hover:text-white">Goals</a></li>
+                        <li><a href="#" class="hover:text-white">Literacy</a></li>
+                        <li><a href="#" class="hover:text-white">Community</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Company</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="about.html" class="hover:text-white">About us</a></li>
+                        <li><a href="blog.html" class="hover:text-white">Blog</a></li>
+                        <li><a href="careers.html" class="hover:text-white">Careers</a></li>
+                        <li><a href="press.html" class="hover:text-white">Press</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Legal & Regulatory</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="terms.html" class="hover:text-white">Terms & Conditions</a></li>
+                        <li><a href="privacy.html" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="disclosures.html" class="hover:text-white">Disclosures</a></li>
+                    </ul>
+                </div>
+                <div>
+                     <h3 class="font-bold mb-4">Follow Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><img src="../images/Instagram_Logo.webp" alt="Instagram" class="h-6 w-6"></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><img src="../images/LinkedIn_Logo.webp" alt="LinkedIn" class="h-6 w-6"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2025 Vibance. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- DYNAMIC CONTENT SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4yxIaK9WDTwrk1riHfYxAvq9Z_v7wGDM",
+            authDomain: "vibanceco.firebaseapp.com",
+            projectId: "vibanceco",
+            storageBucket: "vibanceco.appspot.com",
+            messagingSenderId: "1068160687178",
+            appId: "1:1068160687178:web:3cbff24fe03c98fc521ab3",
+            measurementId: "G-T-9L0S3VSKP"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadPressContent() {
+            const pressCollection = collection(db, 'siteContent', 'press', 'releases');
+            const pressContainer = document.getElementById('press-list-container');
+            
+            try {
+                const q = query(pressCollection, orderBy('date', 'desc'));
+                const querySnapshot = await getDocs(q);
+                const releases = [];
+                querySnapshot.forEach(doc => releases.push({ id: doc.id, ...doc.data() }));
+
+                if (releases.length > 0) {
+                    pressContainer.innerHTML = '';
+                    releases.forEach(release => {
+                        const releaseElement = document.createElement('a');
+                        releaseElement.href = `article.html?type=press&id=${release.id}`;
+                        releaseElement.className = 'press-item block py-6';
+                        
+                        const releaseDate = new Date(release.date + 'T00:00:00');
+                        const formattedDate = releaseDate.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+
+                        releaseElement.innerHTML = `
+                            <p class="text-sm text-gray-500">${formattedDate}</p>
+                            <h3 class="text-xl font-bold mt-2 hover:text-neon transition-colors">${release.title}</h3>
+                            <p class="text-gray-400 mt-2">${release.summary}</p>
+                        `;
+                        pressContainer.appendChild(releaseElement);
+                    });
+                } else {
+                    pressContainer.innerHTML = '<p class="text-center text-gray-500">No press releases at this time.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching press content:", error);
+                pressContainer.innerHTML = '<p class="text-center text-red-500">Could not load latest news.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadPressContent);
+    </script>
+
+</body>
+</html>
+

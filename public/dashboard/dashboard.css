@@ -1,0 +1,227 @@
+/* FILE: public/dashboard/dashboard.css */
+:root {
+    --neon-green: #CCFF00;
+    --ring-size: 250px;
+    --bubble-size-w: 160px; /* Increased size */
+    --bubble-size-h: 80px;  /* Increased size */
+    --orbit-radius: 240px;  /* Increased distance */
+    --rotation-speed: 40s;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- VibeScore Component --- */
+.vibe-score-wrapper {
+    margin-top: 2rem; /* Decreased top margin */
+    margin-bottom: 2rem;
+}
+
+.vibe-score-container {
+    position: relative;
+    width: calc(var(--orbit-radius) * 2 + var(--bubble-size-w));
+    height: calc(var(--orbit-radius) * 2 + var(--bubble-size-h));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}
+
+.vibe-score-ring {
+    width: var(--ring-size);
+    height: var(--ring-size);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+    background: conic-gradient(var(--neon-green) calc(var(--p) * 1%), #1C1C1E 0);
+    transform: scaleX(-1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.vibe-score-ring:hover {
+    transform: scaleX(-1) scale(1.05);
+    box-shadow: 0 0 25px 0 rgba(204, 255, 0, 0.4);
+}
+
+.vibe-score-ring::before {
+    content: '';
+    position: absolute;
+    width: 85%;
+    height: 85%;
+    background-color: #000;
+    border-radius: 50%;
+}
+
+.vibe-score-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: scaleX(-1);
+}
+
+.vibe-score-percentage {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--neon-green);
+    line-height: 1;
+}
+
+.vibe-score-label {
+    font-size: 1.25rem;
+    color: #FFF;
+    margin-top: 0.25rem;
+}
+
+/* --- The Rotating Bubbles (FIXED) --- */
+.bubbles-orbit {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+}
+
+.bubble {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--bubble-size-w);
+    height: var(--bubble-size-h);
+    margin-top: calc(var(--bubble-size-h) / -2);
+    margin-left: calc(var(--bubble-size-w) / -2);
+    animation: orbit var(--rotation-speed) linear infinite;
+    animation-delay: calc(var(--rotation-speed) / 6 * var(--i) * -1);
+}
+
+.bubble-content {
+    width: 100%;
+    height: 100%;
+    background-color: #121212;
+    border: 2px solid #3A3A3C;
+    border-radius: 0.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.125rem;
+    color: #a0a0a0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.bubble:hover .bubble-content {
+    transform: scale(1.1);
+    border-color: var(--neon-green);
+    box-shadow: 0 0 20px 0 rgba(204, 255, 0, 0.5);
+}
+
+@keyframes orbit {
+    from {
+        transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg);
+    }
+}
+
+/* --- VibeScore Info Box --- */
+.vibe-score-info-box {
+    position: fixed;
+    top: 50%;
+    left: 4rem; /* Moved to the right */
+    transform: translateY(-50%);
+    width: 320px; /* Made larger */
+    background-color: #121212;
+    border: 1px solid #3A3A3C;
+    border-radius: 0.75rem;
+    padding: 2rem; /* Increased padding */
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+}
+
+.vibe-score-info-box.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* --- Content Sections (REWORKED) --- */
+.content-section {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto 5rem auto; /* Increased bottom margin */
+    padding: 0 4rem; /* Increased side padding */
+}
+
+.section-header {
+    font-family: 'Lora', serif;
+    font-size: 2.5rem; /* Increased size */
+    font-weight: 600;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #3A3A3C;
+    text-align: left; /* Ensured left alignment */
+}
+
+/* --- Financial News (REWORKED) --- */
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Forces 3 columns on wider screens */
+    gap: 2rem;
+}
+
+.news-card {
+    background-color: #121212;
+    border: 1px solid #3A3A3C;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.news-card:hover {
+    transform: translateY(-5px);
+    border-color: #555;
+}
+
+.news-card-content {
+    padding: 2rem; /* Increased padding */
+}
+
+.news-card-title {
+    font-size: 1.375rem; /* Increased size */
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #FFF;
+}
+
+.news-card-preview {
+    font-size: 1rem; /* Increased size */
+    color: #a0a0a0;
+    line-height: 1.6;
+}
+
+/* --- Placeholder Boxes (NEW) --- */
+.placeholder-box {
+    background-color: #121212;
+    border: 2px dashed #3A3A3C;
+    border-radius: 0.75rem;
+    min-height: 250px; /* Increased height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+

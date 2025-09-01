@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="bg-black text-white font-['Inter']">
+
+    <!-- Header Placeholder -->
+    <div id="header-placeholder"></div>
+
+    <main class="pt-24"> <!-- Added padding-top to the main container -->
+        <section class="vibe-score-wrapper">
+            <div class="vibe-score-container">
+                <!-- The VibeScore Info Box -->
+                <div id="vibe-score-info" class="vibe-score-info-box">
+                    <h3 class="font-['Lora'] text-lg font-semibold mb-2 text-white">What is a VibeScore?</h3>
+                    <p class="text-sm text-gray-400">
+                        Your VibeScore is the culmination of your financial condition, providing a real-time snapshot of your economic health. It analyzes your budgeting habits, savings progress, debt levels, and investment activity to give you a single, understandable metric.
+                    </p>
+                </div>
+
+                <!-- Rotating Bubbles (Corrected Structure) -->
+                <div class="bubbles-orbit">
+                    <div class="bubble" style="--i:0;"><div class="bubble-content"><span>Budgeting</span></div></div>
+                    <div class="bubble" style="--i:1;"><div class="bubble-content"><span>Savings</span></div></div>
+                    <div class="bubble" style="--i:2;"><div class="bubble-content"><span>Credit</span></div></div>
+                    <div class="bubble" style="--i:3;"><div class="bubble-content"><span>Investing</span></div></div>
+                    <div class="bubble" style="--i:4;"><div class="bubble-content"><span>Debt</span></div></div>
+                    <div class="bubble" style="--i:5;"><div class="bubble-content"><span>Income</span></div></div>
+                </div>
+    
+                <!-- Central VibeScore Ring -->
+                <div id="vibe-score-ring" class="vibe-score-ring" style="--p:75;">
+                    <div class="vibe-score-inner">
+                        <span class="vibe-score-percentage">75%</span>
+                        <span class="vibe-score-label font-['Lora']">VibeScore</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Financial News Section -->
+        <section id="financial-news" class="content-section">
+            <h2 class="section-header">Financial News</h2>
+            <div id="news-grid" class="news-grid">
+                </div>
+        </section>
+
+        <!-- Savings Goals Section -->
+        <section id="savings-goals" class="content-section">
+            <h2 class="section-header">Savings Goals</h2>
+            <div class="placeholder-box">
+                <span>Savings Goals Content Here</span>
+            </div>
+        </section>
+
+        <!-- Achievements Section -->
+        <section id="achievements" class="content-section">
+            <h2 class="section-header">Achievements</h2>
+            <div class="placeholder-box">
+                <span>Achievements Content Here</span>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Scripts -->
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+    <script type="module" src="dashboard.js"></script>
+
+</body>
+</html>
+
