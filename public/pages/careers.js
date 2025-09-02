@@ -1,20 +1,14 @@
 // FILE: public/pages/careers.js
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+// *** FIX: Import the initialized 'db' instance from your central firebase.js file ***
+import { db } from '../api/firebase.js';
 
-const firebaseConfig = {
-    apiKey: "AIzaSyC4yxIaK9WDTwrk1riHfYxAvq9Z_v7wGDM",
-    authDomain: "vibanceco.firebaseapp.com",
-    projectId: "vibanceco",
-    storageBucket: "vibanceco.appspot.com",
-    messagingSenderId: "1068160687178",
-    appId: "1:1068160687178:web:3cbff24fe03c98fc521ab3"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// *** FIX: The other Firebase imports are still needed, but not initializeApp ***
+import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-// Modal Elements
+// *** REMOVED: The entire firebaseConfig object and the initializeApp() call have been deleted. ***
+
+// Modal Elements (This part is unchanged)
 const applicationModal = document.getElementById('application-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const modalJobTitle = document.getElementById('modal-job-title');
@@ -48,7 +42,6 @@ async function loadCareersContent() {
             const jobElement = document.createElement('div');
             jobElement.className = 'bg-[#121212] border border-gray-800 rounded-lg p-8';
             
-            // Two-column layout with a sticky sidebar
             jobElement.innerHTML = `
                 <div class="grid grid-cols-1 lg:grid-cols-3 lg:gap-16">
                     <div class="lg:col-span-2">
@@ -83,7 +76,7 @@ async function loadCareersContent() {
     }
 }
 
-// Event Listener for Apply buttons
+// Event Listeners (This part is unchanged)
 document.getElementById('careers-list-container').addEventListener('click', (event) => {
     const applyButton = event.target.closest('.apply-btn');
     if (applyButton) {
@@ -92,7 +85,6 @@ document.getElementById('careers-list-container').addEventListener('click', (eve
     }
 });
 
-// Modal event listeners
 closeModalBtn.addEventListener('click', closeModal);
 applicationModal.addEventListener('click', (e) => {
     if (e.target === applicationModal) {
