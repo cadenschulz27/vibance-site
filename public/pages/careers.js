@@ -1,18 +1,14 @@
 // FILE: public/pages/careers.js
 
-// *** FIX: Import the initialized 'db' instance from your central firebase.js file ***
 import { db } from '../api/firebase.js';
-
-// *** FIX: The other Firebase imports are still needed, but not initializeApp ***
 import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-// *** REMOVED: The entire firebaseConfig object and the initializeApp() call have been deleted. ***
-
-// Modal Elements (This part is unchanged)
+// Modal Elements
 const applicationModal = document.getElementById('application-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const modalJobTitle = document.getElementById('modal-job-title');
 const applicationForm = document.getElementById('application-form');
+const careersContainer = document.getElementById('careers-list-container');
 
 function openModal(jobTitle) {
     modalJobTitle.textContent = jobTitle;
@@ -25,46 +21,44 @@ function closeModal() {
 
 async function loadCareersContent() {
     const careersCollection = collection(db, 'siteContent', 'careers', 'jobs');
-    const careersContainer = document.getElementById('careers-list-container');
-    
+    const q = query(careersCollection, orderBy('createdAt', 'desc'));
+
     try {
-        const q = query(careersCollection, orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
-        
+        careersContainer.innerHTML = ''; // Clear loading message
+
         if (querySnapshot.empty) {
             careersContainer.innerHTML = '<p class="text-center text-gray-500">No open positions at this time. Check back soon!</p>';
             return;
         }
-        
-        careersContainer.innerHTML = ''; // Clear loading message
+
         querySnapshot.forEach(doc => {
             const job = doc.data();
             const jobElement = document.createElement('div');
-            jobElement.className = 'bg-[#121212] border border-gray-800 rounded-lg p-8';
+            // This class is the main container for one job listing
+            jobElement.className = 'job-listing bg-[#121212] border border-gray-800 rounded-lg overflow-hidden';
             
+            // REVISED: HTML structure for the accordion layout
             jobElement.innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 lg:gap-16">
-                    <div class="lg:col-span-2">
-                        <h2 class="font-headline text-3xl font-bold text-white mb-6">${job.title}</h2>
-                        <div class="job-description-content">
-                            ${job.description}
-                        </div>
+                <div class="job-header cursor-pointer p-6 flex justify-between items-center hover:bg-gray-900 transition-colors">
+                    <div>
+                        <h3 class="font-headline text-xl font-bold text-white">${job.title}</h3>
+                        <p class="text-gray-400 text-sm mt-1">${job.type} &bull; ${job.location}</p>
                     </div>
+                    <div class="arrow text-neon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
 
-                    <div class="relative mt-8 lg:mt-0">
-                        <div class="lg:sticky lg:top-24">
-                            <div class="bg-gray-900 border border-gray-700 rounded-lg p-6">
-                                <h3 class="text-lg font-semibold text-white mb-4">Role Details</h3>
-                                <div class="space-y-3 text-gray-300">
-                                    <p><strong>Location:</strong> ${job.location}</p>
-                                    <p><strong>Department:</strong> ${job.type}</p>
-                                </div>
-                                <button data-job-title="${job.title}" class="apply-btn btn-neon block w-full text-center py-3 mt-6 rounded-lg">
-                                    Apply Now
-                                </button>
-                            </div>
-                        </div>
+                <div class="job-description border-t border-gray-800">
+                    <div class="job-description-content">
+                        ${job.description}
                     </div>
+                    <button data-job-title="${job.title}" class="apply-btn btn-neon py-2 px-6 rounded-lg font-semibold mt-4">
+                        Apply Now
+                    </button>
                 </div>
             `;
             careersContainer.appendChild(jobElement);
@@ -76,20 +70,39 @@ async function loadCareersContent() {
     }
 }
 
-// Event Listeners (This part is unchanged)
-document.getElementById('careers-list-container').addEventListener('click', (event) => {
+// REVISED: Event listener to handle both accordion and modal button clicks
+careersContainer.addEventListener('click', (event) => {
+    const header = event.target.closest('.job-header');
     const applyButton = event.target.closest('.apply-btn');
+
+    // If an "Apply Now" button was clicked
     if (applyButton) {
         const jobTitle = applyButton.dataset.jobTitle;
         openModal(jobTitle);
+        return; // Stop further processing
+    }
+
+    // If a job header was clicked
+    if (header) {
+        const listing = header.parentElement;
+        const wasOpen = listing.classList.contains('open');
+
+        // Close all other open listings for a cleaner experience
+        document.querySelectorAll('.job-listing.open').forEach(openListing => {
+            openListing.classList.remove('open');
+        });
+
+        // If the clicked listing was not already open, open it
+        if (!wasOpen) {
+            listing.classList.add('open');
+        }
     }
 });
 
+// Modal event listeners (Unchanged)
 closeModalBtn.addEventListener('click', closeModal);
 applicationModal.addEventListener('click', (e) => {
-    if (e.target === applicationModal) {
-        closeModal();
-    }
+    if (e.target === applicationModal) closeModal();
 });
 applicationForm.addEventListener('submit', (e) => {
     e.preventDefault();
