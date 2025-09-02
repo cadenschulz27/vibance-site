@@ -2,10 +2,10 @@
 :root {
     --neon-green: #CCFF00;
     --ring-size: 250px;
-    --bubble-size-w: 160px; /* Increased size */
-    --bubble-size-h: 80px;  /* Increased size */
-    --orbit-radius: 240px;  /* Increased distance */
-    --rotation-speed: 40s;
+    --bubble-size-w: 160px;
+    --bubble-size-h: 80px;
+    --orbit-radius: 280px; /* Increased radius for a wider orbit */
+    --rotation-speed: 30s; /* Sped up the rotation slightly */
 }
 
 body {
@@ -15,7 +15,7 @@ body {
 
 /* --- VibeScore Component --- */
 .vibe-score-wrapper {
-    margin-top: 2rem; /* Decreased top margin */
+    margin-top: 2rem;
     margin-bottom: 2rem;
 }
 
@@ -27,6 +27,8 @@ body {
     justify-content: center;
     align-items: center;
     margin: 0 auto;
+    /* NEW: Creates the 3D perspective for child elements */
+    perspective: 1200px;
 }
 
 .vibe-score-ring {
@@ -80,12 +82,15 @@ body {
     margin-top: 0.25rem;
 }
 
-/* --- The Rotating Bubbles (FIXED) --- */
+/* --- REWORKED: 3D Orbit Animation --- */
 .bubbles-orbit {
     position: absolute;
     width: 100%;
     height: 100%;
     z-index: 5;
+    /* NEW: Enables 3D transformations for children and applies the main orbit animation */
+    transform-style: preserve-3d;
+    animation: orbit-spin var(--rotation-speed) linear infinite;
 }
 
 .bubble {
@@ -96,8 +101,8 @@ body {
     height: var(--bubble-size-h);
     margin-top: calc(var(--bubble-size-h) / -2);
     margin-left: calc(var(--bubble-size-w) / -2);
-    animation: orbit var(--rotation-speed) linear infinite;
-    animation-delay: calc(var(--rotation-speed) / 6 * var(--i) * -1);
+    /* NEW: Positions each bubble on the ring using its --angle variable */
+    transform: rotateY(var(--angle)) translateX(var(--orbit-radius));
 }
 
 .bubble-content {
@@ -112,6 +117,8 @@ body {
     font-size: 1.125rem;
     color: #a0a0a0;
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    /* NEW: Applies the counter-rotation to always face the camera */
+    animation: face-camera var(--rotation-speed) linear infinite;
 }
 
 .bubble:hover .bubble-content {
@@ -120,26 +127,30 @@ body {
     box-shadow: 0 0 20px 0 rgba(204, 255, 0, 0.5);
 }
 
-@keyframes orbit {
-    from {
-        transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg);
-    }
+/* NEW: Keyframe for the main orbital plate's rotation */
+@keyframes orbit-spin {
+    from { transform: rotateY(0deg) rotateX(75deg); }
+    to   { transform: rotateY(360deg) rotateX(75deg); }
 }
+
+/* NEW: Keyframe to counter-rotate the bubbles so they always face forward */
+@keyframes face-camera {
+    from { transform: rotateX(-75deg) rotateY(0deg); }
+    to   { transform: rotateX(-75deg) rotateY(-360deg); }
+}
+
 
 /* --- VibeScore Info Box --- */
 .vibe-score-info-box {
     position: fixed;
     top: 50%;
-    left: 4rem; /* Moved to the right */
+    left: 4rem;
     transform: translateY(-50%);
-    width: 320px; /* Made larger */
+    width: 320px;
     background-color: #121212;
     border: 1px solid #3A3A3C;
     border-radius: 0.75rem;
-    padding: 2rem; /* Increased padding */
+    padding: 2rem;
     z-index: 100;
     opacity: 0;
     visibility: hidden;
@@ -152,28 +163,28 @@ body {
     visibility: visible;
 }
 
-/* --- Content Sections (REWORKED) --- */
+/* --- Content Sections --- */
 .content-section {
     width: 100%;
     max-width: 1400px;
-    margin: 0 auto 5rem auto; /* Increased bottom margin */
-    padding: 0 4rem; /* Increased side padding */
+    margin: 0 auto 5rem auto;
+    padding: 0 4rem;
 }
 
 .section-header {
     font-family: 'Lora', serif;
-    font-size: 2.5rem; /* Increased size */
+    font-size: 2.5rem;
     font-weight: 600;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #3A3A3C;
-    text-align: left; /* Ensured left alignment */
+    text-align: left;
 }
 
-/* --- Financial News (REWORKED) --- */
+/* --- Financial News --- */
 .news-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* Forces 3 columns on wider screens */
+    grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
 }
 
@@ -194,28 +205,28 @@ body {
 }
 
 .news-card-content {
-    padding: 2rem; /* Increased padding */
+    padding: 2rem;
 }
 
 .news-card-title {
-    font-size: 1.375rem; /* Increased size */
+    font-size: 1.375rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
     color: #FFF;
 }
 
 .news-card-preview {
-    font-size: 1rem; /* Increased size */
+    font-size: 1rem;
     color: #a0a0a0;
     line-height: 1.6;
 }
 
-/* --- Placeholder Boxes (NEW) --- */
+/* --- Placeholder Boxes --- */
 .placeholder-box {
     background-color: #121212;
     border: 2px dashed #3A3A3C;
     border-radius: 0.75rem;
-    min-height: 250px; /* Increased height */
+    min-height: 250px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -223,5 +234,3 @@ body {
     font-size: 1.25rem;
     font-weight: 500;
 }
-
-
