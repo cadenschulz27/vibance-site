@@ -105,7 +105,14 @@
             <h2 class="text-2xl font-bold mb-4">Career Listings</h2>
             <div class="bg-gray-900 p-6 rounded-lg">
                 <form id="career-form" class="mb-6">
-                    <h3 class="text-lg font-semibold mb-2" id="career-form-title">Add New Job</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold" id="career-form-title">Add New Job</h3>
+                        <div class="flex items-center space-x-2">
+                            <button type="submit" id="career-submit-btn" class="btn-neon px-4 py-2 rounded">Save Job Listing</button>
+                            <button type="button" id="clear-career-form" class="bg-gray-600 px-4 py-2 rounded">Clear</button>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <input type="hidden" id="career-post-id">
                         <div class="col-span-2">
@@ -124,11 +131,7 @@
                             <label for="career-description">Description</label>
                             <div id="career-editor" class="mt-1"></div>
                         </div>
-                        <div class="col-span-2 flex items-center space-x-2">
-                            <button type="submit" id="career-submit-btn" class="btn-neon px-4 py-2 mt-2 rounded">Save Job Listing</button>
-                            <button type="button" id="clear-career-form" class="bg-gray-600 px-4 py-2 mt-2 rounded">Clear</button>
                         </div>
-                    </div>
                 </form>
                 <h3 class="text-lg font-semibold mb-2 border-t border-gray-700 pt-6">Existing Listings</h3>
                 <div id="careers-list"></div>
