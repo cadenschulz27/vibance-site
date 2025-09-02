@@ -234,26 +234,31 @@ async function initBlog() {
     loadPosts();
 }
 
+// FILE: public/admin/admin.js
+
 // --- CAREERS MANAGEMENT ---
 async function initCareers() {
-    // *** FIX: Initialize Quill Editor ***
-    const careerEditor = new Quill('#career-editor', quillOptions);
-
     const careerForm = document.getElementById('career-form');
     const careerTitle = document.getElementById('career-title');
     const careerLocation = document.getElementById('career-location');
     const careerType = document.getElementById('career-type');
+    const careerEditor = new Quill('#career-editor', quillOptions);
     const careerPostId = document.getElementById('career-post-id');
     const careersList = document.getElementById('careers-list');
     const clearCareerBtn = document.getElementById('clear-career-form');
     const careersCollection = collection(db, 'siteContent', 'careers', 'jobs');
+    
+    // ADDED: Get a reference to the submit button
+    const careerSubmitBtn = document.getElementById('career-submit-btn');
 
     const resetCareerForm = () => {
         careerForm.reset();
         careerPostId.value = '';
-        // *** FIX: Clear Quill editor ***
         careerEditor.root.innerHTML = '';
         document.getElementById('career-form-title').textContent = 'Add New Job';
+        
+        // CHANGED: Reset the button text when the form is cleared
+        careerSubmitBtn.textContent = 'Save Job Listing';
     };
 
     async function loadCareers() {
@@ -275,9 +280,13 @@ async function initCareers() {
                 careerTitle.value = job.title;
                 careerLocation.value = job.location;
                 careerType.value = job.type;
-                // *** FIX: Set Quill editor content ***
                 careerEditor.root.innerHTML = job.description;
+
+                // CHANGED: Update the button text to "Update"
+                careerSubmitBtn.textContent = 'Update Listing';
+                
                 window.scrollTo(0, careerForm.offsetTop);
+
             };
 
             const deleteBtn = document.createElement('button');
@@ -305,7 +314,6 @@ async function initCareers() {
             title: careerTitle.value,
             location: careerLocation.value,
             type: careerType.value,
-            // *** FIX: Get content from Quill editor ***
             description: careerEditor.root.innerHTML,
             createdAt: serverTimestamp()
         };
