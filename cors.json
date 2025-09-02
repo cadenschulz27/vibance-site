@@ -1,13 +1,11 @@
 [
   {
-    "origin": [
-      "https://vibance.netlify.app",
-      "http://localhost:3000",
-      "http://127.0.0.1:5500",
-      "*.netlify.app"
+    "origin": ["https://vibance.netlify.app"],
+    "method": ["GET", "POST", "OPTIONS", "PUT", "HEAD"],
+    "responseHeader": [
+      "Content-Type",
+      "Access-Control-Allow-Origin"
     ],
-    "method": ["GET", "POST", "PUT", "DELETE"],
-    "responseHeader": ["Content-Type", "Authorization"],
     "maxAgeSeconds": 3600
   }
 ]
