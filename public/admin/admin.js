@@ -28,7 +28,6 @@ const quillOptions = {
 
 // --- INITIALIZATION ---
 function initializeApp() {
-    // *** FIX: Added redirect on logout ***
     document.getElementById('logout-btn').addEventListener('click', () => {
         signOut(auth).then(() => {
             window.location.href = '../login.html';
@@ -38,10 +37,18 @@ function initializeApp() {
     initBlog();
     initCareers();
     initPress();
+    initApplications();
+}
+
+// --- HELPER FUNCTION ---
+function formatDate(timestamp) {
+    if (!timestamp || !timestamp.toDate) return 'N/A';
+    return timestamp.toDate().toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+    });
 }
 
 // --- REUSABLE UPLOADER FUNCTION ---
-// This function is well-written and requires no changes.
 function createUploader(options) {
     const { dropZone, fileInput, progressContainer, progressBar, filePreview, hiddenUrlInput, storagePath } = options;
 
@@ -83,7 +90,6 @@ function createUploader(options) {
 }
 
 // --- ABOUT US MANAGEMENT ---
-// This section uses a standard textarea and works correctly. No changes needed.
 async function initAboutUs() {
     const aboutForm = document.getElementById('about-us-form');
     const storyTextarea = document.getElementById('about-us-story');
@@ -103,9 +109,7 @@ async function initAboutUs() {
 
 // --- BLOG MANAGEMENT ---
 async function initBlog() {
-    // *** FIX: Initialize Quill Editor ***
     const blogEditor = new Quill('#blog-editor', quillOptions);
-
     const blogForm = document.getElementById('blog-form');
     const blogTitle = document.getElementById('blog-title');
     const blogAuthor = document.getElementById('blog-author');
@@ -129,7 +133,6 @@ async function initBlog() {
         blogForm.reset();
         blogPostId.value = '';
         coverPhotoUrlInput.value = '';
-        // *** FIX: Clear Quill editor ***
         blogEditor.root.innerHTML = '';
         document.getElementById('blog-file-preview').innerHTML = '';
         document.getElementById('blog-upload-progress-container').classList.add('hidden');
@@ -137,7 +140,6 @@ async function initBlog() {
     };
 
     async function setFeaturedPost(postId) {
-        // This function works correctly. No changes needed.
         const batch = writeBatch(db);
         const q = query(postsCollection, where("isFeatured", "==", true));
         const querySnapshot = await getDocs(q);
@@ -162,7 +164,6 @@ async function initBlog() {
             postEl.innerHTML = `<span>${post.isFeatured ? '⭐' : ''} ${post.title} <em class="text-gray-400 text-sm">- by ${post.author || 'Unknown'}</em></span>`;
             
             const btnContainer = document.createElement('div');
-            // ... (button creation logic is fine)
             const featureBtn = document.createElement('button');
             featureBtn.textContent = 'Feature';
             featureBtn.className = 'text-blue-400 text-sm';
@@ -182,7 +183,6 @@ async function initBlog() {
                 blogAuthor.value = post.author || '';
                 coverPhotoUrlInput.value = post.coverPhotoURL || '';
                 document.getElementById('blog-file-preview').innerHTML = post.coverPhotoURL ? `<img src="${post.coverPhotoURL}" class="h-16 mt-2 rounded">` : '';
-                // *** FIX: Set Quill editor content ***
                 blogEditor.root.innerHTML = post.content;
                 window.scrollTo(0, blogForm.offsetTop);
             };
@@ -212,7 +212,6 @@ async function initBlog() {
             title: blogTitle.value,
             author: blogAuthor.value,
             coverPhotoURL: coverPhotoUrlInput.value,
-            // *** FIX: Get content from Quill editor ***
             content: blogEditor.root.innerHTML,
             createdAt: serverTimestamp()
         };
@@ -234,8 +233,6 @@ async function initBlog() {
     loadPosts();
 }
 
-// FILE: public/admin/admin.js
-
 // --- CAREERS MANAGEMENT ---
 async function initCareers() {
     const careerForm = document.getElementById('career-form');
@@ -247,8 +244,6 @@ async function initCareers() {
     const careersList = document.getElementById('careers-list');
     const clearCareerBtn = document.getElementById('clear-career-form');
     const careersCollection = collection(db, 'siteContent', 'careers', 'jobs');
-    
-    // ADDED: Get a reference to the submit button
     const careerSubmitBtn = document.getElementById('career-submit-btn');
 
     const resetCareerForm = () => {
@@ -256,8 +251,6 @@ async function initCareers() {
         careerPostId.value = '';
         careerEditor.root.innerHTML = '';
         document.getElementById('career-form-title').textContent = 'Add New Job';
-        
-        // CHANGED: Reset the button text when the form is cleared
         careerSubmitBtn.textContent = 'Save Job Listing';
     };
 
@@ -281,12 +274,8 @@ async function initCareers() {
                 careerLocation.value = job.location;
                 careerType.value = job.type;
                 careerEditor.root.innerHTML = job.description;
-
-                // CHANGED: Update the button text to "Update"
                 careerSubmitBtn.textContent = 'Update Listing';
-                
                 window.scrollTo(0, careerForm.offsetTop);
-
             };
 
             const deleteBtn = document.createElement('button');
@@ -336,9 +325,7 @@ async function initCareers() {
 
 // --- PRESS MANAGEMENT ---
 async function initPress() {
-    // *** FIX: Initialize Quill Editor ***
     const pressEditor = new Quill('#press-editor', quillOptions);
-
     const pressForm = document.getElementById('press-form');
     const pressTitle = document.getElementById('press-title');
     const pressDate = document.getElementById('press-date');
@@ -363,7 +350,6 @@ async function initPress() {
         pressForm.reset();
         pressPostId.value = '';
         coverPhotoUrlInput.value = '';
-        // *** FIX: Clear Quill editor ***
         pressEditor.root.innerHTML = '';
         document.getElementById('press-file-preview').innerHTML = '';
         document.getElementById('press-upload-progress-container').classList.add('hidden');
@@ -391,7 +377,6 @@ async function initPress() {
                 pressSource.value = release.source || '';
                 coverPhotoUrlInput.value = release.coverPhotoURL || '';
                 document.getElementById('press-file-preview').innerHTML = release.coverPhotoURL ? `<img src="${release.coverPhotoURL}" class="h-16 mt-2 rounded">` : '';
-                // *** FIX: Set Quill editor content ***
                 pressEditor.root.innerHTML = release.summary;
                 window.scrollTo(0, pressForm.offsetTop);
             };
@@ -420,7 +405,6 @@ async function initPress() {
         const data = {
             title: pressTitle.value,
             date: pressDate.value,
-            // *** FIX: Get content from Quill editor ***
             summary: pressEditor.root.innerHTML,
             source: pressSource.value,
             coverPhotoURL: coverPhotoUrlInput.value,
@@ -439,4 +423,61 @@ async function initPress() {
 
     clearPressBtn.addEventListener('click', resetPressForm);
     loadPressReleases();
+}
+
+// --- JOB APPLICATIONS VIEWER ---
+async function initApplications() {
+    const appListContainer = document.getElementById('applications-list');
+    const appsCollection = collection(db, 'applications');
+    const q = query(appsCollection, orderBy('submittedAt', 'desc'));
+
+    try {
+        const querySnapshot = await getDocs(q);
+        appListContainer.innerHTML = ''; // Clear loading message
+
+        if (querySnapshot.empty) {
+            appListContainer.innerHTML = '<p class="text-gray-400">No applications have been submitted yet.</p>';
+            return;
+        }
+
+        querySnapshot.forEach(doc => {
+            const app = doc.data();
+            const appCard = document.createElement('div');
+            appCard.className = 'bg-gray-800 p-4 rounded-lg border border-gray-700';
+
+            appCard.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="font-bold text-lg text-neon">${app.jobTitle}</h4>
+                        <p class="font-semibold text-white">${app.name}</p>
+                        <a href="mailto:${app.email}" class="text-sm text-gray-400 hover:underline">${app.email}</a>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">Submitted:</p>
+                        <p class="text-sm text-gray-300">${formatDate(app.submittedAt)}</p>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-700">
+                    <div class="flex items-center space-x-4">
+                        <a href="${app.resumeURL}" target="_blank" rel="noopener noreferrer" class="btn-neon px-4 py-2 rounded text-sm">View Resume</a>
+                        ${app.coverLetter ? `<button class="view-cover-letter-btn bg-gray-600 px-4 py-2 rounded text-sm">View Cover Letter</button>` : ''}
+                    </div>
+                    ${app.coverLetter ? `<p class="cover-letter-content hidden mt-4 p-3 bg-gray-900 rounded text-gray-300 text-sm whitespace-pre-wrap">${app.coverLetter}</p>` : ''}
+                </div>
+            `;
+            appListContainer.appendChild(appCard);
+        });
+
+    } catch (error) {
+        console.error("Error loading applications:", error);
+        appListContainer.innerHTML = '<p class="text-red-500">Failed to load applications.</p>';
+    }
+
+    // Event listener to toggle cover letter visibility
+    appListContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('view-cover-letter-btn')) {
+            const content = e.target.parentElement.nextElementSibling;
+            content.classList.toggle('hidden');
+        }
+    });
 }
