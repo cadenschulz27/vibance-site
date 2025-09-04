@@ -18,8 +18,8 @@ body {
 /* --- RADIAL HUD --- */
 .radial-hud-wrapper {
     margin-bottom: 4rem;
-    /* CHANGED: Increased height to give the arc enough space */
-    height: 550px; 
+    /* CHANGED: Increased height to give the full circle enough space */
+    height: 650px; 
     display: flex;
     align-items: center;
     justify-content: center;

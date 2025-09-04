@@ -4,22 +4,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- RADIAL HUD ---
     function initRadialHUD() {
+        // CHANGED: Expanded the data set for a full circle
         const financialData = [
-            { name: 'Budgeting', score: 92 },
             { name: 'Savings', score: 85 },
-            { name: 'Credit', score: 78 },
+            { name: 'Budgeting', score: 92 },
+            { name: 'Income', score: 65 },
+            { name: 'Cash Flow', score: 75 },
+            { name: 'Credit Score', score: 78 },
             { name: 'Investing', score: 45 },
+            { name: 'Retirement', score: 55 },
             { name: 'Debt', score: 30 },
-            { name: 'Income', score: 65 }
+            { name: 'Net Worth', score: 60 },
+            { name: 'Emergency Fund', score: 88 }
         ];
 
         const hudPlane = document.getElementById('hud-plane');
         if (!hudPlane) return;
         
-        // CHANGED: Reduced the arc width for a tighter, cleaner look
-        const arcSpan = 160; 
-        const angleStep = arcSpan / (financialData.length - 1);
-        const startingAngle = -90 - (arcSpan / 2);
+        // CHANGED: Set the arc to a full 360 degrees
+        const arcSpan = 360; 
+        const angleStep = arcSpan / financialData.length; // Divide by item count for a full circle
+        const startingAngle = -90; // Start at the top
 
         financialData.forEach((item, index) => {
             const angle = startingAngle + (index * angleStep);
@@ -46,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bubble.className = 'hud-bubble';
             
             bubble.style.setProperty('--angle', `${angle}deg`);
-            bubble.style.setProperty('--delay', `${index * 100}ms`);
+            bubble.style.setProperty('--delay', `${index * 80}ms`); // Slightly adjusted delay
             bubble.style.setProperty('--border-color', colors.borderColor);
             bubble.style.setProperty('--glow-color', colors.glowColor);
             bubble.style.setProperty('--hover-border-color', colors.hoverBorderColor);
@@ -96,5 +101,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INITIALIZE ALL COMPONENTS ---
     initRadialHUD();
     fetchFinancialNews();
-    setInterval(fetchFinancialNews, 900000); // Refresh news every 15 mins
+    setInterval(fetchFinancialNews, 900000); 
 });
