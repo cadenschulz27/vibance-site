@@ -12,48 +12,30 @@
 </head>
 <body class="bg-black text-white font-['Inter']">
 
-    <!-- Header Placeholder -->
     <div id="header-placeholder"></div>
-
-    <main class="pt-24"> <!-- Added padding-top to the main container -->
-        <section class="vibe-score-wrapper">
-            <div class="vibe-score-container">
-                <!-- The VibeScore Info Box -->
-                <div id="vibe-score-info" class="vibe-score-info-box">
-                    <h3 class="font-['Lora'] text-lg font-semibold mb-2 text-white">What is a VibeScore?</h3>
-                    <p class="text-sm text-gray-400">
-                        Your VibeScore is the culmination of your financial condition, providing a real-time snapshot of your economic health. It analyzes your budgeting habits, savings progress, debt levels, and investment activity to give you a single, understandable metric.
-                    </p>
-                </div>
-
-                <!-- Rotating Bubbles (Corrected Structure) -->
-                <div class="bubbles-orbit">
-                    <div class="bubble" style="--angle: 0deg; --delay: 0s;"><div class="bubble-content"><span>Budgeting</span></div></div>
-                    <div class="bubble" style="--angle: 60deg; --delay: -1s;"><div class="bubble-content"><span>Savings</span></div></div>
-                    <div class="bubble" style="--angle: 120deg; --delay: -2s;"><div class="bubble-content"><span>Credit</span></div></div>
-                    <div class="bubble" style="--angle: 180deg; --delay: -3s;"><div class="bubble-content"><span>Investing</span></div></div>
-                    <div class="bubble" style="--angle: 240deg; --delay: -4s;"><div class="bubble-content"><span>Debt</span></div></div>
-                    <div class="bubble" style="--angle: 300deg; --delay: -5s;"><div class="bubble-content"><span>Income</span></div></div>
-                </div>
     
-                <!-- Central VibeScore Ring -->
-                <div id="vibe-score-ring" class="vibe-score-ring" style="--p:75;">
+    <div id="tooltip" class="orrery-tooltip"></div>
+
+    <main class="pt-24">
+        <section class="orrery-wrapper">
+            <div class="orrery-container">
+                <div class="vibe-score-ring">
                     <div class="vibe-score-inner">
                         <span class="vibe-score-percentage">75%</span>
-                        <span class="vibe-score-label font-['Lora']">VibeScore</span>
+                        <span class="vibe-score-label">VibeScore</span>
                     </div>
                 </div>
+
+                <div id="orbit-plane" class="orrery-orbit-plane"></div>
             </div>
         </section>
 
-        <!-- Financial News Section -->
         <section id="financial-news" class="content-section">
             <h2 class="section-header">Financial News</h2>
             <div id="news-grid" class="news-grid">
                 </div>
         </section>
 
-        <!-- Savings Goals Section -->
         <section id="savings-goals" class="content-section">
             <h2 class="section-header">Savings Goals</h2>
             <div class="placeholder-box">
@@ -61,7 +43,6 @@
             </div>
         </section>
 
-        <!-- Achievements Section -->
         <section id="achievements" class="content-section">
             <h2 class="section-header">Achievements</h2>
             <div class="placeholder-box">
@@ -70,7 +51,6 @@
         </section>
     </main>
     
-    <!-- Scripts -->
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
@@ -78,4 +58,3 @@
 
 </body>
 </html>
-

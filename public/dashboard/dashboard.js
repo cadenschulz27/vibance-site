@@ -2,106 +2,101 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- Example function to dynamically update the VibeScore ---
-    function setVibeScore(percentage) {
-        const ring = document.getElementById('vibe-score-ring');
-        const percentageText = document.querySelector('.vibe-score-percentage');
+    // --- DYNAMIC DATA ORRERY ---
+    function initOrrery() {
+        const financialData = [
+            { name: 'Budgeting', score: 92 },
+            { name: 'Savings', score: 85 },
+            { name: 'Credit', score: 78 },
+            { name: 'Investing', score: 45 },
+            { name: 'Debt', score: 30 },
+            { name: 'Income', score: 65 }
+        ];
 
-        if (ring && percentageText) {
-            const p = Math.max(0, Math.min(100, percentage));
-            ring.style.setProperty('--p', p);
-            percentageText.textContent = `${p}%`;
-        }
-    }
-    const userScore = 75; 
-    setVibeScore(userScore);
+        const orbitPlane = document.getElementById('orbit-plane');
+        const tooltip = document.getElementById('tooltip');
 
-    // --- Rotation Pause/Play Logic ---
-    const bubbles = document.querySelectorAll('.bubble');
+        if (!orbitPlane || !tooltip) return;
 
-    if (bubbles.length > 0) {
-        bubbles.forEach(bubble => {
-            bubble.addEventListener('mouseenter', () => {
-                bubbles.forEach(b => b.style.animationPlayState = 'paused');
-            });
+        const angleStep = 360 / financialData.length;
 
-            bubble.addEventListener('mouseleave', () => {
-                bubbles.forEach(b => b.style.animationPlayState = 'running');
-            });
+        financialData.forEach((item, index) => {
+            const size = 40 + (item.score / 100) * 50;
+            const distance = 180 + ((100 - item.score) / 100) * 150;
+            let color;
+            if (item.score < 50) color = 'var(--color-red)';
+            else if (item.score < 80) color = 'var(--color-yellow)';
+            else color = 'var(--color-green)';
+            const angle = index * angleStep;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'orrery-bubble';
+            bubble.dataset.name = item.name;
+            bubble.dataset.score = item.score;
+            
+            bubble.style.setProperty('--size', `${size}px`);
+            bubble.style.setProperty('--distance', `${distance}px`);
+            bubble.style.setProperty('--color', color);
+            bubble.style.setProperty('--angle', `${angle}deg`);
+
+            bubble.innerHTML = `
+                <div class="bubble-core">${item.name.charAt(0)}</div>
+                <div class="connecting-line"></div>
+            `;
+            orbitPlane.appendChild(bubble);
+        });
+
+        orbitPlane.addEventListener('mouseover', (event) => {
+            const bubble = event.target.closest('.orrery-bubble');
+            if (bubble) {
+                tooltip.textContent = `${bubble.dataset.name}: ${bubble.dataset.score}/100`;
+                tooltip.classList.add('visible');
+            }
+        });
+
+        orbitPlane.addEventListener('mouseout', () => {
+            tooltip.classList.remove('visible');
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            tooltip.style.left = `${event.clientX + 15}px`;
+            tooltip.style.top = `${event.clientY + 15}px`;
         });
     }
 
-    // --- VibeScore Info Box Logic ---
-    const vibeScoreRing = document.getElementById('vibe-score-ring');
-    const infoBox = document.getElementById('vibe-score-info');
 
-    if (vibeScoreRing && infoBox) {
-        vibeScoreRing.addEventListener('mouseenter', () => {
-            infoBox.classList.add('visible');
-        });
-
-        vibeScoreRing.addEventListener('mouseleave', () => {
-            infoBox.classList.remove('visible');
-        });
-    }
-
-    // --- REVISED: Function to fetch news from the secure Netlify Function ---
+    // --- FINANCIAL NEWS FETCHER ---
     async function fetchFinancialNews() {
         const newsGrid = document.getElementById('news-grid');
-        
-        // This URL now points to YOUR secure Netlify Function
+        if (!newsGrid) return;
         const apiUrl = `/.netlify/functions/getNews`;
-
-        // Add a loading message
         newsGrid.innerHTML = '<p class="text-gray-400">Fetching the latest financial news...</p>';
-
         try {
-            // No API key is exposed here in the browser!
             const response = await fetch(apiUrl);
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`Request failed`);
             const data = await response.json();
-            const articles = data.articles;
-
-            // Clear the loading message
             newsGrid.innerHTML = '';
-
-            if (!articles || articles.length === 0) {
-                newsGrid.innerHTML = '<p class="text-gray-400">Could not retrieve news articles at this time.</p>';
+            if (!data.articles || data.articles.length === 0) {
+                newsGrid.innerHTML = '<p class="text-gray-400">Could not retrieve news articles.</p>';
                 return;
             }
-
-            // Loop through the articles and create HTML for each one
-            articles.forEach(article => {
-                // Skip articles with no content or removed content
+            data.articles.forEach(article => {
                 if (!article.description || article.description.includes('[Removed]')) return;
-
                 const newsCard = document.createElement('a');
                 newsCard.href = article.url;
                 newsCard.target = '_blank';
-                newsCard.className = 'news-card'; // Use the existing CSS class
-
-                // Use the existing HTML structure and classes for consistent styling
-                newsCard.innerHTML = `
-                    <div class="news-card-content">
-                        <h3 class="news-card-title">${article.title}</h3>
-                        <p class="news-card-preview">${article.description}</p>
-                    </div>
-                `;
+                newsCard.className = 'news-card';
+                newsCard.innerHTML = `<div class="news-card-content"><h3 class="news-card-title">${article.title}</h3><p class="news-card-preview">${article.description}</p></div>`;
                 newsGrid.appendChild(newsCard);
             });
-
         } catch (error) {
             console.error("Error fetching financial news:", error);
             newsGrid.innerHTML = '<p class="text-red-500">Failed to load news. Please try again later.</p>';
         }
     }
 
-    // Call the function once when the page first loads
+    // --- INITIALIZE ALL COMPONENTS ---
+    initOrrery();
     fetchFinancialNews();
-
-    // Set an interval to call the function again every 15 minutes 🔄
-    // 15 minutes * 60 seconds/minute * 1000 milliseconds/second = 900000
-    setInterval(fetchFinancialNews, 900000);
+    setInterval(fetchFinancialNews, 900000); // Refresh news every 15 mins
 });
