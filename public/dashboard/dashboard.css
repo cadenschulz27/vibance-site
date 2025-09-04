@@ -12,12 +12,30 @@
     --heartbeat-scale: 1.02;
 }
 
-body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
 
 /* --- MAIN WRAPPER & CONTAINER --- */
-.radial-hud-wrapper { margin-bottom: 4rem; height: 650px; display: flex; align-items: center; justify-content: center; }
-.radial-hud-container { position: relative; display: flex; align-items: center; justify-content: center; }
-.hud-plane { position: absolute; width: 100%; height: 100%; }
+.radial-hud-wrapper {
+    margin-bottom: 4rem;
+    height: 650px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.radial-hud-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.hud-plane {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
 
 /* --- "LIVING BREATHING" VIBESCORE RING --- */
 .vibescore-ring {
@@ -35,14 +53,51 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
     animation: heartbeat var(--heartbeat-duration) ease-in-out infinite;
     transition: all 0.5s ease;
 }
-.vibescore-ring::before { content: ''; position: absolute; width: 80%; height: 80%; background-color: #000; border-radius: 50%; box-shadow: inset 0 0 25px rgba(0,0,0,0.7); }
-.vibescore-ring:hover { --heartbeat-duration: 1s; --heartbeat-scale: 1.05; }
-.vibescore-ring.status-good { --ring-color: var(--color-good); --glow-color: var(--glow-good); }
-.vibescore-ring.status-warning { --ring-color: var(--color-yellow); --glow-color: var(--glow-warning); }
-.vibescore-ring.status-danger { --ring-color: var(--color-danger); --glow-color: var(--glow-danger); }
-.vibescore-inner { position: relative; z-index: 1; text-align: center; filter: none; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
-.vibescore-percentage { font-size: 2.5rem; font-weight: 700; color: var(--ring-color); line-height: 1; transition: color 0.5s ease; }
-.vibescore-label { font-family: 'Lora', serif; font-size: 1.1rem; color: #FFF; margin-top: 0.25rem; }
+.vibescore-ring::before {
+    content: '';
+    position: absolute;
+    width: 80%;
+    height: 80%;
+    background-color: #000;
+    border-radius: 50%;
+    box-shadow: inset 0 0 25px rgba(0,0,0,0.7);
+}
+.vibescore-ring:hover {
+    --heartbeat-duration: 1s;
+    --heartbeat-scale: 1.05;
+}
+.vibescore-ring.status-good {
+    --ring-color: var(--color-good);
+    --glow-color: var(--glow-good);
+}
+.vibescore-ring.status-warning {
+    --ring-color: var(--color-yellow);
+    --glow-color: var(--glow-warning);
+}
+.vibescore-ring.status-danger {
+    --ring-color: var(--color-danger);
+    --glow-color: var(--glow-danger);
+}
+.vibescore-inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    filter: none;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+.vibescore-percentage {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--ring-color);
+    line-height: 1;
+    transition: color 0.5s ease;
+}
+.vibescore-label {
+    font-family: 'Lora', serif;
+    font-size: 1.1rem;
+    color: #FFF;
+    margin-top: 0.25rem;
+}
 
 /* --- SURROUNDING HUD BUBBLES --- */
 .hud-bubble {
@@ -58,33 +113,120 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
     animation-delay: var(--delay);
 }
 .bubble-core {
-    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; font-weight: 500; color: #e5e7eb; border-radius: 10px;
-    background: rgba(28, 28, 30, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color); box-shadow: 0 0 20px -5px var(--glow-color);
-    transition: all 0.3s ease; cursor: default;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #e5e7eb;
+    border-radius: 10px;
+    background: rgba(28, 28, 30, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0 20px -5px var(--glow-color);
+    transition: all 0.3s ease;
+    cursor: default;
 }
-.hud-bubble:hover .bubble-core { transform: scale(1.1); color: #fff; border-color: var(--hover-border-color); box-shadow: 0 0 30px -5px var(--glow-color); }
-.bubble-score { font-size: 0.8rem; margin-left: 8px; font-weight: 700; color: var(--text-color); }
+.hud-bubble:hover .bubble-core {
+    transform: scale(1.1);
+    color: #fff;
+    border-color: var(--hover-border-color);
+    box-shadow: 0 0 30px -5px var(--glow-color);
+}
+.bubble-score {
+    font-size: 0.8rem;
+    margin-left: 8px;
+    font-weight: 700;
+    color: var(--text-color);
+}
 
 /* --- KEYFRAME ANIMATIONS --- */
 @keyframes heartbeat {
-    0% { transform: scale(1); box-shadow: 0 0 20px -5px var(--glow-color); }
-    50% { transform: scale(var(--heartbeat-scale)); box-shadow: 0 0 40px 5px var(--glow-color); }
-    100% { transform: scale(1); box-shadow: 0 0 20px -5px var(--glow-color); }
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 20px -5px var(--glow-color);
+    }
+    50% {
+        transform: scale(var(--heartbeat-scale));
+        box-shadow: 0 0 40px 5px var(--glow-color);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px -5px var(--glow-color);
+    }
 }
 @keyframes fan-out {
-    from { opacity: 0; transform: rotate(var(--angle)) translateY(0) rotate(calc(var(--angle) * -1)) scale(0.5); }
-    to { opacity: 1; transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1); }
+    from {
+        opacity: 0;
+        transform: rotate(var(--angle)) translateY(0) rotate(calc(var(--angle) * -1)) scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1);
+    }
 }
 
 /* --- General Content Sections --- */
-.content-section { width: 100%; max-width: 1400px; margin: 0 auto 5rem auto; padding: 0 4rem; }
-.section-header { font-family: 'Lora', serif; font-size: 2.5rem; font-weight: 600; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #3A3A3C; text-align: left; }
-.news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
-.news-card { background-color: #121212; border: 1px solid #3A3A3C; border-radius: 0.75rem; overflow: hidden; transition: transform 0.3s ease, border-color 0.3s ease; display: block; text-decoration: none; color: inherit; }
-.news-card:hover { transform: translateY(-5px); border-color: #555; }
-.news-card-content { padding: 2rem; }
-.news-card-title { font-size: 1.375rem; font-weight: 600; margin-bottom: 0.75rem; color: #FFF; }
-.news-card-preview { font-size: 1rem; color: #a0a0a0; line-height: 1.6; }
-.placeholder-box { background-color: #121212; border: 2px dashed #3A3A3C; border-radius: 0.75rem; min-height: 250px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 1.25rem; font-weight: 500; }
+.content-section {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto 5rem auto;
+    padding: 0 4rem;
+}
+.section-header {
+    font-family: 'Lora', serif;
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #3A3A3C;
+    text-align: left;
+}
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+.news-card {
+    background-color: #121212;
+    border: 1px solid #3A3A3C;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+.news-card:hover {
+    transform: translateY(-5px);
+    border-color: #555;
+}
+.news-card-content {
+    padding: 2rem;
+}
+.news-card-title {
+    font-size: 1.375rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #FFF;
+}
+.news-card-preview {
+    font-size: 1rem;
+    color: #a0a0a0;
+    line-height: 1.6;
+}
+.placeholder-box {
+    background-color: #121212;
+    border: 2px dashed #3A3A3C;
+    border-radius: 0.75rem;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
