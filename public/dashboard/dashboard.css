@@ -4,8 +4,8 @@
     --color-red: #FF4500;
     --color-yellow: #FFD700;
     --color-green: #90EE90;
-    --center-ring-size: 220px; /* Slightly smaller for focus */
-    --hud-radius: 260px; /* Distance of bubbles from center */
+    --center-ring-size: 220px;
+    --hud-radius: 260px;
     --bubble-width: 140px;
     --bubble-height: 50px;
 }
@@ -15,10 +15,11 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- NEW: RADIAL HUD --- */
+/* --- RADIAL HUD --- */
 .radial-hud-wrapper {
     margin-bottom: 4rem;
-    height: 450px;
+    /* CHANGED: Increased height to give the arc enough space */
+    height: 550px; 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,7 +38,7 @@ body {
     height: 100%;
 }
 
-/* --- CENTRAL VIBESCORE RING (Styled to match HUD) --- */
+/* --- CENTRAL VIBESCORE RING --- */
 .vibe-score-ring {
     width: var(--center-ring-size);
     height: var(--center-ring-size);
@@ -55,46 +56,20 @@ body {
         0 0 35px rgba(204, 255, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
-.vibe-score-ring::before {
-    content: '';
-    position: absolute;
-    width: 85%;
-    height: 85%;
-    background-color: #000;
-    border-radius: 50%;
-}
-.vibe-score-inner {
-    position: relative;
-    z-index: 1;
-    transform: scaleX(-1);
-    text-align: center;
-}
-.vibe-score-percentage {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--neon-green);
-    line-height: 1;
-}
-.vibe-score-label {
-    font-family: 'Lora', serif;
-    font-size: 1.1rem;
-    color: #FFF;
-    margin-top: 0.25rem;
-}
+.vibe-score-ring::before { content: ''; position: absolute; width: 85%; height: 85%; background-color: #000; border-radius: 50%; }
+.vibe-score-inner { position: relative; z-index: 1; transform: scaleX(-1); text-align: center; }
+.vibe-score-percentage { font-size: 2.5rem; font-weight: 700; color: var(--neon-green); line-height: 1; }
+.vibe-score-label { font-family: 'Lora', serif; font-size: 1.1rem; color: #FFF; margin-top: 0.25rem; }
 
-/* --- HUD BUBBLES (Replaces Orbiting Bubbles) --- */
+/* --- HUD BUBBLES --- */
 .hud-bubble {
     width: var(--bubble-width);
     height: var(--bubble-height);
     position: absolute;
     top: calc(50% - (var(--bubble-height) / 2));
     left: calc(50% - (var(--bubble-width) / 2));
-    
-    /* Sets the bubble's position on the arc */
     transform-origin: center;
     transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1));
-    
-    /* Intro animation */
     opacity: 0;
     animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     animation-delay: var(--delay);
@@ -109,14 +84,11 @@ body {
     font-weight: 500;
     color: #e5e7eb;
     border-radius: 10px;
-    
-    /* Glassmorphism & Glow Effects */
     background: rgba(28, 28, 30, 0.6);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     box-shadow: 0 0 20px -5px var(--glow-color);
-
     transition: all 0.3s ease;
     cursor: default;
 }
@@ -145,7 +117,7 @@ body {
     }
 }
 
-/* --- General Content Sections (Unchanged) --- */
+/* --- General Content Sections --- */
 .content-section { width: 100%; max-width: 1400px; margin: 0 auto 5rem auto; padding: 0 4rem; }
 .section-header { font-family: 'Lora', serif; font-size: 2.5rem; font-weight: 600; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #3A3A3C; text-align: left; }
 .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }

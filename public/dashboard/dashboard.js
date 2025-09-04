@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- NEW: RADIAL HUD ---
+    // --- RADIAL HUD ---
     function initRadialHUD() {
         const financialData = [
             { name: 'Budgeting', score: 92 },
@@ -16,47 +16,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const hudPlane = document.getElementById('hud-plane');
         if (!hudPlane) return;
         
-        // Define the total arc span in degrees (e.g., 180 for a semicircle)
-        const arcSpan = 180;
+        // CHANGED: Reduced the arc width for a tighter, cleaner look
+        const arcSpan = 160; 
         const angleStep = arcSpan / (financialData.length - 1);
         const startingAngle = -90 - (arcSpan / 2);
 
         financialData.forEach((item, index) => {
             const angle = startingAngle + (index * angleStep);
             
-            // Determine colors based on score
             let colors;
             if (item.score < 50) {
                 colors = {
-                    borderColor: 'rgba(255, 69, 0, 0.4)',
-                    glowColor: 'rgba(255, 69, 0, 0.3)',
-                    hoverBorderColor: 'rgba(255, 69, 0, 0.8)',
-                    textColor: 'var(--color-red)'
+                    borderColor: 'rgba(255, 69, 0, 0.4)', glowColor: 'rgba(255, 69, 0, 0.3)',
+                    hoverBorderColor: 'rgba(255, 69, 0, 0.8)', textColor: 'var(--color-red)'
                 };
             } else if (item.score < 80) {
                 colors = {
-                    borderColor: 'rgba(255, 215, 0, 0.4)',
-                    glowColor: 'rgba(255, 215, 0, 0.3)',
-                    hoverBorderColor: 'rgba(255, 215, 0, 0.8)',
-                    textColor: 'var(--color-yellow)'
+                    borderColor: 'rgba(255, 215, 0, 0.4)', glowColor: 'rgba(255, 215, 0, 0.3)',
+                    hoverBorderColor: 'rgba(255, 215, 0, 0.8)', textColor: 'var(--color-yellow)'
                 };
             } else {
                  colors = {
-                    borderColor: 'rgba(144, 238, 144, 0.4)',
-                    glowColor: 'rgba(144, 238, 144, 0.3)',
-                    hoverBorderColor: 'rgba(144, 238, 144, 0.8)',
-                    textColor: 'var(--color-green)'
+                    borderColor: 'rgba(144, 238, 144, 0.4)', glowColor: 'rgba(144, 238, 144, 0.3)',
+                    hoverBorderColor: 'rgba(144, 238, 144, 0.8)', textColor: 'var(--color-green)'
                 };
             }
 
             const bubble = document.createElement('div');
             bubble.className = 'hud-bubble';
             
-            // Set CSS variables for positioning and staggered animation
             bubble.style.setProperty('--angle', `${angle}deg`);
             bubble.style.setProperty('--delay', `${index * 100}ms`);
-            
-            // Set CSS variables for data-driven colors
             bubble.style.setProperty('--border-color', colors.borderColor);
             bubble.style.setProperty('--glow-color', colors.glowColor);
             bubble.style.setProperty('--hover-border-color', colors.hoverBorderColor);
