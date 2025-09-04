@@ -27,14 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 20);
 
         let time = 0;
-        function animateTurbulence() {
-            const freqX = 0.01 + Math.sin(time * 0.0002) * 0.005;
-            const freqY = 0.03 + Math.cos(time * 0.0003) * 0.007;
-            turbulence.setAttribute('baseFrequency', `${freqX} ${freqY}`);
-            time++;
-            requestAnimationFrame(animateTurbulence);
-        }
-        animateTurbulence();
+        //function animateTurbulence() {
+          //  const freqX = 0.01 + Math.sin(time * 0.0002) * 0.005;
+            //const freqY = 0.03 + Math.cos(time * 0.0003) * 0.007;
+            //turbulence.setAttribute('baseFrequency', `${freqX} ${freqY}`);
+            //time++;
+            //requestAnimationFrame(animateTurbulence);
+        //}
+        //animateTurbulence();
     }
 
     // --- RADIAL HUD BUBBLES ---
