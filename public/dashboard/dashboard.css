@@ -4,8 +4,8 @@
     --ring-size: 250px;
     --bubble-size-w: 160px;
     --bubble-size-h: 80px;
-    --orbit-radius: 280px; /* Increased radius for a wider orbit */
-    --rotation-speed: 30s; /* Sped up the rotation slightly */
+    --orbit-radius: 280px;
+    --rotation-speed: 30s;
 }
 
 body {
@@ -27,7 +27,6 @@ body {
     justify-content: center;
     align-items: center;
     margin: 0 auto;
-    /* NEW: Creates the 3D perspective for child elements */
     perspective: 1200px;
 }
 
@@ -43,11 +42,17 @@ body {
     background: conic-gradient(var(--neon-green) calc(var(--p) * 1%), #1C1C1E 0);
     transform: scaleX(-1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* NEW: Added a glow effect to the central ring */
+    box-shadow: 
+        inset 0 0 15px rgba(0,0,0,0.5),
+        0 0 25px rgba(204, 255, 0, 0.1);
 }
 
 .vibe-score-ring:hover {
     transform: scaleX(-1) scale(1.05);
-    box-shadow: 0 0 25px 0 rgba(204, 255, 0, 0.4);
+    box-shadow: 
+        inset 0 0 20px rgba(0,0,0,0.6),
+        0 0 35px rgba(204, 255, 0, 0.3);
 }
 
 .vibe-score-ring::before {
@@ -82,15 +87,15 @@ body {
     margin-top: 0.25rem;
 }
 
-/* --- REWORKED: 3D Orbit Animation --- */
+/* --- REWORKED: 3D Orbit & Modern Styling --- */
 .bubbles-orbit {
     position: absolute;
     width: 100%;
     height: 100%;
     z-index: 5;
-    /* NEW: Enables 3D transformations for children and applies the main orbit animation */
     transform-style: preserve-3d;
     animation: orbit-spin var(--rotation-speed) linear infinite;
+    transition: transform 0.5s ease;
 }
 
 .bubble {
@@ -101,136 +106,82 @@ body {
     height: var(--bubble-size-h);
     margin-top: calc(var(--bubble-size-h) / -2);
     margin-left: calc(var(--bubble-size-w) / -2);
-    /* NEW: Positions each bubble on the ring using its --angle variable */
     transform: rotateY(var(--angle)) translateX(var(--orbit-radius));
+    /* NEW: Smooth transition for hover effects */
+    transition: opacity 0.4s ease;
 }
 
 .bubble-content {
     width: 100%;
     height: 100%;
-    background-color: #121212;
-    border: 2px solid #3A3A3C;
-    border-radius: 0.75rem;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 1.125rem;
-    color: #a0a0a0;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-    /* NEW: Applies the counter-rotation to always face the camera */
-    animation: face-camera var(--rotation-speed) linear infinite;
+    color: #e5e7eb;
+    font-weight: 500;
+    border-radius: 1rem; /* Increased border-radius for a softer look */
+    
+    /* NEW: Glassmorphism Effect */
+    background: rgba(28, 28, 30, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(204, 255, 0, 0.2);
+    
+    /* NEW: Glow Effect */
+    box-shadow: 0 0 20px rgba(204, 255, 0, 0.1);
+
+    /* NEW: Combined animations for rotation and floating */
+    animation: 
+        face-camera var(--rotation-speed) linear infinite,
+        float 6s ease-in-out infinite;
+    animation-delay: var(--delay); /* Stagger the float animation */
+
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* NEW: Enhanced hover effect */
 .bubble:hover .bubble-content {
-    transform: scale(1.1);
-    border-color: var(--neon-green);
-    box-shadow: 0 0 20px 0 rgba(204, 255, 0, 0.5);
+    transform: scale(1.15); /* Enlarge more on hover */
+    border-color: rgba(204, 255, 0, 0.8);
+    box-shadow: 0 0 35px rgba(204, 255, 0, 0.5); /* Brighter glow */
+    color: #FFF;
 }
 
-/* NEW: Keyframe for the main orbital plate's rotation */
+/* NEW: Dim other bubbles when one is hovered */
+.bubbles-orbit:has(.bubble:hover) .bubble:not(:hover) {
+    opacity: 0.3;
+}
+
+
+/* --- KEYFRAMES --- */
 @keyframes orbit-spin {
     from { transform: rotateY(0deg) rotateX(75deg); }
     to   { transform: rotateY(360deg) rotateX(75deg); }
 }
 
-/* NEW: Keyframe to counter-rotate the bubbles so they always face forward */
 @keyframes face-camera {
     from { transform: rotateX(-75deg) rotateY(0deg); }
     to   { transform: rotateX(-75deg) rotateY(-360deg); }
 }
 
-
-/* --- VibeScore Info Box --- */
-.vibe-score-info-box {
-    position: fixed;
-    top: 50%;
-    left: 4rem;
-    transform: translateY(-50%);
-    width: 320px;
-    background-color: #121212;
-    border: 1px solid #3A3A3C;
-    border-radius: 0.75rem;
-    padding: 2rem;
-    z-index: 100;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-    pointer-events: none;
+/* NEW: Keyframe for the subtle floating effect */
+@keyframes float {
+    0% { transform: translateY(5px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(5px); }
 }
 
-.vibe-score-info-box.visible {
-    opacity: 1;
-    visibility: visible;
-}
 
-/* --- Content Sections --- */
-.content-section {
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto 5rem auto;
-    padding: 0 4rem;
-}
-
-.section-header {
-    font-family: 'Lora', serif;
-    font-size: 2.5rem;
-    font-weight: 600;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #3A3A3C;
-    text-align: left;
-}
-
-/* --- Financial News --- */
-.news-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-}
-
-.news-card {
-    background-color: #121212;
-    border: 1px solid #3A3A3C;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    transition: transform 0.3s ease, border-color 0.3s ease;
-    display: block;
-    text-decoration: none;
-    color: inherit;
-}
-
-.news-card:hover {
-    transform: translateY(-5px);
-    border-color: #555;
-}
-
-.news-card-content {
-    padding: 2rem;
-}
-
-.news-card-title {
-    font-size: 1.375rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: #FFF;
-}
-
-.news-card-preview {
-    font-size: 1rem;
-    color: #a0a0a0;
-    line-height: 1.6;
-}
-
-/* --- Placeholder Boxes --- */
-.placeholder-box {
-    background-color: #121212;
-    border: 2px dashed #3A3A3C;
-    border-radius: 0.75rem;
-    min-height: 250px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #555;
-    font-size: 1.25rem;
-    font-weight: 500;
-}
+/* --- VibeScore Info Box & Content Sections (Unchanged) --- */
+.vibe-score-info-box { position: fixed; top: 50%; left: 4rem; transform: translateY(-50%); width: 320px; background-color: #121212; border: 1px solid #3A3A3C; border-radius: 0.75rem; padding: 2rem; z-index: 100; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; pointer-events: none; }
+.vibe-score-info-box.visible { opacity: 1; visibility: visible; }
+.content-section { width: 100%; max-width: 1400px; margin: 0 auto 5rem auto; padding: 0 4rem; }
+.section-header { font-family: 'Lora', serif; font-size: 2.5rem; font-weight: 600; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #3A3A3C; text-align: left; }
+.news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.news-card { background-color: #121212; border: 1px solid #3A3A3C; border-radius: 0.75rem; overflow: hidden; transition: transform 0.3s ease, border-color 0.3s ease; display: block; text-decoration: none; color: inherit; }
+.news-card:hover { transform: translateY(-5px); border-color: #555; }
+.news-card-content { padding: 2rem; }
+.news-card-title { font-size: 1.375rem; font-weight: 600; margin-bottom: 0.75rem; color: #FFF; }
+.news-card-preview { font-size: 1rem; color: #a0a0a0; line-height: 1.6; }
+.placeholder-box { background-color: #121212; border: 2px dashed #3A3A3C; border-radius: 0.75rem; min-height: 250px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 1.25rem; font-weight: 500; }
