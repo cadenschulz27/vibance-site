@@ -13,12 +13,10 @@
 <body class="bg-black text-white font-['Inter']">
 
     <div id="header-placeholder"></div>
-    
-    <div id="tooltip" class="orrery-tooltip"></div>
 
     <main class="pt-24">
-        <section class="orrery-wrapper">
-            <div class="orrery-container">
+        <section class="radial-hud-wrapper">
+            <div class="radial-hud-container">
                 <div class="vibe-score-ring">
                     <div class="vibe-score-inner">
                         <span class="vibe-score-percentage">75%</span>
@@ -26,35 +24,22 @@
                     </div>
                 </div>
 
-                <div id="orbit-plane" class="orrery-orbit-plane"></div>
+                <div id="hud-plane" class="hud-plane"></div>
             </div>
         </section>
 
         <section id="financial-news" class="content-section">
             <h2 class="section-header">Financial News</h2>
-            <div id="news-grid" class="news-grid">
-                </div>
+            <div id="news-grid" class="news-grid"></div>
         </section>
 
-        <section id="savings-goals" class="content-section">
-            <h2 class="section-header">Savings Goals</h2>
-            <div class="placeholder-box">
-                <span>Savings Goals Content Here</span>
-            </div>
-        </section>
-
-        <section id="achievements" class="content-section">
-            <h2 class="section-header">Achievements</h2>
-            <div class="placeholder-box">
-                <span>Achievements Content Here</span>
-            </div>
-        </section>
+        <section id="savings-goals" class="content-section"><h2 class="section-header">Savings Goals</h2><div class="placeholder-box"><span>Savings Goals Content Here</span></div></section>
+        <section id="achievements" class="content-section"><h2 class="section-header">Achievements</h2><div class="placeholder-box"><span>Achievements Content Here</span></div></section>
     </main>
     
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
     <script type="module" src="dashboard.js"></script>
-
 </body>
 </html>

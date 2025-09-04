@@ -2,8 +2,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- DYNAMIC DATA ORRERY ---
-    function initOrrery() {
+    // --- NEW: RADIAL HUD ---
+    function initRadialHUD() {
         const financialData = [
             { name: 'Budgeting', score: 92 },
             { name: 'Savings', score: 85 },
@@ -13,59 +13,67 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: 'Income', score: 65 }
         ];
 
-        const orbitPlane = document.getElementById('orbit-plane');
-        const tooltip = document.getElementById('tooltip');
-
-        if (!orbitPlane || !tooltip) return;
-
-        const angleStep = 360 / financialData.length;
+        const hudPlane = document.getElementById('hud-plane');
+        if (!hudPlane) return;
+        
+        // Define the total arc span in degrees (e.g., 180 for a semicircle)
+        const arcSpan = 180;
+        const angleStep = arcSpan / (financialData.length - 1);
+        const startingAngle = -90 - (arcSpan / 2);
 
         financialData.forEach((item, index) => {
-            const size = 40 + (item.score / 100) * 50;
-            const distance = 180 + ((100 - item.score) / 100) * 150;
-            let color;
-            if (item.score < 50) color = 'var(--color-red)';
-            else if (item.score < 80) color = 'var(--color-yellow)';
-            else color = 'var(--color-green)';
-            const angle = index * angleStep;
+            const angle = startingAngle + (index * angleStep);
+            
+            // Determine colors based on score
+            let colors;
+            if (item.score < 50) {
+                colors = {
+                    borderColor: 'rgba(255, 69, 0, 0.4)',
+                    glowColor: 'rgba(255, 69, 0, 0.3)',
+                    hoverBorderColor: 'rgba(255, 69, 0, 0.8)',
+                    textColor: 'var(--color-red)'
+                };
+            } else if (item.score < 80) {
+                colors = {
+                    borderColor: 'rgba(255, 215, 0, 0.4)',
+                    glowColor: 'rgba(255, 215, 0, 0.3)',
+                    hoverBorderColor: 'rgba(255, 215, 0, 0.8)',
+                    textColor: 'var(--color-yellow)'
+                };
+            } else {
+                 colors = {
+                    borderColor: 'rgba(144, 238, 144, 0.4)',
+                    glowColor: 'rgba(144, 238, 144, 0.3)',
+                    hoverBorderColor: 'rgba(144, 238, 144, 0.8)',
+                    textColor: 'var(--color-green)'
+                };
+            }
 
             const bubble = document.createElement('div');
-            bubble.className = 'orrery-bubble';
-            bubble.dataset.name = item.name;
-            bubble.dataset.score = item.score;
+            bubble.className = 'hud-bubble';
             
-            bubble.style.setProperty('--size', `${size}px`);
-            bubble.style.setProperty('--distance', `${distance}px`);
-            bubble.style.setProperty('--color', color);
+            // Set CSS variables for positioning and staggered animation
             bubble.style.setProperty('--angle', `${angle}deg`);
+            bubble.style.setProperty('--delay', `${index * 100}ms`);
+            
+            // Set CSS variables for data-driven colors
+            bubble.style.setProperty('--border-color', colors.borderColor);
+            bubble.style.setProperty('--glow-color', colors.glowColor);
+            bubble.style.setProperty('--hover-border-color', colors.hoverBorderColor);
+            bubble.style.setProperty('--text-color', colors.textColor);
 
             bubble.innerHTML = `
-                <div class="bubble-core">${item.name.charAt(0)}</div>
-                <div class="connecting-line"></div>
+                <div class="bubble-core">
+                    <span>${item.name}</span>
+                    <span class="bubble-score">${item.score}</span>
+                </div>
             `;
-            orbitPlane.appendChild(bubble);
-        });
-
-        orbitPlane.addEventListener('mouseover', (event) => {
-            const bubble = event.target.closest('.orrery-bubble');
-            if (bubble) {
-                tooltip.textContent = `${bubble.dataset.name}: ${bubble.dataset.score}/100`;
-                tooltip.classList.add('visible');
-            }
-        });
-
-        orbitPlane.addEventListener('mouseout', () => {
-            tooltip.classList.remove('visible');
-        });
-
-        window.addEventListener('mousemove', (event) => {
-            tooltip.style.left = `${event.clientX + 15}px`;
-            tooltip.style.top = `${event.clientY + 15}px`;
+            hudPlane.appendChild(bubble);
         });
     }
 
 
-    // --- FINANCIAL NEWS FETCHER ---
+    // --- FINANCIAL NEWS FETCHER (Unchanged) ---
     async function fetchFinancialNews() {
         const newsGrid = document.getElementById('news-grid');
         if (!newsGrid) return;
@@ -96,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- INITIALIZE ALL COMPONENTS ---
-    initOrrery();
+    initRadialHUD();
     fetchFinancialNews();
     setInterval(fetchFinancialNews, 900000); // Refresh news every 15 mins
 });

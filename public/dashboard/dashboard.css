@@ -4,8 +4,10 @@
     --color-red: #FF4500;
     --color-yellow: #FFD700;
     --color-green: #90EE90;
-    --center-ring-size: 200px;
-    --rotation-speed: 40s;
+    --center-ring-size: 220px; /* Slightly smaller for focus */
+    --hud-radius: 260px; /* Distance of bubbles from center */
+    --bubble-width: 140px;
+    --bubble-height: 50px;
 }
 
 body {
@@ -13,36 +15,29 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- DYNAMIC DATA ORRERY --- */
-.orrery-wrapper {
-    margin-bottom: 2rem;
-    /* This height helps contain the 3D object and provide space */
-    height: 600px; 
+/* --- NEW: RADIAL HUD --- */
+.radial-hud-wrapper {
+    margin-bottom: 4rem;
+    height: 450px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.orrery-container {
-    width: 100%;
-    max-width: 700px;
-    height: 100%;
+.radial-hud-container {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    perspective: 1500px;
 }
 
-.orrery-orbit-plane {
+.hud-plane {
+    position: absolute;
     width: 100%;
     height: 100%;
-    position: absolute;
-    transform-style: preserve-3d;
-    animation: orbit-spin var(--rotation-speed) linear infinite;
 }
 
-/* --- CENTRAL VIBESCORE RING --- */
+/* --- CENTRAL VIBESCORE RING (Styled to match HUD) --- */
 .vibe-score-ring {
     width: var(--center-ring-size);
     height: var(--center-ring-size);
@@ -58,6 +53,7 @@ body {
     box-shadow: 
         inset 0 0 20px rgba(0,0,0,0.6),
         0 0 35px rgba(204, 255, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .vibe-score-ring::before {
     content: '';
@@ -86,96 +82,70 @@ body {
     margin-top: 0.25rem;
 }
 
-/* --- ORBITING BUBBLES --- */
-.orrery-bubble {
-    width: var(--size);
-    height: var(--size);
+/* --- HUD BUBBLES (Replaces Orbiting Bubbles) --- */
+.hud-bubble {
+    width: var(--bubble-width);
+    height: var(--bubble-height);
     position: absolute;
-    top: calc(50% - (var(--size) / 2));
-    left: calc(50% - (var(--size) / 2));
-    transform: rotateY(var(--angle)) translateX(var(--distance));
-    transition: transform 1s ease, width 1s ease, height 1s ease;
+    top: calc(50% - (var(--bubble-height) / 2));
+    left: calc(50% - (var(--bubble-width) / 2));
+    
+    /* Sets the bubble's position on the arc */
+    transform-origin: center;
+    transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1));
+    
+    /* Intro animation */
+    opacity: 0;
+    animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--delay);
 }
 .bubble-core {
     width: 100%;
     height: 100%;
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-    border: 2px solid var(--color);
-    box-shadow: 0 0 15px -2px var(--color), inset 0 0 10px -5px var(--color);
-    animation: face-camera var(--rotation-speed) linear infinite;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-.orrery-bubble:hover .bubble-core {
-    transform: scale(1.2);
-    box-shadow: 0 0 30px 0px var(--color), inset 0 0 15px -2px var(--color);
-}
-
-/* --- CONNECTING LINE --- */
-.connecting-line {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 2px;
-    height: var(--distance);
-    transform-origin: top center;
-    transform: rotateY(var(--angle)) rotateX(90deg);
-    background: var(--color);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-}
-.orrery-bubble:hover .connecting-line {
-    opacity: 0.5;
-    animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* --- TOOLTIP --- */
-.orrery-tooltip {
-    position: fixed;
-    background: rgba(28, 28, 30, 0.8);
+    font-size: 1rem;
+    font-weight: 500;
+    color: #e5e7eb;
+    border-radius: 10px;
+    
+    /* Glassmorphism & Glow Effects */
+    background: rgba(28, 28, 30, 0.6);
     backdrop-filter: blur(10px);
-    border: 1px solid #3A3A3C;
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: #fff;
-    font-size: 14px;
-    z-index: 100;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    transform: translateY(10px);
-    pointer-events: none;
-    white-space: nowrap;
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0 20px -5px var(--glow-color);
+
+    transition: all 0.3s ease;
+    cursor: default;
 }
-.orrery-tooltip.visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
+.hud-bubble:hover .bubble-core {
+    transform: scale(1.1);
+    color: #fff;
+    border-color: var(--hover-border-color);
+    box-shadow: 0 0 30px -5px var(--glow-color);
+}
+.bubble-score {
+    font-size: 0.8rem;
+    margin-left: 8px;
+    font-weight: 700;
+    color: var(--text-color);
 }
 
 /* --- KEYFRAME ANIMATIONS --- */
-@keyframes orbit-spin {
-    from { transform: rotateY(0deg) rotateX(65deg); }
-    to   { transform: rotateY(360deg) rotateX(65deg); }
-}
-@keyframes face-camera {
-    from { transform: rotateX(-65deg) rotateY(0deg); }
-    to   { transform: rotateX(-65deg) rotateY(-360deg); }
-}
-@keyframes pulse {
-    0%, 100% { box-shadow: 0 0 5px 0px var(--color); }
-    50% { box-shadow: 0 0 15px 3px var(--color); }
+@keyframes fan-out {
+    from {
+        opacity: 0;
+        transform: rotate(var(--angle)) translateY(0) rotate(calc(var(--angle) * -1)) scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1);
+    }
 }
 
-/* --- General Content Sections --- */
+/* --- General Content Sections (Unchanged) --- */
 .content-section { width: 100%; max-width: 1400px; margin: 0 auto 5rem auto; padding: 0 4rem; }
 .section-header { font-family: 'Lora', serif; font-size: 2.5rem; font-weight: 600; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #3A3A3C; text-align: left; }
 .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
