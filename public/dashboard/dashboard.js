@@ -2,69 +2,49 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- RADIAL HUD ---
-    function initRadialHUD() {
-        // CHANGED: Expanded the data set for a full circle
-        const financialData = [
-            { name: 'Savings', score: 85 },
-            { name: 'Budgeting', score: 92 },
-            { name: 'Income', score: 65 },
-            { name: 'Cash Flow', score: 75 },
-            { name: 'Credit Score', score: 78 },
-            { name: 'Investing', score: 45 },
-            { name: 'Retirement', score: 55 },
-            { name: 'Debt', score: 30 },
-            { name: 'Net Worth', score: 60 },
-            { name: 'Emergency Fund', score: 88 }
-        ];
+    // --- "LIVING BREATHING" VIBESCORE ---
+    function initVibeScore(score) {
+        const ring = document.getElementById('vibescore-ring');
+        const percentageText = document.getElementById('vibescore-percentage');
+        const turbulence = document.querySelector('#watery-goo feTurbulence');
 
-        const hudPlane = document.getElementById('hud-plane');
-        if (!hudPlane) return;
-        
-        // CHANGED: Set the arc to a full 360 degrees
-        const arcSpan = 360; 
-        const angleStep = arcSpan / financialData.length; // Divide by item count for a full circle
-        const startingAngle = -90; // Start at the top
+        if (!ring || !percentageText || !turbulence) {
+            console.error('VibeScore elements not found!');
+            return;
+        }
 
-        financialData.forEach((item, index) => {
-            const angle = startingAngle + (index * angleStep);
-            
-            let colors;
-            if (item.score < 50) {
-                colors = {
-                    borderColor: 'rgba(255, 69, 0, 0.4)', glowColor: 'rgba(255, 69, 0, 0.3)',
-                    hoverBorderColor: 'rgba(255, 69, 0, 0.8)', textColor: 'var(--color-red)'
-                };
-            } else if (item.score < 80) {
-                colors = {
-                    borderColor: 'rgba(255, 215, 0, 0.4)', glowColor: 'rgba(255, 215, 0, 0.3)',
-                    hoverBorderColor: 'rgba(255, 215, 0, 0.8)', textColor: 'var(--color-yellow)'
-                };
+        // 1. SET THE STATUS CLASS (Controls Color & Glow)
+        ring.classList.remove('status-good', 'status-warning', 'status-danger');
+        if (score >= 80) {
+            ring.classList.add('status-good');
+        } else if (score >= 50) {
+            ring.classList.add('status-warning');
+        } else {
+            ring.classList.add('status-danger');
+        }
+
+        // 2. ANIMATE THE TEXT AND CONIC GRADIENT
+        let currentScore = 0;
+        const interval = setInterval(() => {
+            if (currentScore >= score) {
+                clearInterval(interval);
             } else {
-                 colors = {
-                    borderColor: 'rgba(144, 238, 144, 0.4)', glowColor: 'rgba(144, 238, 144, 0.3)',
-                    hoverBorderColor: 'rgba(144, 238, 144, 0.8)', textColor: 'var(--color-green)'
-                };
+                currentScore++;
+                percentageText.textContent = `${currentScore}%`;
+                ring.style.background = `conic-gradient(var(--ring-color) ${currentScore}%, #1C1C1E 0%)`;
             }
+        }, 20);
 
-            const bubble = document.createElement('div');
-            bubble.className = 'hud-bubble';
-            
-            bubble.style.setProperty('--angle', `${angle}deg`);
-            bubble.style.setProperty('--delay', `${index * 80}ms`); // Slightly adjusted delay
-            bubble.style.setProperty('--border-color', colors.borderColor);
-            bubble.style.setProperty('--glow-color', colors.glowColor);
-            bubble.style.setProperty('--hover-border-color', colors.hoverBorderColor);
-            bubble.style.setProperty('--text-color', colors.textColor);
-
-            bubble.innerHTML = `
-                <div class="bubble-core">
-                    <span>${item.name}</span>
-                    <span class="bubble-score">${item.score}</span>
-                </div>
-            `;
-            hudPlane.appendChild(bubble);
-        });
+        // 3. ANIMATE THE SVG FILTER (Creates the "Living" Texture)
+        let time = 0;
+        function animateTurbulence() {
+            const freqX = 0.01 + Math.sin(time * 0.0002) * 0.005;
+            const freqY = 0.03 + Math.cos(time * 0.0003) * 0.007;
+            turbulence.setAttribute('baseFrequency', `${freqX} ${freqY}`);
+            time++;
+            requestAnimationFrame(animateTurbulence);
+        }
+        animateTurbulence();
     }
 
 
@@ -99,7 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- INITIALIZE ALL COMPONENTS ---
-    initRadialHUD();
+    // In a real app, this score would be fetched from the user's data in Firestore.
+    const userVibeScore = 75; 
+    initVibeScore(userVibeScore);
+
     fetchFinancialNews();
-    setInterval(fetchFinancialNews, 900000); 
+    setInterval(fetchFinancialNews, 900000); // Refresh news every 15 mins
 });

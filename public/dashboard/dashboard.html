@@ -15,16 +15,14 @@
     <div id="header-placeholder"></div>
 
     <main class="pt-24">
-        <section class="radial-hud-wrapper">
-            <div class="radial-hud-container">
-                <div class="vibe-score-ring">
-                    <div class="vibe-score-inner">
-                        <span class="vibe-score-percentage">75%</span>
-                        <span class="vibe-score-label">VibeScore</span>
+        <section class="vibescore-wrapper">
+            <div class="vibescore-container">
+                <div id="vibescore-ring" class="vibescore-ring">
+                    <div class="vibescore-inner">
+                        <span id="vibescore-percentage" class="vibescore-percentage">0%</span>
+                        <span class="vibescore-label">VibeScore</span>
                     </div>
                 </div>
-
-                <div id="hud-plane" class="hud-plane"></div>
             </div>
         </section>
 
@@ -37,6 +35,13 @@
         <section id="achievements" class="content-section"><h2 class="section-header">Achievements</h2><div class="placeholder-box"><span>Achievements Content Here</span></div></section>
     </main>
     
+    <svg style="display: none;">
+        <filter id="watery-goo">
+            <feTurbulence type="fractalNoise" baseFrequency="0.01 0.03" numOctaves="1" result="warp" />
+            <feDisplacementMap in="SourceGraphic" in2="warp" scale="20" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+    </svg>
+
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
