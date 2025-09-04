@@ -84,4 +84,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
 .news-card { background-color: #121212; border: 1px solid #3A3A3C; border-radius: 0.75rem; overflow: hidden; transition: transform 0.3s ease, border-color 0.3s ease; display: block; text-decoration: none; color: inherit; }
 .news-card:hover { transform: translateY(-5px); border-color: #555; }
+.news-card-content { padding: 2rem; }
+.news-card-title { font-size: 1.375rem; font-weight: 600; margin-bottom: 0.75rem; color: #FFF; }
+.news-card-preview { font-size: 1rem; color: #a0a0a0; line-height: 1.6; }
 .placeholder-box { background-color: #121212; border: 2px dashed #3A3A3C; border-radius: 0.75rem; min-height: 250px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 1.25rem; font-weight: 500; }

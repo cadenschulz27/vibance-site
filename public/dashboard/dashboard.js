@@ -75,12 +75,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FINANCIAL NEWS FETCHER ---
-    async function fetchFinancialNews() { /* ... unchanged ... */ }
+    async function fetchFinancialNews() {
+        const newsGrid = document.getElementById('news-grid');
+        if (!newsGrid) return;
+        const apiUrl = `/.netlify/functions/getNews`;
+        
+        // Only show loading message if the grid is empty
+        if (newsGrid.innerHTML.trim() === '' || newsGrid.querySelector('p')) {
+            newsGrid.innerHTML = '<p class="text-gray-400">Fetching the latest financial news...</p>';
+        }
+
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error(`Request failed`);
+            const data = await response.json();
+            
+            // Clear the grid before adding new articles
+            newsGrid.innerHTML = ''; 
+
+            if (!data.articles || data.articles.length === 0) {
+                newsGrid.innerHTML = '<p class="text-gray-400">Could not retrieve news articles.</p>';
+                return;
+            }
+            data.articles.forEach(article => {
+                if (!article.description || article.description.includes('[Removed]')) return;
+                const newsCard = document.createElement('a');
+                newsCard.href = article.url;
+                newsCard.target = '_blank';
+                newsCard.className = 'news-card';
+                newsCard.innerHTML = `<div class="news-card-content"><h3 class="news-card-title">${article.title}</h3><p class="news-card-preview">${article.description}</p></div>`;
+                newsGrid.appendChild(newsCard);
+            });
+        } catch (error) {
+            console.error("Error fetching financial news:", error);
+            newsGrid.innerHTML = '<p class="text-red-500">Failed to load news. Please try again later.</p>';
+        }
+    }
 
     // --- INITIALIZE ALL DASHBOARD COMPONENTS ---
     const userVibeScore = 75; 
     initVibeScore(userVibeScore);
     initRadialHUD();
     fetchFinancialNews();
-    setInterval(fetchFinancialNews, 900000);
+    setInterval(fetchFinancialNews, 900000); // Refresh news every 15 mins
 });
