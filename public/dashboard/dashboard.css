@@ -1,45 +1,31 @@
 /* FILE: public/dashboard/dashboard.css */
 :root {
-    --bg-color: #000;
-    --ring-size: 250px;
-    
-    /* Data-driven colors */
-    --color-good: #CCFF00;
-    --glow-good: rgba(204, 255, 0, 0.5);
-    --color-warning: #FFD700;
-    --glow-warning: rgba(255, 215, 0, 0.5);
-    --color-danger: #FF4500;
-    --glow-danger: rgba(255, 69, 0, 0.5);
-    
-    /* Animation variables */
+    --neon-green: #CCFF00;
+    --color-red: #FF4500;
+    --color-yellow: #FFD700;
+    --color-green: #90EE90;
+    --center-ring-size: 220px;
+    --hud-radius: 260px;
+    --bubble-width: 140px;
+    --bubble-height: 50px;
     --heartbeat-duration: 2.5s;
     --heartbeat-scale: 1.02;
 }
 
-body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
-/* --- VIBESCORE COMPONENT --- */
-.vibescore-wrapper {
-    margin-bottom: 4rem;
-    height: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.vibescore-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+/* --- MAIN WRAPPER & CONTAINER --- */
+.radial-hud-wrapper { margin-bottom: 4rem; height: 650px; display: flex; align-items: center; justify-content: center; }
+.radial-hud-container { position: relative; display: flex; align-items: center; justify-content: center; }
+.hud-plane { position: absolute; width: 100%; height: 100%; }
+
+/* --- "LIVING BREATHING" VIBESCORE RING --- */
 .vibescore-ring {
-    width: var(--ring-size);
-    height: var(--ring-size);
+    width: var(--center-ring-size);
+    height: var(--center-ring-size);
     border-radius: 50%;
     position: relative;
+    z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -49,61 +35,47 @@ body {
     animation: heartbeat var(--heartbeat-duration) ease-in-out infinite;
     transition: all 0.5s ease;
 }
-.vibescore-ring::before {
-    content: '';
+.vibescore-ring::before { content: ''; position: absolute; width: 80%; height: 80%; background-color: #000; border-radius: 50%; box-shadow: inset 0 0 25px rgba(0,0,0,0.7); }
+.vibescore-ring:hover { --heartbeat-duration: 1s; --heartbeat-scale: 1.05; }
+.vibescore-ring.status-good { --ring-color: var(--color-good); --glow-color: var(--glow-good); }
+.vibescore-ring.status-warning { --ring-color: var(--color-yellow); --glow-color: var(--glow-warning); }
+.vibescore-ring.status-danger { --ring-color: var(--color-danger); --glow-color: var(--glow-danger); }
+.vibescore-inner { position: relative; z-index: 1; text-align: center; filter: none; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+.vibescore-percentage { font-size: 2.5rem; font-weight: 700; color: var(--ring-color); line-height: 1; transition: color 0.5s ease; }
+.vibescore-label { font-family: 'Lora', serif; font-size: 1.1rem; color: #FFF; margin-top: 0.25rem; }
+
+/* --- SURROUNDING HUD BUBBLES --- */
+.hud-bubble {
+    width: var(--bubble-width);
+    height: var(--bubble-height);
     position: absolute;
-    width: 80%;
-    height: 80%;
-    background-color: var(--bg-color);
-    border-radius: 50%;
-    box-shadow: inset 0 0 25px rgba(0,0,0,0.7);
+    top: calc(50% - (var(--bubble-height) / 2));
+    left: calc(50% - (var(--bubble-width) / 2));
+    transform-origin: center;
+    transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1));
+    opacity: 0;
+    animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--delay);
 }
-.vibescore-ring:hover {
-    --heartbeat-duration: 1s;
-    --heartbeat-scale: 1.05;
+.bubble-core {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 500; color: #e5e7eb; border-radius: 10px;
+    background: rgba(28, 28, 30, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color); box-shadow: 0 0 20px -5px var(--glow-color);
+    transition: all 0.3s ease; cursor: default;
 }
+.hud-bubble:hover .bubble-core { transform: scale(1.1); color: #fff; border-color: var(--hover-border-color); box-shadow: 0 0 30px -5px var(--glow-color); }
+.bubble-score { font-size: 0.8rem; margin-left: 8px; font-weight: 700; color: var(--text-color); }
 
-/* --- STATUS CLASSES --- */
-.vibescore-ring.status-good {
-    --ring-color: var(--color-good);
-    --glow-color: var(--glow-good);
-}
-.vibescore-ring.status-warning {
-    --ring-color: var(--color-warning);
-    --glow-color: var(--glow-warning);
-}
-.vibescore-ring.status-danger {
-    --ring-color: var(--color-danger);
-    --glow-color: var(--glow-danger);
-}
-
-/* --- TEXT ELEMENTS --- */
-.vibescore-inner {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    filter: none; 
-    text-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-.vibescore-percentage {
-    font-size: 3rem;
-    font-weight: 700;
-    color: var(--ring-color);
-    line-height: 1;
-    transition: color 0.5s ease;
-}
-.vibescore-label {
-    font-family: 'Lora', serif;
-    font-size: 1.2rem;
-    color: #FFF;
-    margin-top: 0.25rem;
-}
-
-/* --- HEARTBEAT ANIMATION --- */
+/* --- KEYFRAME ANIMATIONS --- */
 @keyframes heartbeat {
     0% { transform: scale(1); box-shadow: 0 0 20px -5px var(--glow-color); }
     50% { transform: scale(var(--heartbeat-scale)); box-shadow: 0 0 40px 5px var(--glow-color); }
     100% { transform: scale(1); box-shadow: 0 0 20px -5px var(--glow-color); }
+}
+@keyframes fan-out {
+    from { opacity: 0; transform: rotate(var(--angle)) translateY(0) rotate(calc(var(--angle) * -1)) scale(0.5); }
+    to { opacity: 1; transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1); }
 }
 
 /* --- General Content Sections --- */
@@ -112,7 +84,4 @@ body {
 .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
 .news-card { background-color: #121212; border: 1px solid #3A3A3C; border-radius: 0.75rem; overflow: hidden; transition: transform 0.3s ease, border-color 0.3s ease; display: block; text-decoration: none; color: inherit; }
 .news-card:hover { transform: translateY(-5px); border-color: #555; }
-.news-card-content { padding: 2rem; }
-.news-card-title { font-size: 1.375rem; font-weight: 600; margin-bottom: 0.75rem; color: #FFF; }
-.news-card-preview { font-size: 1rem; color: #a0a0a0; line-height: 1.6; }
 .placeholder-box { background-color: #121212; border: 2px dashed #3A3A3C; border-radius: 0.75rem; min-height: 250px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 1.25rem; font-weight: 500; }
