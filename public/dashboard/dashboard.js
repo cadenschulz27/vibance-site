@@ -6,9 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function initVibeScore(score) {
         const ring = document.getElementById('vibescore-ring');
         const percentageText = document.getElementById('vibescore-percentage');
-        const turbulence = document.querySelector('#watery-goo feTurbulence');
 
-        if (!ring || !percentageText || !turbulence) { return; }
+        // REMOVED: The 'turbulence' variable is no longer needed.
+        if (!ring || !percentageText) { return; }
 
         ring.classList.remove('status-good', 'status-warning', 'status-danger');
         if (score >= 80) ring.classList.add('status-good');
@@ -26,15 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 20);
 
-        let time = 0;
-        //function animateTurbulence() {
-          //  const freqX = 0.01 + Math.sin(time * 0.0002) * 0.005;
-            //const freqY = 0.03 + Math.cos(time * 0.0003) * 0.007;
-            //turbulence.setAttribute('baseFrequency', `${freqX} ${freqY}`);
-            //time++;
-            //requestAnimationFrame(animateTurbulence);
-        //}
-        //animateTurbulence();
+        // REMOVED: The entire 'animateTurbulence' function is gone.
     }
 
     // --- RADIAL HUD BUBBLES ---
@@ -87,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
             const data = await response.json();
     
-            // Clear the grid ONLY after a successful fetch
             newsGrid.innerHTML = ''; 
     
             if (!data.articles || data.articles.length === 0) {
@@ -115,6 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const userVibeScore = 75; 
     initVibeScore(userVibeScore);
     initRadialHUD();
-    fetchFinancialNews(); // Initial fetch
-    setInterval(fetchFinancialNews, 900000); // Refresh news every 15 mins
+    fetchFinancialNews();
+    setInterval(fetchFinancialNews, 900000);
 });

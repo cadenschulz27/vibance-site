@@ -49,7 +49,6 @@ body {
     align-items: center;
     justify-content: center;
     background: conic-gradient(var(--ring-color) 0%, #1C1C1E 0%);
-    /*filter: url(#watery-goo); */
     animation: heartbeat var(--heartbeat-duration) ease-in-out infinite;
     transition: all 0.5s ease;
 }
