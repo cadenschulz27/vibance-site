@@ -4,46 +4,26 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/fir
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- LOGIC FOR CALCULATING INCOME SCORE & INSIGHT ---
-
-    /**
-     * Calculates an income score based on various factors.
-     * @param {object} incomeData - The user's income data from Firestore.
-     * @returns {number} A score between 0 and 100.
-     */
     function calculateIncomeScore(incomeData = {}) {
         let score = 0;
         const totalIncome = (incomeData.primaryIncome || 0) + (incomeData.additionalIncome || 0);
-
-        // Score based on total monthly income (max 50 points)
         if (totalIncome > 7000) score += 50;
         else if (totalIncome > 5000) score += 40;
         else if (totalIncome > 3000) score += 30;
         else if (totalIncome > 1500) score += 20;
         else score += 10;
-        
-        // Score based on stability (max 25 points)
         if (incomeData.stability === 'high') score += 25;
         else if (incomeData.stability === 'medium') score += 15;
         else score += 5;
-
-        // Score based on growth potential (max 25 points)
         if (incomeData.growthPotential === 'high') score += 25;
         else if (incomeData.growthPotential === 'medium') score += 15;
         else score += 5;
-
-        return Math.min(100, score); // Cap the score at 100
+        return Math.min(100, score);
     }
 
-    /**
-     * Generates a personalized insight string based on income data.
-     * @param {object} incomeData - The user's income data from Firestore.
-     * @param {number} score - The calculated income score.
-     * @returns {string} The insight text.
-     */
     function generateIncomeInsight(incomeData = {}, score) {
         if (score > 80) {
             return `Your high and stable income of $${((incomeData.primaryIncome || 0) + (incomeData.additionalIncome || 0)).toLocaleString()}/mo provides a powerful foundation for your financial goals.`;
@@ -66,22 +46,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return insight;
     }
 
-
     // --- "LIVING BREATHING" VIBESCORE ---
     function initVibeScore(score) {
         const ring = document.getElementById('vibescore-ring');
         const percentageText = document.getElementById('vibescore-percentage');
         const turbulence = document.querySelector('#watery-goo feTurbulence');
-        if (!ring || !percentageText || !turbulence) { return; }
+        if (!ring || !percentageText) { return; }
         ring.classList.remove('status-good', 'status-warning', 'status-danger');
         if (score >= 80) ring.classList.add('status-good');
         else if (score >= 50) ring.classList.add('status-warning');
         else ring.classList.add('status-danger');
         let currentScore = 0;
         const interval = setInterval(() => { if (currentScore >= score) { clearInterval(interval); } else { currentScore++; percentageText.textContent = `${currentScore}%`; ring.style.background = `conic-gradient(var(--ring-color) ${currentScore}%, #1C1C1E 0%)`; } }, 20);
-        let time = 0;
-        function animateTurbulence() { const freqX = 0.01 + Math.sin(time * 0.0002) * 0.005; const freqY = 0.03 + Math.cos(time * 0.0003) * 0.007; turbulence.setAttribute('baseFrequency', `${freqX} ${freqY}`); time++; requestAnimationFrame(animateTurbulence); }
-        animateTurbulence();
+        if (turbulence) {
+            let time = 0;
+            function animateTurbulence() { const freqX = 0.01 + Math.sin(time * 0.0002) * 0.005; const freqY = 0.03 + Math.cos(time * 0.0003) * 0.007; turbulence.setAttribute('baseFrequency', `${freqX} ${freqY}`); time++; requestAnimationFrame(animateTurbulence); }
+            animateTurbulence();
+        }
     }
 
     // --- RADIAL HUD BUBBLES ---
@@ -108,6 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         hudPlane.innerHTML = '';
         
+        const insightPanel = document.getElementById('insight-panel');
+        const insightTitle = document.getElementById('insight-title');
+        const insightScore = document.getElementById('insight-score');
+        const insightText = document.getElementById('insight-text');
+
         const arcSpan = 360; 
         const angleStep = arcSpan / finalFinancialData.length;
         const startingAngle = -90;
@@ -121,9 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const bubble = document.createElement('div');
             bubble.className = 'hud-bubble';
-            bubble.dataset.name = item.name;
-            bubble.dataset.score = item.score;
-            bubble.dataset.insight = item.insight;
             
             bubble.style.setProperty('--angle', `${angle}deg`);
             bubble.style.setProperty('--delay', `${index * 80}ms`);
@@ -132,6 +115,19 @@ document.addEventListener('DOMContentLoaded', () => {
             bubble.style.setProperty('--hover-border-color', colors.hoverBorderColor);
             bubble.style.setProperty('--text-color', colors.textColor);
             bubble.innerHTML = `<div class="bubble-core"><span>${item.name}</span><span class="bubble-score">${item.score}</span></div>`;
+
+            bubble.addEventListener('mouseenter', () => {
+                insightTitle.textContent = item.name;
+                insightScore.textContent = item.score;
+                insightScore.style.color = colors.textColor;
+                insightText.textContent = item.insight;
+                insightPanel.classList.add('visible');
+            });
+
+            bubble.addEventListener('mouseleave', () => {
+                insightPanel.classList.remove('visible');
+            });
+
             hudPlane.appendChild(bubble);
         });
     }
@@ -142,63 +138,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!newsGrid) return;
         try { const response = await fetch('/.netlify/functions/getNews'); if (!response.ok) throw new Error(`API Request Failed`); const data = await response.json(); newsGrid.innerHTML = ''; if (!data.articles || data.articles.length === 0) { newsGrid.innerHTML = '<p class="text-gray-400">Could not retrieve news articles at this time.</p>'; return; } data.articles.forEach(article => { if (!article.description || article.description.includes('[Removed]')) return; const newsCard = document.createElement('a'); newsCard.href = article.url; newsCard.target = '_blank'; newsCard.className = 'news-card'; newsCard.innerHTML = `<div class="news-card-content"><h3 class="news-card-title">${article.title}</h3><p class="news-card-preview">${article.description}</p></div>`; newsGrid.appendChild(newsCard); }); } catch (error) { console.error("Error fetching financial news:", error); newsGrid.innerHTML = '<p class="text-red-500">Failed to load news. Please try again later.</p>'; }
     }
-    
+
     // --- MAIN INITIALIZATION LOGIC ---
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userDocRef);
-
-            let incomeScore = 50;
-            let incomeInsight = "No income data found in your profile. This score is an estimate.";
-            
-            if (userDoc.exists() && userDoc.data().income) {
-                const incomeData = userDoc.data().income;
-                incomeScore = calculateIncomeScore(incomeData);
-                incomeInsight = generateIncomeInsight(incomeData, incomeScore);
-            }
-
-            const dynamicIncomeData = { score: incomeScore, insight: incomeInsight };
-            const userVibeScore = 75; 
-
-            initVibeScore(userVibeScore);
-            initRadialHUD(dynamicIncomeData);
-            fetchFinancialNews();
-            setInterval(fetchFinancialNews, 900000);
-        }
-    });
-
-    // Insight Panel logic (needs to be initialized after panel is loaded)
-    (async () => {
+    async function initializeDashboard() {
         try {
             const response = await fetch('components/insight-panel.html');
             const panelHTML = await response.text();
             document.getElementById('insight-panel-placeholder').innerHTML = panelHTML;
-
-            const hudPlane = document.getElementById('hud-plane');
-            const insightPanel = document.getElementById('insight-panel');
-            const insightTitle = document.getElementById('insight-title');
-            const insightScore = document.getElementById('insight-score');
-            const insightText = document.getElementById('insight-text');
-
-            if (hudPlane && insightPanel) {
-                hudPlane.addEventListener('mouseover', (event) => {
-                    const bubble = event.target.closest('.hud-bubble');
-                    if (bubble) {
-                        insightTitle.textContent = bubble.dataset.name;
-                        insightScore.textContent = bubble.dataset.score;
-                        insightScore.style.color = bubble.style.getPropertyValue('--text-color');
-                        insightText.textContent = bubble.dataset.insight;
-                        insightPanel.classList.add('visible');
-                    }
-                });
-
-                hudPlane.addEventListener('mouseout', () => {
-                    insightPanel.classList.remove('visible');
-                });
-            }
         } catch (error) {
-            console.error('Failed to load or initialize insight panel:', error);
+            console.error('Failed to load insight panel:', error);
         }
-    })();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                let incomeScore = 50;
+                let incomeInsight = "No income data found in your profile. This score is an estimate.";
+                
+                if (userDoc.exists() && userDoc.data().income) {
+                    const incomeData = userDoc.data().income;
+                    incomeScore = calculateIncomeScore(incomeData);
+                    incomeInsight = generateIncomeInsight(incomeData, incomeScore);
+                }
+
+                const dynamicIncomeData = { score: incomeScore, insight: incomeInsight };
+                const userVibeScore = 75; 
+
+                initVibeScore(userVibeScore);
+                initRadialHUD(dynamicIncomeData);
+                fetchFinancialNews();
+                setInterval(fetchFinancialNews, 900000);
+            }
+        });
+    }
+
+    initializeDashboard();
 });

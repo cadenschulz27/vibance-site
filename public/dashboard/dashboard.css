@@ -24,6 +24,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative; 
 }
 .radial-hud-container {
     position: relative;
@@ -35,6 +36,7 @@ body {
     position: absolute;
     width: 100%;
     height: 100%;
+    z-index: 5;
 }
 
 /* --- "LIVING BREATHING" VIBESCORE RING --- */
@@ -49,6 +51,7 @@ body {
     align-items: center;
     justify-content: center;
     background: conic-gradient(var(--ring-color) 0%, #1C1C1E 0%);
+    filter: url(#watery-goo);
     animation: heartbeat var(--heartbeat-duration) ease-in-out infinite;
     transition: all 0.5s ease;
 }
@@ -127,7 +130,7 @@ body {
     border: 1px solid var(--border-color);
     box-shadow: 0 0 20px -5px var(--glow-color);
     transition: all 0.3s ease;
-    cursor: default;
+    cursor: pointer;
 }
 .hud-bubble:hover .bubble-core {
     transform: scale(1.1);
@@ -168,6 +171,31 @@ body {
     }
 }
 
+/* --- INSIGHT PANEL STYLES --- */
+.insight-panel {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    width: 320px;
+    background: rgba(18, 18, 18, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    z-index: 20;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+}
+.insight-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
 /* --- General Content Sections --- */
 .content-section {
     width: 100%;
@@ -202,20 +230,6 @@ body {
 .news-card:hover {
     transform: translateY(-5px);
     border-color: #555;
-}
-.news-card-content {
-    padding: 2rem;
-}
-.news-card-title {
-    font-size: 1.375rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: #FFF;
-}
-.news-card-preview {
-    font-size: 1rem;
-    color: #a0a0a0;
-    line-height: 1.6;
 }
 .placeholder-box {
     background-color: #121212;
