@@ -6,47 +6,149 @@ import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/fir
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- LOGIC FOR CALCULATING INCOME SCORE & INSIGHT ---
-    function calculateIncomeScore(incomeData = {}) {
+    // --- SCORING & INSIGHT GENERATION LOGIC ---
+
+    function calculateIncomeScore(d = {}) {
         let score = 0;
-        const totalIncome = (incomeData.primaryIncome || 0) + (incomeData.additionalIncome || 0);
+        const totalIncome = (d.primaryIncome || 0) + (d.additionalIncome || 0);
         if (totalIncome > 7000) score += 50;
         else if (totalIncome > 5000) score += 40;
         else if (totalIncome > 3000) score += 30;
         else if (totalIncome > 1500) score += 20;
         else score += 10;
-        if (incomeData.stability === 'high') score += 25;
-        else if (incomeData.stability === 'medium') score += 15;
+        if (d.stability === 'high') score += 25;
+        else if (d.stability === 'medium') score += 15;
         else score += 5;
-        if (incomeData.growthPotential === 'high') score += 25;
-        else if (incomeData.growthPotential === 'medium') score += 15;
+        if (d.growthPotential === 'high') score += 25;
+        else if (d.growthPotential === 'medium') score += 15;
         else score += 5;
         return Math.min(100, score);
     }
-
-    function generateIncomeInsight(incomeData = {}, score) {
-        if (score > 80) {
-            return `Your high and stable income of $${((incomeData.primaryIncome || 0) + (incomeData.additionalIncome || 0)).toLocaleString()}/mo provides a powerful foundation for your financial goals.`;
-        }
-        if (score > 60) {
-            let insight = "Your income is solid. ";
-            if (incomeData.growthPotential !== 'high') {
-                insight += "Focusing on opportunities for career growth could boost this score even higher.";
-            } else {
-                insight += "Your high growth potential is a key strength for building future wealth.";
-            }
-            return insight;
-        }
-        let insight = "There's room for improvement here. ";
-        if ((incomeData.additionalIncome || 0) === 0) {
-            insight += "Exploring additional income streams could increase your financial security.";
-        } else {
-            insight += `Your additional income of $${(incomeData.additionalIncome || 0).toLocaleString()}/mo is a great start.`;
-        }
-        return insight;
+    function generateIncomeInsight(d = {}, s) {
+        if (s > 80) return `Your high and stable income of $${((d.primaryIncome || 0) + (d.additionalIncome || 0)).toLocaleString()}/mo provides a powerful foundation.`;
+        if (s > 60) { let i = "Your income is solid. "; if (d.growthPotential !== 'high') i += "Focusing on career growth could boost this score."; else i += "Your high growth potential is a key strength."; return i; }
+        let i = "There's room for improvement. "; if ((d.additionalIncome || 0) === 0) i += "Exploring additional income streams could increase security."; else i += `Your additional income of $${(d.additionalIncome || 0).toLocaleString()}/mo is a great start.`; return i;
     }
 
-    // --- "LIVING BREATHING" VIBESCORE ---
+    function calculateSavingsScore(d = {}) {
+        const rateScore = (d.monthlySavingsRate || 0) * 3.5;
+        const bufferScore = ((d.totalLiquidSavings || 0) / 20000) * 30;
+        return Math.min(100, rateScore + bufferScore);
+    }
+    function generateSavingsInsight(d = {}, s) {
+        if (s > 80) return `Exceptional work! A savings rate of ${d.monthlySavingsRate}% is fantastic for building wealth.`;
+        if (s > 50) return `You're on the right track. Consider increasing your monthly savings rate to accelerate your goals.`;
+        return `Your savings need attention. Aim to save at least 15% of your income each month.`;
+    }
+
+    function calculateBudgetingScore(d = {}) {
+        const income = (d.averageMonthlyIncome || 0);
+        if (income === 0) return 20;
+        const surplus = income - (d.averageMonthlySpending || 0);
+        let score = (surplus / income) * 200;
+        if (d.budgetAdherence === 'strict') score += 20;
+        if (d.budgetAdherence === 'flexible') score += 10;
+        return Math.max(0, Math.min(100, score));
+    }
+    function generateBudgetingInsight(d = {}, s) {
+        if (s > 80) return `You are a budgeting master. Your spending is well-controlled, leading to a healthy surplus.`;
+        if (s > 50) return `Your budget is effective. Look for small areas to trim spending to further increase your cash flow.`;
+        return `Your expenses are high relative to your income. A detailed review of your budget is recommended.`;
+    }
+
+    function calculateCashFlowScore(d = {}) {
+        return Math.min(100, Math.max(0, (d.averageMonthlySurplus || 0) / 1000 * 50));
+    }
+    function generateCashFlowInsight(d = {}, s) {
+        if (s > 80) return `Excellent cash flow. A monthly surplus of $${(d.averageMonthlySurplus || 0).toLocaleString()} gives you great financial flexibility.`;
+        if (s > 50) return `Your cash flow is positive and healthy. This is the engine for all your financial goals.`;
+        return `Your monthly cash flow is tight. Increasing income or reducing expenses will improve this score.`;
+    }
+
+    function calculateCreditScore(d = {}) {
+        const score = d.scoreValue || 300;
+        let s = ((score - 300) / (850 - 300)) * 100;
+        if (d.paymentHistory === 'excellent') s += 10;
+        if ((d.creditUtilization || 100) > 30) s -= 15;
+        return Math.max(0, Math.min(100, s));
+    }
+    function generateCreditInsight(d = {}, s) {
+        if (s > 80) return `Your credit score of ${d.scoreValue} is excellent, unlocking the best financial products.`;
+        if (s > 60) return `A good credit score of ${d.scoreValue}. Keep utilization below 30% to improve it further.`;
+        return `Your credit score of ${d.scoreValue} needs work. Focus on timely payments and lowering utilization.`;
+    }
+
+    function calculateInvestingScore(d = {}) {
+        const valueScore = ((d.totalInvested || 0) / 50000) * 50;
+        const contributionScore = ((d.monthlyContribution || 0) / 1000) * 50;
+        let score = valueScore + contributionScore;
+        if (d.portfolioDiversity === 'high') score += 10;
+        return Math.min(100, score);
+    }
+    function generateInvestingInsight(d = {}, s) {
+        if (s > 80) return `You're a savvy investor. Your consistent contributions and diverse portfolio are building significant wealth.`;
+        if (s > 50) return `Your investment journey is well underway. Consider increasing monthly contributions to maximize growth.`;
+        return `Investing is a powerful wealth-building tool. It's a great time to start, even with small amounts.`;
+    }
+
+    function calculateRetirementScore(d = {}) {
+        let score = ((d.retirementAccountValue || 0) / 200000) * 60;
+        score += ((d.monthlyContributionPercent || 0) * 4);
+        if (d.onTrackForGoal) score += 20;
+        return Math.min(100, score);
+    }
+    function generateRetirementInsight(d = {}, s) {
+        if (s > 80) return `Your retirement planning is superb. You are on track for a secure and comfortable future.`;
+        if (s > 50) return `Solid progress on retirement savings. You are building a good nest egg for the future.`;
+        return `It's crucial to prioritize retirement savings. Consider opening or increasing contributions to a 401(k) or IRA.`;
+    }
+
+    function calculateDebtScore(d = {}) {
+        const ratioScore = Math.max(0, 100 - ((d.debtToIncomeRatio || 100) * 2));
+        let score = ratioScore;
+        if (d.hasHighInterestDebt) score -= 20;
+        return Math.max(0, score);
+    }
+    function generateDebtInsight(d = {}, s) {
+        if (s > 80) return `You have very little or no debt, putting you in a powerful financial position.`;
+        if (s > 50) return `Your debt is manageable. Focus on paying down high-interest debt first to improve your score.`;
+        return `Your debt level is high. Creating a focused repayment plan is a critical next step.`;
+    }
+
+    function calculateNetWorthScore(d = {}) {
+        const netWorth = (d.totalAssets || 0) - (d.totalLiabilities || 0);
+        return Math.min(100, Math.max(0, netWorth / 2000));
+    }
+    function generateNetWorthInsight(d = {}, s) {
+        const nw = (d.totalAssets || 0) - (d.totalLiabilities || 0);
+        if (s > 80) return `Congratulations on building a strong net worth of $${nw.toLocaleString()}. Your assets significantly outweigh your liabilities.`;
+        if (s > 50) return `You're building a positive net worth. Continue to increase assets and reduce liabilities.`;
+        return `Your net worth is currently low or negative. Focus on debt reduction and asset building.`;
+    }
+
+    function calculateEmergencyFundScore(d = {}) {
+        return Math.min(100, ((d.currentMonths || 0) / (d.goalMonths || 6)) * 100);
+    }
+    function generateEmergencyFundInsight(d = {}, s) {
+        if (s >= 100) return `Fully funded! Your emergency fund provides an excellent safety net for unexpected events.`;
+        if (s > 50) return `You're over halfway to your emergency fund goal. You're building great financial resilience.`;
+        return `Building an emergency fund is a key first step. Aim for 3-6 months of living expenses.`;
+    }
+
+    const calculationMap = {
+        'Savings': { calc: calculateSavingsScore, gen: generateSavingsInsight, dataKey: 'savings' },
+        'Budgeting': { calc: calculateBudgetingScore, gen: generateBudgetingInsight, dataKey: 'budgeting' },
+        'Income': { calc: calculateIncomeScore, gen: generateIncomeInsight, dataKey: 'income' },
+        'Cash Flow': { calc: calculateCashFlowScore, gen: generateCashFlowInsight, dataKey: 'cashFlow' },
+        'Credit Score': { calc: calculateCreditScore, gen: generateCreditInsight, dataKey: 'credit' },
+        'Investing': { calc: calculateInvestingScore, gen: generateInvestingInsight, dataKey: 'investing' },
+        'Retirement': { calc: calculateRetirementScore, gen: generateRetirementInsight, dataKey: 'retirement' },
+        'Debt': { calc: calculateDebtScore, gen: generateDebtInsight, dataKey: 'debt' },
+        'Net Worth': { calc: calculateNetWorthScore, gen: generateNetWorthInsight, dataKey: 'netWorth' },
+        'Emergency Fund': { calc: calculateEmergencyFundScore, gen: generateEmergencyFundInsight, dataKey: 'emergencyFund' }
+    };
+
+    // --- VIBESCORE & HUD INITIALIZATION ---
     function initVibeScore(score) {
         const ring = document.getElementById('vibescore-ring');
         const percentageText = document.getElementById('vibescore-percentage');
@@ -65,49 +167,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- RADIAL HUD BUBBLES ---
-    function initRadialHUD(dynamicIncomeData) {
-        const initialFinancialData = [
-            { name: 'Savings', score: 85, insight: "Excellent savings rate. Your consistent contributions are building a strong financial cushion." }, 
-            { name: 'Budgeting', score: 92, insight: "Masterful budgeting. You're tracking spending effectively and staying well within your means." },
-            { name: 'Income', score: 50, insight: "Loading your income data..." },
-            { name: 'Cash Flow', score: 75, insight: "Healthy cash flow. Your income comfortably covers your expenses, leaving room for savings and investments." },
-            { name: 'Credit Score', score: 78, insight: "Good credit health. Your score is solid, but timely payments on all accounts will push it even higher." }, 
-            { name: 'Investing', score: 45, insight: "There's an opportunity to grow. Your investment activity is low; consider a diversified portfolio to build long-term wealth." },
-            { name: 'Retirement', score: 55, insight: "A good start on retirement planning. Increasing your contribution rate could significantly improve your outlook." }, 
-            { name: 'Debt', score: 30, insight: "High debt levels are impacting your score. Focus on a repayment strategy, starting with high-interest accounts." },
-            { name: 'Net Worth', score: 60, insight: "Your net worth is growing. Continuing to reduce debt and increase assets will accelerate this progress." }, 
-            { name: 'Emergency Fund', score: 88, insight: "Your emergency fund is well-established, providing excellent security against unexpected expenses." }
-        ];
-
-        const finalFinancialData = initialFinancialData.map(item => 
-            item.name === 'Income' ? { ...item, ...dynamicIncomeData } : item
-        );
-
+    function initRadialHUD(financialData) {
         const hudPlane = document.getElementById('hud-plane');
         if (!hudPlane) return;
-        
         hudPlane.innerHTML = '';
-        
         const insightPanel = document.getElementById('insight-panel');
         const insightTitle = document.getElementById('insight-title');
         const insightScore = document.getElementById('insight-score');
         const insightText = document.getElementById('insight-text');
-
-        const arcSpan = 360; 
-        const angleStep = arcSpan / finalFinancialData.length;
+        const arcSpan = 360;
+        const angleStep = arcSpan / financialData.length;
         const startingAngle = -90;
-
-        finalFinancialData.forEach((item, index) => {
+        financialData.forEach((item, index) => {
             const angle = startingAngle + (index * angleStep);
             let colors;
             if (item.score < 50) colors = { borderColor: 'rgba(255, 69, 0, 0.4)', glowColor: 'rgba(255, 69, 0, 0.3)', hoverBorderColor: 'rgba(255, 69, 0, 0.8)', textColor: 'var(--color-red)' };
             else if (item.score < 80) colors = { borderColor: 'rgba(255, 215, 0, 0.4)', glowColor: 'rgba(255, 215, 0, 0.3)', hoverBorderColor: 'rgba(255, 215, 0, 0.8)', textColor: 'var(--color-yellow)' };
             else colors = { borderColor: 'rgba(144, 238, 144, 0.4)', glowColor: 'rgba(144, 238, 144, 0.3)', hoverBorderColor: 'rgba(144, 238, 144, 0.8)', textColor: 'var(--color-green)' };
-
             const bubble = document.createElement('div');
             bubble.className = 'hud-bubble';
-            
+            bubble.dataset.name = item.name;
+            bubble.dataset.score = item.score;
+            bubble.dataset.insight = item.insight;
             bubble.style.setProperty('--angle', `${angle}deg`);
             bubble.style.setProperty('--delay', `${index * 80}ms`);
             bubble.style.setProperty('--border-color', colors.borderColor);
@@ -115,24 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
             bubble.style.setProperty('--hover-border-color', colors.hoverBorderColor);
             bubble.style.setProperty('--text-color', colors.textColor);
             bubble.innerHTML = `<div class="bubble-core"><span>${item.name}</span><span class="bubble-score">${item.score}</span></div>`;
-
-            bubble.addEventListener('mouseenter', () => {
-                insightTitle.textContent = item.name;
-                insightScore.textContent = item.score;
-                insightScore.style.color = colors.textColor;
-                insightText.textContent = item.insight;
-                insightPanel.classList.add('visible');
-            });
-
-            bubble.addEventListener('mouseleave', () => {
-                insightPanel.classList.remove('visible');
-            });
-
+            bubble.addEventListener('mouseenter', () => { insightTitle.textContent = item.name; insightScore.textContent = item.score; insightScore.style.color = colors.textColor; insightText.textContent = item.insight; insightPanel.classList.add('visible'); });
+            bubble.addEventListener('mouseleave', () => { insightPanel.classList.remove('visible'); });
             hudPlane.appendChild(bubble);
         });
     }
 
-    // --- FINANCIAL NEWS FETCHER ---
     async function fetchFinancialNews() {
         const newsGrid = document.getElementById('news-grid');
         if (!newsGrid) return;
@@ -153,21 +222,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (user) {
                 const userDocRef = doc(db, "users", user.uid);
                 const userDoc = await getDoc(userDocRef);
+                const userData = userDoc.exists() ? userDoc.data() : {};
 
-                let incomeScore = 50;
-                let incomeInsight = "No income data found in your profile. This score is an estimate.";
+                const dynamicFinancialData = Object.keys(calculationMap).map(name => {
+                    const map = calculationMap[name];
+                    const data = userData[map.dataKey] || {};
+                    const score = map.calc(data);
+                    const insight = map.gen(data, score);
+                    return { name, score, insight };
+                });
+
+                const totalScore = dynamicFinancialData.reduce((acc, item) => acc + item.score, 0);
+                const userVibeScore = Math.round(totalScore / dynamicFinancialData.length);
                 
-                if (userDoc.exists() && userDoc.data().income) {
-                    const incomeData = userDoc.data().income;
-                    incomeScore = calculateIncomeScore(incomeData);
-                    incomeInsight = generateIncomeInsight(incomeData, incomeScore);
-                }
-
-                const dynamicIncomeData = { score: incomeScore, insight: incomeInsight };
-                const userVibeScore = 75; 
-
                 initVibeScore(userVibeScore);
-                initRadialHUD(dynamicIncomeData);
+                initRadialHUD(dynamicFinancialData);
                 fetchFinancialNews();
                 setInterval(fetchFinancialNews, 900000);
             }
