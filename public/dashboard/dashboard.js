@@ -178,36 +178,57 @@ document.addEventListener('DOMContentLoaded', () => {
         const arcSpan = 360;
         const angleStep = arcSpan / financialData.length;
         const startingAngle = -90;
+
         financialData.forEach((item, index) => {
             const angle = startingAngle + (index * angleStep);
             let colors;
-            if (item.score < 50) colors = { borderColor: 'rgba(255, 69, 0, 0.4)', glowColor: 'rgba(255, 69, 0, 0.3)', hoverBorderColor: 'rgba(255, 69, 0, 0.8)', textColor: 'var(--color-red)' };
-            else if (item.score < 80) colors = { borderColor: 'rgba(255, 215, 0, 0.4)', glowColor: 'rgba(255, 215, 0, 0.3)', hoverBorderColor: 'rgba(255, 215, 0, 0.8)', textColor: 'var(--color-yellow)' };
-            else colors = { borderColor: 'rgba(144, 238, 144, 0.4)', glowColor: 'rgba(144, 238, 144, 0.3)', hoverBorderColor: 'rgba(144, 238, 144, 0.8)', textColor: 'var(--color-green)' };
+            if (!item.hasData) {
+                colors = {
+                    borderColor: 'var(--color-nodata)', glowColor: 'rgba(0,0,0,0)',
+                    hoverBorderColor: '#9CA3AF', textColor: '#9CA3AF'
+                };
+            } else if (item.score < 50) {
+                colors = { borderColor: 'rgba(255, 69, 0, 0.4)', glowColor: 'rgba(255, 69, 0, 0.3)', hoverBorderColor: 'rgba(255, 69, 0, 0.8)', textColor: 'var(--color-red)' };
+            } else if (item.score < 80) {
+                colors = { borderColor: 'rgba(255, 215, 0, 0.4)', glowColor: 'rgba(255, 215, 0, 0.3)', hoverBorderColor: 'rgba(255, 215, 0, 0.8)', textColor: 'var(--color-yellow)' };
+            } else {
+                colors = { borderColor: 'rgba(144, 238, 144, 0.4)', glowColor: 'rgba(144, 238, 144, 0.3)', hoverBorderColor: 'rgba(144, 238, 144, 0.8)', textColor: 'var(--color-green)' };
+            }
             const bubble = document.createElement('div');
             bubble.className = 'hud-bubble';
-            bubble.dataset.name = item.name;
-            bubble.dataset.score = item.score;
-            bubble.dataset.insight = item.insight;
+            if (!item.hasData) {
+                bubble.classList.add('is-nodata');
+            }
             bubble.style.setProperty('--angle', `${angle}deg`);
             bubble.style.setProperty('--delay', `${index * 80}ms`);
             bubble.style.setProperty('--border-color', colors.borderColor);
             bubble.style.setProperty('--glow-color', colors.glowColor);
             bubble.style.setProperty('--hover-border-color', colors.hoverBorderColor);
             bubble.style.setProperty('--text-color', colors.textColor);
-            bubble.innerHTML = `<div class="bubble-core"><span>${item.name}</span><span class="bubble-score">${item.score}</span></div>`;
-            bubble.addEventListener('mouseenter', () => { insightTitle.textContent = item.name; insightScore.textContent = item.score; insightScore.style.color = colors.textColor; insightText.textContent = item.insight; insightPanel.classList.add('visible'); });
-            bubble.addEventListener('mouseleave', () => { insightPanel.classList.remove('visible'); });
+            const scoreText = item.hasData ? item.score.toFixed(2) : 'N/A';
+            const coreContent = `<div class="bubble-core"><span>${item.name}</span><span class="bubble-score">${scoreText}</span></div>`;
+            bubble.innerHTML = item.hasData ? coreContent : `<a href="../pages/profile.html" class="bubble-core-link">${coreContent}</a>`;
+            bubble.addEventListener('mouseenter', () => {
+                insightTitle.textContent = item.name;
+                insightScore.textContent = scoreText;
+                insightScore.style.color = colors.textColor;
+                insightText.textContent = item.insight;
+                insightPanel.classList.add('visible');
+            });
+            bubble.addEventListener('mouseleave', () => {
+                insightPanel.classList.remove('visible');
+            });
             hudPlane.appendChild(bubble);
         });
     }
 
+    // --- FINANCIAL NEWS FETCHER ---
     async function fetchFinancialNews() {
         const newsGrid = document.getElementById('news-grid');
         if (!newsGrid) return;
         try { const response = await fetch('/.netlify/functions/getNews'); if (!response.ok) throw new Error(`API Request Failed`); const data = await response.json(); newsGrid.innerHTML = ''; if (!data.articles || data.articles.length === 0) { newsGrid.innerHTML = '<p class="text-gray-400">Could not retrieve news articles at this time.</p>'; return; } data.articles.forEach(article => { if (!article.description || article.description.includes('[Removed]')) return; const newsCard = document.createElement('a'); newsCard.href = article.url; newsCard.target = '_blank'; newsCard.className = 'news-card'; newsCard.innerHTML = `<div class="news-card-content"><h3 class="news-card-title">${article.title}</h3><p class="news-card-preview">${article.description}</p></div>`; newsGrid.appendChild(newsCard); }); } catch (error) { console.error("Error fetching financial news:", error); newsGrid.innerHTML = '<p class="text-red-500">Failed to load news. Please try again later.</p>'; }
     }
-
+    
     // --- MAIN INITIALIZATION LOGIC ---
     async function initializeDashboard() {
         try {
@@ -226,14 +247,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const dynamicFinancialData = Object.keys(calculationMap).map(name => {
                     const map = calculationMap[name];
-                    const data = userData[map.dataKey] || {};
-                    const score = map.calc(data);
-                    const insight = map.gen(data, score);
-                    return { name, score, insight };
+                    const data = userData[map.dataKey];
+                    const hasData = data && Object.keys(data).length > 0;
+                    const score = hasData ? map.calc(data) : 0;
+                    const insight = hasData 
+                        ? map.gen(data, score) 
+                        : "No data found for this category. Click to go to your profile and add your information.";
+                    return { name, score, insight, hasData };
                 });
 
-                const totalScore = dynamicFinancialData.reduce((acc, item) => acc + item.score, 0);
-                const userVibeScore = Math.round(totalScore / dynamicFinancialData.length);
+                const itemsWithData = dynamicFinancialData.filter(item => item.hasData);
+                const totalScore = itemsWithData.reduce((acc, item) => acc + item.score, 0);
+                const userVibeScore = itemsWithData.length > 0 ? Math.round(totalScore / itemsWithData.length) : 0;
                 
                 initVibeScore(userVibeScore);
                 initRadialHUD(dynamicFinancialData);

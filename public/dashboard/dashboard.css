@@ -4,6 +4,7 @@
     --color-red: #FF4500;
     --color-yellow: #FFD700;
     --color-green: #90EE90;
+    --color-nodata: #4B5563; /* Gray for inactive bubbles */
     --center-ring-size: 220px;
     --hud-radius: 260px;
     --bubble-width: 140px;
@@ -120,7 +121,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.95rem; 
     font-weight: 500;
     color: #e5e7eb;
     border-radius: 10px;
@@ -139,36 +140,39 @@ body {
     box-shadow: 0 0 30px -5px var(--glow-color);
 }
 .bubble-score {
-    font-size: 0.8rem;
-    margin-left: 8px;
+    font-size: 0.75rem; 
+    margin-left: 6px;
     font-weight: 700;
     color: var(--text-color);
 }
 
+/* Style for bubbles with no data */
+.hud-bubble.is-nodata .bubble-core {
+    background: rgba(20, 20, 22, 0.6);
+    border-color: var(--color-nodata);
+    box-shadow: none;
+    color: #9CA3AF;
+}
+.hud-bubble.is-nodata:hover .bubble-core {
+    border-color: #9CA3AF;
+    color: #fff;
+}
+.bubble-core-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+}
+
 /* --- KEYFRAME ANIMATIONS --- */
 @keyframes heartbeat {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 20px -5px var(--glow-color);
-    }
-    50% {
-        transform: scale(var(--heartbeat-scale));
-        box-shadow: 0 0 40px 5px var(--glow-color);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 20px -5px var(--glow-color);
-    }
+    0% { transform: scale(1); box-shadow: 0 0 20px -5px var(--glow-color); }
+    50% { transform: scale(var(--heartbeat-scale)); box-shadow: 0 0 40px 5px var(--glow-color); }
+    100% { transform: scale(1); box-shadow: 0 0 20px -5px var(--glow-color); }
 }
 @keyframes fan-out {
-    from {
-        opacity: 0;
-        transform: rotate(var(--angle)) translateY(0) rotate(calc(var(--angle) * -1)) scale(0.5);
-    }
-    to {
-        opacity: 1;
-        transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1);
-    }
+    from { opacity: 0; transform: rotate(var(--angle)) translateY(0) rotate(calc(var(--angle) * -1)) scale(0.5); }
+    to { opacity: 1; transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1); }
 }
 
 /* --- INSIGHT PANEL STYLES --- */
@@ -230,6 +234,20 @@ body {
 .news-card:hover {
     transform: translateY(-5px);
     border-color: #555;
+}
+.news-card-content {
+    padding: 2rem;
+}
+.news-card-title {
+    font-size: 1.375rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #FFF;
+}
+.news-card-preview {
+    font-size: 1rem;
+    color: #a0a0a0;
+    line-height: 1.6;
 }
 .placeholder-box {
     background-color: #121212;
