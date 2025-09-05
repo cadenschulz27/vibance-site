@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #000; color: #FFF; font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Lora', serif; }
+        .btn-neon { background-color: #CCFF00; color: #000; font-weight: 700; transition: all 0.2s ease; }
+        .btn-neon:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2); }
+        button.btn-neon:disabled {
+            background-color: #3A3A3C;
+            color: #9CA3AF;
+            cursor: not-allowed;
+        }
+        .input-field, .select-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
+        .input-field:focus, .select-field:focus { border-color: #CCFF00; outline: none; }
+    </style>
+</head>
+<body class="bg-black">
+
+    <div id="header-placeholder"></div>
+
+    <main class="container mx-auto px-6 py-12 md:py-20 max-w-2xl">
+        <h1 class="font-headline text-4xl font-bold mb-8">My Financial Profile</h1>
+
+        <form id="profile-form" class="bg-[#121212] border border-gray-800 rounded-lg p-8 space-y-6">
+            <div>
+                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Income Details</h2>
+                <p class="text-sm text-gray-400 mb-4">This information helps us calculate your 'Income' score. It is kept private and secure.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="primaryIncome" class="text-sm font-medium text-gray-300">Primary Monthly Income ($)</label>
+                    <input id="primaryIncome" type="number" placeholder="e.g., 5000" class="w-full mt-1 p-3 rounded input-field">
+                </div>
+                <div>
+                    <label for="additionalIncome" class="text-sm font-medium text-gray-300">Additional Monthly Income ($)</label>
+                    <input id="additionalIncome" type="number" placeholder="e.g., 500" class="w-full mt-1 p-3 rounded input-field">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="stability" class="text-sm font-medium text-gray-300">Income Stability</label>
+                    <select id="stability" class="w-full mt-1 p-3 rounded select-field appearance-none">
+                        <option value="low">Low (Freelance, irregular)</option>
+                        <option value="medium" selected>Medium (Consistent, hourly)</option>
+                        <option value="high">High (Salaried, long-term)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="growthPotential" class="text-sm font-medium text-gray-300">Income Growth Potential</label>
+                    <select id="growthPotential" class="w-full mt-1 p-3 rounded select-field appearance-none">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="pt-4">
+                <button type="submit" id="save-button" class="btn-neon px-8 py-3 rounded-full">Save Profile</button>
+            </div>
+        </form>
+    </main>
+
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+    <script type="module" src="profile.js"></script>
+</body>
+</html>
