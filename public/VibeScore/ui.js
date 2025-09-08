@@ -11,6 +11,7 @@
  * @param {HTMLElement} container - The container element for the insight panel.
  */
 function _injectInsightPanel(container) {
+    if (!container) return;
     container.innerHTML = `
         <div id="insight-panel" class="insight-panel">
             <div class="flex justify-between items-center mb-2">
@@ -23,12 +24,13 @@ function _injectInsightPanel(container) {
 }
 
 /**
- * FIX: Creates the necessary HTML elements for the central VibeScore gauge.
- * This function builds the multi-layered, 3D-effect gauge and injects it into the container.
+ * Creates the HTML elements for the central VibeScore gauge and returns direct references to them.
+ * This is more reliable than querying the DOM immediately after an innerHTML update.
  * @param {HTMLElement} container - The main container for the VibeScore gauge.
+ * @returns {{progressEl: HTMLElement, percentageEl: HTMLElement}} References to the key gauge elements.
  */
 function _createGaugeLayers(container) {
-    if (!container) return;
+    if (!container) return { progressEl: null, percentageEl: null };
     container.innerHTML = `
         <div class="gauge-layer gauge-progress"></div>
         <svg class="gauge-layer gauge-bezel" viewBox="0 0 100 100">
@@ -43,6 +45,11 @@ function _createGaugeLayers(container) {
             <span class="vibescore-label">VibeScore</span>
         </div>
     `;
+    // Return direct references to the newly created elements
+    return {
+        progressEl: container.querySelector('.gauge-progress'),
+        percentageEl: container.querySelector('#vibe-score-percentage')
+    };
 }
 
 
@@ -64,24 +71,24 @@ export const VibeScoreUI = {
             return;
         }
 
-        // FIX: Call the new function to build the gauge before trying to use it.
-        _createGaugeLayers(vibeScoreContainer);
+        // Create the gauge and get direct references to its updateable parts.
+        const gaugeElements = _createGaugeLayers(vibeScoreContainer);
 
         _injectInsightPanel(insightPanelContainer);
         this.createHudBubbles(hudPlane, financialData);
-        this.updateVibeScoreDisplay(vibeScore);
+        
+        // Pass the direct references to the update function.
+        this.updateVibeScoreDisplay(vibeScore, gaugeElements);
     },
 
     /**
-     * FIX: Updates the central VibeScore display with the calculated score and color.
+     * Updates the central VibeScore display using direct element references.
      * @param {number} score - The overall VibeScore (0-100).
+     * @param {{progressEl: HTMLElement, percentageEl: HTMLElement}} elements - Direct references to the gauge elements.
      */
-    updateVibeScoreDisplay(score) {
-        const percentageEl = document.getElementById('vibe-score-percentage');
-        const progressEl = document.querySelector('.gauge-progress');
-
+    updateVibeScoreDisplay(score, { progressEl, percentageEl }) {
         if (!percentageEl || !progressEl) {
-            console.error("VibeScore UI Error: Cannot find elements to update display.");
+            console.error("VibeScore UI Error: Cannot update display because gauge elements were not found or passed correctly.");
             return;
         }
 
@@ -107,10 +114,9 @@ export const VibeScoreUI = {
         data.forEach((item, index) => {
             const angle = startingAngle + (index * angleStep);
             
-            // Determine colors based on score and data availability
             let colors;
             if (!item.hasData) {
-                colors = { borderColor: 'var(--color-nodata)', glowColor: 'rgba(0,0,0,0)', hoverBorderColor: '#9CA3AF', textColor: '#9CA3AF' };
+                colors = { borderColor: 'var(--color-nodata)', glowColor: 'rgba(0,0,0,0)', textColor: '#9CA3AF' };
             } else if (item.score < 50) {
                 colors = { borderColor: 'rgba(255, 69, 0, 0.4)', glowColor: 'rgba(255, 69, 0, 0.3)', textColor: 'var(--color-red)' };
             } else if (item.score < 80) {
@@ -123,7 +129,6 @@ export const VibeScoreUI = {
             bubble.className = 'hud-bubble';
             if (!item.hasData) bubble.classList.add('is-nodata');
             
-            // Set CSS variables for dynamic styling and animation
             bubble.style.setProperty('--angle', `${angle}deg`);
             bubble.style.setProperty('--delay', `${index * 80}ms`);
             bubble.style.setProperty('--border-color', colors.borderColor);
@@ -144,7 +149,6 @@ export const VibeScoreUI = {
 
             plane.appendChild(bubble);
 
-            // Add event listeners for interactivity
             bubble.addEventListener('mouseenter', () => this.showInsight(item, colors));
             bubble.addEventListener('mouseleave', () => this.hideInsight());
         });
@@ -168,7 +172,6 @@ export const VibeScoreUI = {
 
         insightPanel.classList.add('visible');
 
-        // Animate the tracer line
         const bubble = [...document.querySelectorAll('.hud-bubble')].find(b => b.querySelector('span').textContent === item.name);
         if (bubble) {
             const tracerLine = bubble.querySelector('.tracer-line');
