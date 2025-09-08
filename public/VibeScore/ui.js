@@ -18,7 +18,6 @@ function _createGaugeLayers(container) {
             <circle class="progress-ring__track" cx="60" cy="60" r="54" fill="transparent" />
             <circle class="progress-ring__progress" cx="60" cy="60" r="54" fill="transparent" />
         </svg>
-
         <div class="vibescore-inner-text">
             <span id="vibe-score-percentage" class="vibescore-percentage">0%</span>
             <span class="vibescore-label">VibeScore</span>
@@ -69,27 +68,20 @@ export const VibeScoreUI = {
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
     },
 
-    /**
-     * Updates the central VibeScore display and animates the progress ring.
-     * @param {number} score - The overall VibeScore (0-100).
-     * @param {Object} elements - Direct references to the gauge elements.
-     */
     updateVibeScoreDisplay(score, { percentageEl, progressRingEl }) {
         if (!percentageEl || !progressRingEl) {
             console.error("VibeScore UI Error: Cannot update display because gauge elements were not found.");
             return;
         }
 
-        // Determine color based on score
         let mainColor = 'var(--color-danger)';
         if (score >= 80) mainColor = 'var(--neon-green)';
         else if (score >= 50) mainColor = 'var(--color-yellow)';
         
-        // Update text content and color directly
+        // Update text content and color
         percentageEl.textContent = `${score}%`;
         percentageEl.style.color = mainColor;
 
-        // Animate the SVG progress ring
         const radius = progressRingEl.r.baseVal.value;
         const circumference = 2 * Math.PI * radius;
         const offset = circumference - (score / 100) * circumference;
@@ -97,8 +89,8 @@ export const VibeScoreUI = {
         progressRingEl.style.strokeDasharray = `${circumference} ${circumference}`;
         progressRingEl.style.strokeDashoffset = offset;
         
-        // FIX: Apply the stroke color directly to the ring element.
-        progressRingEl.style.stroke = mainColor;
+        // FIX: Set the CSS variable that the stylesheet is waiting for.
+        progressRingEl.style.setProperty('--progress-color', mainColor);
     },
 
     createHudBubbles(plane, data) {

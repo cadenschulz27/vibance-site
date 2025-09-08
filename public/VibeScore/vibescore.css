@@ -51,8 +51,7 @@
     border-radius: 50%;
 }
 
-/* * NEW: Progress Ring SVG Styles 
- * This SVG sits on a new layer and contains the progress animation.
+/* * Progress Ring SVG Styles 
 */
 .progress-ring {
     transform: rotate(-90deg); /* Start the ring from the top */
@@ -65,8 +64,8 @@
 
 .progress-ring__progress {
     stroke-width: 8px;
-    stroke: var(--progress-color); /* Color will be set by JS */
-    stroke-linecap: round; /* Gives the line a soft, rounded end */
+    stroke: var(--progress-color); /* This will now inherit the color from the JS */
+    stroke-linecap: round;
     transition: stroke-dashoffset 0.8s cubic-bezier(0.5, 0, 0.2, 1), stroke 0.5s ease;
 }
 
@@ -82,7 +81,7 @@
     font-size: 2.5rem;
     font-weight: 700;
     line-height: 1;
-    color: var(--progress-color); /* Match the ring color */
+    color: var(--progress-color);
     transition: color 0.5s ease;
 }
 
