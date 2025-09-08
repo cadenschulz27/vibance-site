@@ -4,6 +4,9 @@
  * It is responsible for creating, updating, and handling events for the gauge, HUD, and insight panel.
  */
 
+// FIX: Import the Three.js library as a module
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
+
 // --- PRIVATE HELPER FUNCTIONS ---
 
 /**
@@ -224,6 +227,4 @@ export const VibeScoreUI = {
         }
     }
 };
-
-
 
