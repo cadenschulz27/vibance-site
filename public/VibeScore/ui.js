@@ -61,7 +61,7 @@ export const VibeScoreUI = {
      * @param {number} vibeScore - The overall VibeScore (0-100).
      * @param {Array<Object>} financialData - Array of financial category data objects.
      */
-    initialize(vibeScore, financialData) {
+    init(vibeScore, financialData) {
         const vibeScoreContainer = document.getElementById('vibescore-container');
         const hudPlane = document.getElementById('hud-plane');
         const insightPanelContainer = document.getElementById('insight-panel-container');
