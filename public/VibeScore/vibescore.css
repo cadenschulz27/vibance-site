@@ -92,23 +92,26 @@
 }
 
 /* --- 3D HOVER INTERACTION --- */
-/* When hovering over the entire wrapper, apply transforms to the gauge and its layers. */
-.vibescore-wrapper:hover .vibescore-gauge {
+/* FIX: Changed selectors from '.vibescore-wrapper:hover' to '.vibescore-gauge:hover'
+ * This ensures the 3D tilt effect only triggers when hovering the central gauge,
+ * not the entire component wrapper or the outer bubbles.
+ */
+.vibescore-gauge:hover {
     transform: perspective(1000px) rotateX(10deg) rotateY(-5deg);
 }
-.vibescore-wrapper:hover .gauge-bezel {
+.vibescore-gauge:hover .gauge-bezel {
     transform: translateZ(30px) scale(1.05); /* Lifts and scales up */
 }
-.vibescore-wrapper:hover .gauge-progress {
+.vibescore-gauge:hover .gauge-progress {
     transform: translateZ(10px); /* Lifts slightly */
 }
-.vibescore-wrapper:hover .gauge-inner-ring {
+.vibescore-gauge:hover .gauge-inner-ring {
     transform: translateZ(-20px); /* Pushes further back */
 }
-.vibescore-wrapper:hover .gauge-glass {
+.vibescore-gauge:hover .gauge-glass {
     transform: translateZ(40px) scale(0.95); /* Lifts significantly and shrinks slightly */
 }
-.vibescore-wrapper:hover .vibescore-inner-text {
+.vibescore-gauge:hover .vibescore-inner-text {
     transform: translateZ(60px) scale(0.95); /* Lifts the text even further forward */
 }
 
@@ -142,3 +145,4 @@
     from { transform: rotate(360deg) translateZ(-10px); }
     to { transform: rotate(0deg) translateZ(-10px); }
 }
+
