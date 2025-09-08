@@ -1,7 +1,7 @@
 /**
  * @file VibeScore/hud.css
  * @description Styles for the Heads-Up Display (HUD) component of the VibeScore.
- * This includes the orbiting data bubbles, tracer lines, and all associated animations.
+ * This includes the orbiting data bubbles and all associated animations.
  */
 
 /* --- HUD & BUBBLE VARIABLES --- */
@@ -26,7 +26,6 @@
     width: 100%;
     height: 100%;
     z-index: 5;
-    /* Allows for 3D transformations on child elements (the bubbles) */
     transform-style: preserve-3d;
     transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -34,32 +33,16 @@
 /* --- HUD BUBBLE --- */
 /* The base styles for each individual data point orbiting the center gauge. */
 .hud-bubble {
-    /* Set dimensions from variables */
     width: var(--bubble-width);
     height: var(--bubble-height);
-    
-    /* Positioning magic: place the bubble's center at the center of the plane */
     position: absolute;
     top: calc(50% - (var(--bubble-height) / 2));
     left: calc(50% - (var(--bubble-width) / 2));
-    
-    /* The transform-origin is key for rotation */
     transform-origin: center;
-    
-    /* * The transform is controlled by JS-injected CSS variables (--angle, --hud-radius).
-     * 1. Rotate the bubble to its designated spot on the circle.
-     * 2. Translate it outwards from the center by the radius.
-     * 3. Un-rotate the bubble itself so its text remains horizontal.
-    */
     transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1));
-    
-    /* Initial state for the fan-out animation */
     opacity: 0;
-    
-    /* Animation definition */
     animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    animation-delay: var(--delay); /* Staggered animation for each bubble */
-    
+    animation-delay: var(--delay);
     transition: opacity 0.3s ease;
 }
 
@@ -70,7 +53,7 @@
     height: 100%;
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Pushes name and score to opposite ends */
+    justify-content: space-between;
     padding: 0 1rem;
     font-size: 0.95rem;
     font-weight: 500;
@@ -79,19 +62,17 @@
     background: var(--bubble-bg-color);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color); /* Color is data-driven via JS */
-    box-shadow: 0 0 20px -5px var(--glow-color); /* Glow is data-driven via JS */
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0 20px -5px var(--glow-color);
     transition: all 0.3s ease;
     cursor: pointer;
 }
 
-/* Ensure links within bubbles are styled correctly */
 .bubble-core-link {
     text-decoration: none;
 }
 
 /* --- BUBBLE STATES --- */
-/* Style for bubbles that have no user data yet. */
 .hud-bubble.is-nodata .bubble-core {
     background: var(--bubble-nodata-bg-color);
     border-color: var(--bubble-nodata-border-color);
@@ -99,7 +80,6 @@
     color: var(--bubble-nodata-text-color);
 }
 
-/* On hover, fade out all other bubbles to reduce visual noise. */
 .vibescore-wrapper:has(.hud-bubble:hover) .hud-bubble:not(:hover) {
     opacity: 0.3;
 }
@@ -109,51 +89,23 @@
     font-size: 0.75rem;
     margin-left: 6px;
     font-weight: 700;
-    color: var(--text-color); /* Data-driven color from JS */
+    color: var(--text-color);
 }
 
-/* --- TRACER LINE --- */
-/* The line that connects a hovered bubble to the insight panel. */
-.tracer-line {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 2px;
-    background: var(--glow-color); /* Matches the bubble's glow */
-    transform-origin: top;
-    opacity: 0;
-    height: 0; /* Initial state for animation */
-    transition: opacity 0.3s ease;
-}
-
-/* Animate the tracer line on bubble hover */
-.hud-bubble:hover .tracer-line {
-    opacity: 0.7;
-    animation: trace 0.5s ease-out forwards;
-}
+/*
+ * FIX: All CSS rules for the .tracer-line and its @keyframes animation
+ * have been removed to prevent them from affecting the layout.
+ */
 
 /* --- KEYFRAME ANIMATIONS --- */
-
-/* Initial animation for bubbles fanning out into position. */
 @keyframes fan-out {
     from {
         opacity: 0;
-        /* Start closer to the center and smaller */
         transform: rotate(var(--angle)) translateY(-100px) rotate(calc(var(--angle) * -1)) scale(0.5);
     }
     to {
         opacity: 1;
-        /* End in the final, calculated position */
         transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1);
     }
 }
 
-/* Animation for the tracer line growing from the bubble downwards. */
-@keyframes trace {
-    from {
-        height: 0;
-    }
-    to {
-        height: var(--trace-height); /* Height is calculated and set by JS */
-    }
-}

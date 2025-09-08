@@ -7,25 +7,7 @@
 // --- PRIVATE HELPER FUNCTIONS ---
 
 /**
- * Injects the HTML structure for the insight panel into its container.
- * @param {HTMLElement} container - The container element for the insight panel.
- */
-function _injectInsightPanel(container) {
-    if (!container) return;
-    container.innerHTML = `
-        <div id="insight-panel" class="insight-panel">
-            <div class="flex justify-between items-center mb-2">
-                <h3 id="insight-title" class="insight-title text-lg font-semibold"></h3>
-                <p id="insight-score" class="insight-score font-bold text-lg"></p>
-            </div>
-            <p id="insight-text" class="text-gray-400 text-sm leading-relaxed"></p>
-        </div>
-    `;
-}
-
-/**
- * Creates the HTML elements for the central VibeScore gauge and returns direct references to them.
- * This is more reliable than querying the DOM immediately after an innerHTML update.
+ * Creates the HTML elements for the central VibeScore gauge.
  * @param {HTMLElement} container - The main container for the VibeScore gauge.
  * @returns {{progressEl: HTMLElement, percentageEl: HTMLElement}} References to the key gauge elements.
  */
@@ -45,7 +27,6 @@ function _createGaugeLayers(container) {
             <span class="vibescore-label">VibeScore</span>
         </div>
     `;
-    // Return direct references to the newly created elements
     return {
         progressEl: container.querySelector('.gauge-progress'),
         percentageEl: container.querySelector('#vibe-score-percentage')
@@ -56,6 +37,30 @@ function _createGaugeLayers(container) {
 // --- PUBLIC MODULE ---
 
 export const VibeScoreUI = {
+    // A property to hold a reference to our globally-positioned insight panel
+    insightPanelEl: null,
+
+    /**
+     * Creates the insight panel element once and attaches it to the document body.
+     * This completely decouples it from the VibeScore component's layout.
+     */
+    _createGlobalInsightPanel() {
+        if (this.insightPanelEl) return; // Only create it once
+
+        const panel = document.createElement('div');
+        panel.id = 'insight-panel'; // Give it an ID for easier selection
+        panel.className = 'insight-panel';
+        panel.innerHTML = `
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="insight-title text-lg font-semibold"></h3>
+                <p class="insight-score font-bold text-lg"></p>
+            </div>
+            <p class="insight-text text-gray-400 text-sm leading-relaxed"></p>
+        `;
+        document.body.appendChild(panel);
+        this.insightPanelEl = panel;
+    },
+    
     /**
      * Initializes the entire VibeScore component on the dashboard.
      * @param {number} vibeScore - The overall VibeScore (0-100).
@@ -64,23 +69,16 @@ export const VibeScoreUI = {
     init(vibeScore, financialData) {
         const vibeScoreContainer = document.getElementById('vibescore-container');
         const hudPlane = document.getElementById('hud-plane');
-        const insightPanelContainer = document.getElementById('insight-panel-container');
 
-        if (!vibeScoreContainer || !hudPlane || !insightPanelContainer) {
+        if (!vibeScoreContainer || !hudPlane) {
             console.error("VibeScore UI Error: A required container element is missing from the DOM.");
             return;
         }
 
-        // Create the gauge and get direct references to its updateable parts.
         const gaugeElements = _createGaugeLayers(vibeScoreContainer);
-
-        _injectInsightPanel(insightPanelContainer);
+        this._createGlobalInsightPanel(); // Create the panel and attach it to the body
         this.createHudBubbles(hudPlane, financialData);
-        
-        // Pass the direct references to the update function.
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
-        
-        // FIX: Removed the event listeners that controlled the now-deleted tilt animation.
     },
 
     /**
@@ -93,7 +91,6 @@ export const VibeScoreUI = {
             console.error("VibeScore UI Error: Cannot update display because gauge elements were not found or passed correctly.");
             return;
         }
-
         percentageEl.textContent = `${score}%`;
         
         let mainColor = 'var(--color-danger)';
@@ -114,9 +111,8 @@ export const VibeScoreUI = {
             console.error("VibeScore UI Error: Invalid or missing financial data provided to createHudBubbles.", data);
             return;
         }
-
         const angleStep = 360 / data.length;
-        const startingAngle = -90; // Start at the top
+        const startingAngle = -90;
 
         data.forEach((item, index) => {
             const angle = startingAngle + (index * angleStep);
@@ -142,18 +138,9 @@ export const VibeScoreUI = {
             bubble.style.setProperty('--glow-color', colors.glowColor);
             
             const scoreText = item.hasData ? item.score.toFixed(0) : 'N/A';
-            const coreContent = `
-                <div class="bubble-core" style="--text-color: ${colors.textColor};">
-                    <span>${item.name}</span>
-                    <span class="bubble-score">${scoreText}</span>
-                </div>
-                <div class="tracer-line"></div>
-            `;
-
-            bubble.innerHTML = item.hasData 
-                ? coreContent 
-                : `<a href="../pages/profile.html" class="bubble-core-link">${coreContent}</a>`;
-
+            // FIX: Removed the tracer line div from the template string.
+            const coreContent = `<div class="bubble-core" style="--text-color: ${colors.textColor};"><span>${item.name}</span><span class="bubble-score">${scoreText}</span></div>`;
+            bubble.innerHTML = item.hasData ? coreContent : `<a href="../pages/profile.html" class="bubble-core-link">${coreContent}</a>`;
             plane.appendChild(bubble);
 
             bubble.addEventListener('mouseenter', () => this.showInsight(item, colors));
@@ -162,43 +149,39 @@ export const VibeScoreUI = {
     },
 
     /**
-     * Displays the insight panel with details for a specific financial category.
+     * Displays and positions the insight panel with details for a specific financial category.
      * @param {Object} item - The financial data object for the hovered category.
      * @param {Object} colors - The color scheme for the hovered category.
      */
     showInsight(item, colors) {
-        const insightPanel = document.getElementById('insight-panel');
-        if (!insightPanel) return;
+        if (!this.insightPanelEl) return;
 
-        insightPanel.querySelector('#insight-title').textContent = item.name;
-        insightPanel.querySelector('#insight-score').textContent = item.hasData ? item.score.toFixed(0) : 'N/A';
-        insightPanel.querySelector('#insight-text').textContent = item.insight;
+        const wrapper = document.querySelector('.vibescore-wrapper');
+        const wrapperRect = wrapper.getBoundingClientRect();
         
-        insightPanel.style.setProperty('--border-color', colors.borderColor);
-        insightPanel.querySelector('.insight-score').style.color = colors.textColor;
+        const top = wrapperRect.bottom + window.scrollY + 16;
+        const left = wrapperRect.left + (wrapperRect.width / 2);
 
-        insightPanel.classList.add('visible');
+        this.insightPanelEl.style.top = `${top}px`;
+        this.insightPanelEl.style.left = `${left}px`;
+        
+        this.insightPanelEl.querySelector('.insight-title').textContent = item.name;
+        this.insightPanelEl.querySelector('.insight-score').textContent = item.hasData ? item.score.toFixed(0) : 'N/A';
+        this.insightPanelEl.querySelector('.insight-text').textContent = item.insight;
+        this.insightPanelEl.style.setProperty('--border-color', colors.borderColor);
+        this.insightPanelEl.querySelector('.insight-score').style.color = colors.textColor;
 
-        const bubble = [...document.querySelectorAll('.hud-bubble')].find(b => b.querySelector('span').textContent === item.name);
-        if (bubble) {
-            const tracerLine = bubble.querySelector('.tracer-line');
-            if (tracerLine) {
-                const radius = 300;
-                const bubbleHeight = 55;
-                const traceHeight = radius - (bubbleHeight / 2) - 20;
-                tracerLine.style.setProperty('--trace-height', `${traceHeight}px`);
-                tracerLine.style.setProperty('--glow-color', colors.glowColor);
-            }
-        }
+        this.insightPanelEl.classList.add('visible');
+
+        // FIX: Removed the logic that calculated the height for the deleted tracer line.
     },
 
     /**
      * Hides the insight panel.
      */
     hideInsight() {
-        const insightPanel = document.getElementById('insight-panel');
-        if (insightPanel) {
-            insightPanel.classList.remove('visible');
+        if (this.insightPanelEl) {
+            this.insightPanelEl.classList.remove('visible');
         }
     }
 };
