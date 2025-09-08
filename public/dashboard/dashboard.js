@@ -37,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- VIBESCORE & HUD INITIALIZATION ---
-    // REVISED: This function now targets the new gauge elements
     function initializeVibeScoreComponent(vibeScore, financialData) {
         const progressRing = document.querySelector('.gauge-progress');
         const percentageText = document.getElementById('vibe-score-percentage');
@@ -46,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!progressRing || !percentageText || !hudPlane) return;
 
-        // 1. Set the main VibeScore value and color
         let statusColor = 'var(--color-danger)';
         if (vibeScore >= 80) statusColor = 'var(--neon-green)';
         else if (vibeScore >= 50) statusColor = 'var(--color-yellow)';
@@ -54,16 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let currentScore = 0;
         const interval = setInterval(() => {
-            if (currentScore >= vibeScore) {
-                clearInterval(interval);
-            } else {
-                currentScore++;
-                percentageText.textContent = `${currentScore}%`;
-                progressRing.style.background = `conic-gradient(${statusColor} ${currentScore}%, #1C1C1E 0%)`;
-            }
+            if (currentScore >= vibeScore) { clearInterval(interval); } 
+            else { currentScore++; percentageText.textContent = `${currentScore}%`; progressRing.style.background = `conic-gradient(${statusColor} ${currentScore}%, #1C1C1E 0%)`; }
         }, 20);
 
-        // 2. Inject the Insight Panel HTML and get references
         insightPanelContainer.innerHTML = `
             <div id="insight-panel" class="insight-panel">
                 <div class="flex justify-between items-center mb-2"><h3 id="insight-title" class="insight-title text-lg font-semibold"></h3><p id="insight-score" class="insight-score font-bold text-lg"></p></div>
@@ -75,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const insightScore = document.getElementById('insight-score');
         const insightText = document.getElementById('insight-text');
         
-        // 3. Create and animate the surrounding HUD bubbles
         const angleStep = 360 / financialData.length;
         const startingAngle = -90;
 
