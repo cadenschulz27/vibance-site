@@ -38,12 +38,14 @@ function _createGaugeLayers(container) {
 
 export const VibeScoreUI = {
     insightPanelEl: null,
+    wrapperEl: null, // Keep a reference to the main wrapper
 
     /**
-     * Creates the insight panel element once and attaches it to the document body.
+     * Creates the insight panel element once and attaches it inside the VibeScore wrapper.
+     * This keeps it within the component's context for centered positioning.
      */
-    _createGlobalInsightPanel() {
-        if (this.insightPanelEl) return;
+    _createLocalInsightPanel() {
+        if (this.insightPanelEl || !this.wrapperEl) return;
 
         const panel = document.createElement('div');
         panel.id = 'insight-panel';
@@ -55,21 +57,22 @@ export const VibeScoreUI = {
             </div>
             <p class="insight-text text-gray-400 text-sm leading-relaxed"></p>
         `;
-        document.body.appendChild(panel);
+        this.wrapperEl.appendChild(panel);
         this.insightPanelEl = panel;
     },
     
     init(vibeScore, financialData) {
+        this.wrapperEl = document.getElementById('vibescore-section');
         const vibeScoreContainer = document.getElementById('vibescore-container');
         const hudPlane = document.getElementById('hud-plane');
 
-        if (!vibeScoreContainer || !hudPlane) {
+        if (!this.wrapperEl || !vibeScoreContainer || !hudPlane) {
             console.error("VibeScore UI Error: A required container element is missing from the DOM.");
             return;
         }
 
         const gaugeElements = _createGaugeLayers(vibeScoreContainer);
-        this._createGlobalInsightPanel();
+        this._createLocalInsightPanel();
         this.createHudBubbles(hudPlane, financialData);
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
     },
@@ -90,7 +93,7 @@ export const VibeScoreUI = {
 
     createHudBubbles(plane, data) {
         if (!data || !Array.isArray(data)) {
-            console.error("VibeScore UI Error: Invalid or missing financial data provided to createHudBubbles.", data);
+            console.error("VibeScore UI Error: Invalid or missing financial data provided.", data);
             return;
         }
         const angleStep = 360 / data.length;
@@ -101,13 +104,13 @@ export const VibeScoreUI = {
             
             let colors;
             if (!item.hasData) {
-                colors = { borderColor: 'var(--color-nodata)', glowColor: 'rgba(0,0,0,0)', textColor: '#9CA3AF' };
+                colors = { borderColor: 'var(--color-nodata)', textColor: '#9CA3AF' };
             } else if (item.score < 50) {
-                colors = { borderColor: 'rgba(255, 69, 0, 0.4)', glowColor: 'rgba(255, 69, 0, 0.3)', textColor: 'var(--color-red)' };
+                colors = { borderColor: 'rgba(255, 69, 0, 0.4)', textColor: 'var(--color-red)' };
             } else if (item.score < 80) {
-                colors = { borderColor: 'rgba(255, 215, 0, 0.4)', glowColor: 'rgba(255, 215, 0, 0.3)', textColor: 'var(--color-yellow)' };
+                colors = { borderColor: 'rgba(255, 215, 0, 0.4)', textColor: 'var(--color-yellow)' };
             } else {
-                colors = { borderColor: 'rgba(144, 238, 144, 0.4)', glowColor: 'rgba(144, 238, 144, 0.3)', textColor: 'var(--color-green)' };
+                colors = { borderColor: 'rgba(144, 238, 144, 0.4)', textColor: 'var(--color-green)' };
             }
 
             const bubble = document.createElement('div');
@@ -117,30 +120,19 @@ export const VibeScoreUI = {
             bubble.style.setProperty('--angle', `${angle}deg`);
             bubble.style.setProperty('--delay', `${index * 80}ms`);
             bubble.style.setProperty('--border-color', colors.borderColor);
-            bubble.style.setProperty('--glow-color', colors.glowColor);
             
             const scoreText = item.hasData ? item.score.toFixed(0) : 'N/A';
             const coreContent = `<div class="bubble-core" style="--text-color: ${colors.textColor};"><span>${item.name}</span><span class="bubble-score">${scoreText}</span></div>`;
             bubble.innerHTML = item.hasData ? coreContent : `<a href="../pages/profile.html" class="bubble-core-link">${coreContent}</a>`;
             plane.appendChild(bubble);
 
-            // FIX: Replaced 'mouseenter' and 'mouseleave' with the more robust 'pointerenter' and 'pointerleave' events.
             bubble.addEventListener('pointerenter', () => this.showInsight(item, colors));
             bubble.addEventListener('pointerleave', () => this.hideInsight());
         });
     },
 
     showInsight(item, colors) {
-        if (!this.insightPanelEl) return;
-
-        const wrapper = document.querySelector('.vibescore-wrapper');
-        const wrapperRect = wrapper.getBoundingClientRect();
-        
-        const top = wrapperRect.bottom + window.scrollY + 16;
-        const left = wrapperRect.left + (wrapperRect.width / 2);
-
-        this.insightPanelEl.style.top = `${top}px`;
-        this.insightPanelEl.style.left = `${left}px`;
+        if (!this.insightPanelEl || !this.wrapperEl) return;
         
         this.insightPanelEl.querySelector('.insight-title').textContent = item.name;
         this.insightPanelEl.querySelector('.insight-score').textContent = item.hasData ? item.score.toFixed(0) : 'N/A';
@@ -148,12 +140,16 @@ export const VibeScoreUI = {
         this.insightPanelEl.style.setProperty('--border-color', colors.borderColor);
         this.insightPanelEl.querySelector('.insight-score').style.color = colors.textColor;
 
+        // FIX: Add classes to show the panel and hide the gauge
         this.insightPanelEl.classList.add('visible');
+        this.wrapperEl.classList.add('insight-is-active');
     },
 
     hideInsight() {
-        if (this.insightPanelEl) {
+        if (this.insightPanelEl && this.wrapperEl) {
+            // FIX: Remove classes to hide the panel and show the gauge
             this.insightPanelEl.classList.remove('visible');
+            this.wrapperEl.classList.remove('insight-is-active');
         }
     }
 };

@@ -3,56 +3,39 @@
  * @description Styles for the Insight Panel that appears on bubble hover.
  */
 
-/* --- INSIGHT PANEL VARIABLES --- */
-:root {
-    --insight-panel-width: 320px;
-    --insight-panel-bg-color: rgba(18, 18, 18, 0.8);
-    --insight-panel-border-radius: 12px;
-    --insight-text-color: #9CA3AF; /* Default text color */
-}
-
-/* --- INSIGHT PANEL CONTAINER --- */
-/* A simple container to hold the panel, ensuring proper layering. */
-.insight-panel-container {
-    position: absolute;
-    /*
-     * FIX: Repositioned the panel to be below the VibeScore wrapper.
-     * 'top: 100%' places the top of the panel at the bottom of the wrapper.
-     * 'margin-top' adds some spacing between them.
-     */
-    top: 100%;
-    margin-top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: var(--insight-panel-width);
-    z-index: 20; /* Ensures it appears above the HUD but below any main UI modals */
-    /* Prevents the panel from capturing mouse events when hidden */
-    pointer-events: none; 
-}
-
-
 /* --- INSIGHT PANEL CORE --- */
+/*
+ * FIX: The panel is now positioned absolutely in the center of its container.
+ * The transform property ensures it is perfectly centered regardless of its own width.
+ * A high z-index guarantees it appears on top of the gauge.
+ */
 .insight-panel {
-    width: 100%;
-    background: var(--insight-panel-bg-color);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border-color); /* Dynamically set by JS */
-    border-radius: var(--insight-panel-border-radius);
-    padding: 1rem 1.5rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 340px; /* Slightly wider for a more premium feel */
+    z-index: 20; /* Ensures it appears above the gauge */
+    
+    background: rgba(18, 18, 18, 0.9); /* Darker, less transparent background */
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 1.5rem 2rem;
 
-    /* Initial state: hidden */
+    /* Initial state: hidden and slightly scaled down */
     opacity: 0;
     visibility: hidden;
-    /* Start slightly lower for a subtle upward slide-in */
-    transform: translateY(20px); 
-
+    transform: translate(-50%, -50%) scale(0.95);
+    
     /* Smooth transitions for all animated properties */
     transition: 
-        opacity 0.3s ease, 
-        transform 0.3s ease, 
-        visibility 0.3s ease, 
-        border-color 0.3s ease;
+        opacity 0.25s ease, 
+        transform 0.25s ease, 
+        visibility 0.25s ease;
+    
+    pointer-events: none;
 }
 
 /* --- VISIBLE STATE --- */
@@ -60,24 +43,22 @@
 .insight-panel.visible {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0); /* Move to its final position */
-    pointer-events: auto; /* Allow interaction when visible */
+    transform: translate(-50%, -50%) scale(1); /* Animate to full size */
+    pointer-events: auto;
 }
 
 
 /* --- TEXT ELEMENTS --- */
 .insight-title {
-    /* Uses the 'Lora' serif font for an elegant headline feel */
     font-family: 'Lora', serif;
 }
 
 .insight-score {
-    /* The color of the score is set dynamically via JS to match the data */
     color: var(--text-color);
 }
 
 .insight-text {
-    color: var(--insight-text-color);
-    line-height: 1.6; /* Improves readability for descriptive text */
+    color: #b0b0b0; /* Lighter text for better contrast */
+    line-height: 1.6;
 }
 

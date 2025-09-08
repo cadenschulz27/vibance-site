@@ -19,8 +19,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: -4rem auto -2rem auto; /* Vertical margin to pull it up slightly */
-    pointer-events: none; /* FIX: Make the wrapper ignore mouse events. */
+    margin: -4rem auto -2rem auto;
+    pointer-events: none;
 }
 
 /* --- CENTRAL GAUGE --- */
@@ -34,11 +34,18 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    /* Enables 3D transformations for child elements */
     transform-style: preserve-3d;
-    /* Smooth transition for the 3D hover effect */
-    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-    pointer-events: auto; /* FIX: Explicitly make the gauge interactive. */
+    transition: opacity 0.25s ease; /* FIX: Added transition for smooth fade out */
+    pointer-events: auto;
+}
+
+/*
+ * FIX: When the wrapper has the 'insight-is-active' class (added by JS on hover),
+ * fade out the central gauge to make room for the insight panel.
+ */
+.vibescore-wrapper.insight-is-active .vibescore-gauge {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* --- GAUGE LAYERS (Shared Properties) --- */
@@ -127,5 +134,6 @@
     from { transform: rotate(360deg) translateZ(-10px); }
     to { transform: rotate(0deg) translateZ(-10px); }
 }
+
 
 
