@@ -1,72 +1,94 @@
-/* FILE: public/dashboard/dashboard.css */
+/**
+ * @file dashboard/dashboard.css
+ * @description Styles for the main dashboard layout and non-VibeScore components,
+ * such as the financial news grid.
+ */
+
+/* --- GLOBAL STYLES & VARIABLES --- */
 :root {
     --neon-green: #CCFF00;
-    --color-red: #FF4500;
-    --color-yellow: #FFD700;
-    --color-green: #90EE90;
-    --color-nodata: #555;
     --bg-color: #000;
-    --container-size: 700px;
-    --center-ring-size: 220px;
-    --hud-radius: 300px;
-    --bubble-width: 150px;
-    --bubble-height: 55px;
 }
-body { background-color: var(--bg-color); color: #FFFFFF; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
-/* --- MAIN VIBESCORE WRAPPER --- */
-.vibescore-wrapper { position: relative; width: var(--container-size); height: var(--container-size); display: flex; align-items: center; justify-content: center; margin: -4rem auto -2rem auto; }
+body {
+    background-color: var(--bg-color);
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
 
-/* --- CENTRAL GAUGE (Multi-layered SVG & Divs) --- */
-.vibescore-gauge { width: var(--center-ring-size); height: var(--center-ring-size); position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); transform-style: preserve-3d; }
-.gauge-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.gauge-bezel { transform: translateZ(10px); }
-.bezel-ticks { stroke: #444; stroke-width: 1.5; }
-.gauge-progress { background: conic-gradient(var(--neon-green) 75%, #1C1C1E 0); box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
-.gauge-inner-ring { animation: rotate-reverse 20s linear infinite; transform: translateZ(-10px); }
-.inner-ring-dashes { stroke: var(--neon-green); stroke-width: 2; stroke-dasharray: 2 10; opacity: 0.3; }
-.gauge-glass { background: rgba(10, 10, 10, 0.5); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.1); transform: translateZ(20px); }
-.vibescore-wrapper:hover .vibescore-gauge { transform: perspective(1000px) rotateX(10deg) rotateY(-5deg); }
-.vibescore-wrapper:hover .gauge-bezel { transform: translateZ(30px) scale(1.05); }
-.vibescore-wrapper:hover .gauge-progress { transform: translateZ(10px); }
-.vibescore-wrapper:hover .gauge-inner-ring { transform: translateZ(-20px); }
-.vibescore-wrapper:hover .gauge-glass { transform: translateZ(40px) scale(0.95); }
-.vibescore-inner-text { position: relative; z-index: 15; text-align: center; text-shadow: 0 0 15px rgba(0,0,0,0.8); transform: translateZ(30px); transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.vibescore-wrapper:hover .vibescore-inner-text { transform: translateZ(60px) scale(0.95); }
-.vibescore-percentage { font-size: 2.5rem; font-weight: 700; color: var(--neon-green); line-height: 1; }
-.vibescore-label { font-family: 'Lora', serif; font-size: 1.1rem; color: #FFF; margin-top: 0.25rem; }
+/* --- GENERAL CONTENT SECTIONS --- */
+/* Provides consistent spacing and max-width for content blocks like News, Goals, etc. */
+.content-section {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto 5rem auto;
+    padding: 0 4rem;
+}
 
-/* --- SURROUNDING HUD BUBBLES --- */
-.hud-plane { position: absolute; width: 100%; height: 100%; z-index: 5; }
-.hud-bubble { width: var(--bubble-width); height: var(--bubble-height); position: absolute; top: calc(50% - (var(--bubble-height) / 2)); left: calc(50% - (var(--bubble-width) / 2)); transform-origin: center; transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)); opacity: 0; animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: var(--delay); transition: opacity 0.3s ease; }
-.bubble-core { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 500; color: #e5e7eb; border-radius: 10px; background: rgba(28, 28, 30, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); box-shadow: 0 0 20px -5px var(--glow-color); transition: all 0.3s ease; cursor: pointer; }
-.bubble-score { font-size: 0.75rem; margin-left: 6px; font-weight: 700; color: var(--text-color); }
-.hud-bubble.is-nodata .bubble-core { background: rgba(20, 20, 22, 0.6); border-color: var(--color-nodata); box-shadow: none; color: #9CA3AF; }
-.bubble-core-link { display: block; width: 100%; height: 100%; text-decoration: none; }
-.vibescore-wrapper:has(.hud-bubble:hover) .hud-bubble:not(:hover) { opacity: 0.3; }
+.section-header {
+    font-family: 'Lora', serif;
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #3A3A3C;
+    text-align: left;
+}
 
-/* --- TRACER LINE --- */
-.tracer-line { position: absolute; top: 50%; left: 50%; width: 2px; background: var(--glow-color); transform-origin: top; opacity: 0; height: 0; transition: opacity 0.3s ease; }
-.hud-bubble:hover .tracer-line { opacity: 0.7; animation: trace 0.5s ease-out forwards; }
+/* --- FINANCIAL NEWS GRID --- */
+.news-grid {
+    display: grid;
+    /* Responsive grid: 1 column on small screens, 3 on large */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
 
-/* --- INSIGHT PANEL --- */
-.insight-panel { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%) translateY(20px); width: 320px; background: rgba(18, 18, 18, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.5rem; z-index: 20; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease, border-color 0.3s ease; pointer-events: none; }
-.insight-panel.visible { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
-.insight-title { font-family: 'Lora', serif; }
-.insight-score { color: var(--text-color); }
+.news-card {
+    background-color: #121212;
+    border: 1px solid #3A3A3C;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
 
-/* --- KEYFRAME ANIMATIONS --- */
-@keyframes rotate-reverse { from { transform: rotate(360deg) translateZ(-10px); } to { transform: rotate(0deg) translateZ(-10px); } }
-@keyframes fan-out { from { opacity: 0; transform: rotate(var(--angle)) translateY(-100px) rotate(calc(var(--angle) * -1)) scale(0.5); } to { opacity: 1; transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1); } }
-@keyframes trace { from { height: 0; } to { height: var(--trace-height); } }
+.news-card:hover {
+    transform: translateY(-5px);
+    border-color: #555;
+}
 
-/* --- General Content Sections --- */
-.content-section { width: 100%; max-width: 1400px; margin: 0 auto 5rem auto; padding: 0 4rem; }
-.section-header { font-family: 'Lora', serif; font-size: 2.5rem; font-weight: 600; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #3A3A3C; text-align: left; }
-.news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
-.news-card { background-color: #121212; border: 1px solid #3A3A3C; border-radius: 0.75rem; overflow: hidden; transition: transform 0.3s ease, border-color 0.3s ease; display: block; text-decoration: none; color: inherit; }
-.news-card:hover { transform: translateY(-5px); border-color: #555; }
-.news-card-content { padding: 2rem; }
-.news-card-title { font-size: 1.375rem; font-weight: 600; margin-bottom: 0.75rem; color: #FFF; }
-.news-card-preview { font-size: 1rem; color: #a0a0a0; line-height: 1.6; }
-.placeholder-box { background-color: #121212; border: 2px dashed #3A3A3C; border-radius: 0.75rem; min-height: 250px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 1.25rem; font-weight: 500; }
+.news-card-content {
+    padding: 2rem;
+}
+
+.news-card-title {
+    font-size: 1.375rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #FFF;
+}
+
+.news-card-preview {
+    font-size: 1rem;
+    color: #a0a0a0;
+    line-height: 1.6;
+}
+
+/* --- PLACEHOLDER STYLES --- */
+/* Used for sections that are not yet implemented (e.g., Savings Goals). */
+.placeholder-box {
+    background-color: #121212;
+    border: 2px dashed #3A3A3C;
+    border-radius: 0.75rem;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 1.25rem;
+    font-weight: 500;
+}

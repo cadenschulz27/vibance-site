@@ -1,0 +1,144 @@
+/**
+ * @file VibeScore/vibescore.css
+ * @description Core styles for the central VibeScore gauge component.
+ */
+
+/* --- GLOBAL VIBESCORE VARIABLES --- */
+/* These variables define the foundational metrics and colors for the component. */
+:root {
+    --container-size: 700px;
+    --center-ring-size: 220px;
+}
+
+/* --- MAIN WRAPPER --- */
+/* Establishes the positioning context and dimensions for the entire component. */
+.vibescore-wrapper {
+    position: relative;
+    width: var(--container-size);
+    height: var(--container-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: -4rem auto -2rem auto; /* Vertical margin to pull it up slightly */
+}
+
+/* --- CENTRAL GAUGE --- */
+/* The core container for the multi-layered dial. */
+.vibescore-gauge {
+    width: var(--center-ring-size);
+    height: var(--center-ring-size);
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    /* Enables 3D transformations for child elements */
+    transform-style: preserve-3d;
+    /* Smooth transition for the 3D hover effect */
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* --- GAUGE LAYERS (Shared Properties) --- */
+/* Defines the base for all circular layers within the gauge. */
+.gauge-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    /* Ensures all layers transition smoothly during the 3D hover effect */
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* --- GAUGE-SPECIFIC LAYERS --- */
+
+/* 1. Bezel - The outer ring with tick marks */
+.gauge-bezel {
+    transform: translateZ(10px); /* Lifts the bezel slightly forward in 3D space */
+}
+.bezel-ticks {
+    stroke: #444; /* Dark gray for subtle tick marks */
+    stroke-width: 1.5;
+}
+
+/* 2. Progress - The colored conic gradient showing the score */
+.gauge-progress {
+    /* The background is dynamically set by JS, e.g., conic-gradient(...) */
+    background: conic-gradient(var(--neon-green) 0%, #1C1C1E 0);
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5); /* Inner shadow for depth */
+}
+
+/* 3. Inner Ring - The animated, dashed ring */
+.gauge-inner-ring {
+    animation: rotate-reverse 20s linear infinite; /* Constant, slow rotation */
+    transform: translateZ(-10px); /* Pushes the ring back in 3D space */
+}
+.inner-ring-dashes {
+    stroke: var(--neon-green);
+    stroke-width: 2;
+    stroke-dasharray: 2 10; /* Creates a dashed line effect */
+    opacity: 0.3; /* Subtle and not distracting */
+}
+
+/* 4. Glass - The top layer creating a reflective, glass-like effect */
+.gauge-glass {
+    background: rgba(10, 10, 10, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Faint border to catch light */
+    transform: translateZ(20px); /* Lifts it furthest forward */
+}
+
+/* --- 3D HOVER INTERACTION --- */
+/* When hovering over the entire wrapper, apply transforms to the gauge and its layers. */
+.vibescore-wrapper:hover .vibescore-gauge {
+    transform: perspective(1000px) rotateX(10deg) rotateY(-5deg);
+}
+.vibescore-wrapper:hover .gauge-bezel {
+    transform: translateZ(30px) scale(1.05); /* Lifts and scales up */
+}
+.vibescore-wrapper:hover .gauge-progress {
+    transform: translateZ(10px); /* Lifts slightly */
+}
+.vibescore-wrapper:hover .gauge-inner-ring {
+    transform: translateZ(-20px); /* Pushes further back */
+}
+.vibescore-wrapper:hover .gauge-glass {
+    transform: translateZ(40px) scale(0.95); /* Lifts significantly and shrinks slightly */
+}
+.vibescore-wrapper:hover .vibescore-inner-text {
+    transform: translateZ(60px) scale(0.95); /* Lifts the text even further forward */
+}
+
+/* --- TEXT ELEMENTS --- */
+.vibescore-inner-text {
+    position: relative;
+    z-index: 15; /* Ensures text is on top of all layers */
+    text-align: center;
+    text-shadow: 0 0 15px rgba(0,0,0,0.8);
+    transform: translateZ(30px); /* Lifts text forward in 3D space */
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.vibescore-percentage {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    /* Color is set dynamically via JS */
+    color: var(--neon-green);
+}
+
+.vibescore-label {
+    font-family: 'Lora', serif;
+    font-size: 1.1rem;
+    color: #FFF;
+    margin-top: 0.25rem;
+}
+
+/* --- KEYFRAME ANIMATIONS --- */
+@keyframes rotate-reverse {
+    from { transform: rotate(360deg) translateZ(-10px); }
+    to { transform: rotate(0deg) translateZ(-10px); }
+}

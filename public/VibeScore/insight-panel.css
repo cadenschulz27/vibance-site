@@ -1,0 +1,76 @@
+/**
+ * @file VibeScore/insight-panel.css
+ * @description Styles for the Insight Panel that appears on bubble hover.
+ */
+
+/* --- INSIGHT PANEL VARIABLES --- */
+:root {
+    --insight-panel-width: 320px;
+    --insight-panel-bg-color: rgba(18, 18, 18, 0.8);
+    --insight-panel-border-radius: 12px;
+    --insight-text-color: #9CA3AF; /* Default text color */
+}
+
+/* --- INSIGHT PANEL CONTAINER --- */
+/* A simple container to hold the panel, ensuring proper layering. */
+.insight-panel-container {
+    position: absolute;
+    /* Positioned at the bottom, centered horizontally */
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--insight-panel-width);
+    z-index: 20; /* Ensures it appears above the HUD but below any main UI modals */
+    /* Prevents the panel from capturing mouse events when hidden */
+    pointer-events: none; 
+}
+
+
+/* --- INSIGHT PANEL CORE --- */
+.insight-panel {
+    width: 100%;
+    background: var(--insight-panel-bg-color);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color); /* Dynamically set by JS */
+    border-radius: var(--insight-panel-border-radius);
+    padding: 1rem 1.5rem;
+
+    /* Initial state: hidden */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px); /* Start slightly lower for a subtle upward slide-in */
+
+    /* Smooth transitions for all animated properties */
+    transition: 
+        opacity 0.3s ease, 
+        transform 0.3s ease, 
+        visibility 0.3s ease, 
+        border-color 0.3s ease;
+}
+
+/* --- VISIBLE STATE --- */
+/* This class is added by JavaScript on bubble hover to reveal the panel. */
+.insight-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0); /* Move to its final position */
+    pointer-events: auto; /* Allow interaction when visible */
+}
+
+
+/* --- TEXT ELEMENTS --- */
+.insight-title {
+    /* Uses the 'Lora' serif font for an elegant headline feel */
+    font-family: 'Lora', serif;
+}
+
+.insight-score {
+    /* The color of the score is set dynamically via JS to match the data */
+    color: var(--text-color);
+}
+
+.insight-text {
+    color: var(--insight-text-color);
+    line-height: 1.6; /* Improves readability for descriptive text */
+}
