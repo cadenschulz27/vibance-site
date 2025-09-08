@@ -14,13 +14,13 @@
 function _createGaugeLayers(container) {
     if (!container) return {};
     container.innerHTML = `
-        <!-- NEW: SVG for the progress ring -->
         <svg class="gauge-layer progress-ring" viewBox="0 0 120 120">
             <circle class="progress-ring__track" cx="60" cy="60" r="54" fill="transparent" />
             <circle class="progress-ring__progress" cx="60" cy="60" r="54" fill="transparent" />
         </svg>
 
-        <div class="gauge-layer gauge-glass"></div>
+        <!-- FIX: The "gauge-glass" element has been removed to eliminate the blur effect. -->
+
         <div class="vibescore-inner-text">
             <span id="vibe-score-percentage" class="vibescore-percentage">0%</span>
             <span class="vibescore-label">VibeScore</span>
@@ -28,7 +28,7 @@ function _createGaugeLayers(container) {
     `;
     return {
         percentageEl: container.querySelector('#vibe-score-percentage'),
-        progressRingEl: container.querySelector('.progress-ring__progress') // Return a reference to the progress circle
+        progressRingEl: container.querySelector('.progress-ring__progress')
     };
 }
 
@@ -71,27 +71,19 @@ export const VibeScoreUI = {
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
     },
 
-    /**
-     * Updates the central VibeScore display and animates the progress ring.
-     * @param {number} score - The overall VibeScore (0-100).
-     * @param {Object} elements - Direct references to the gauge elements.
-     */
     updateVibeScoreDisplay(score, { percentageEl, progressRingEl }) {
         if (!percentageEl || !progressRingEl) {
             console.error("VibeScore UI Error: Cannot update display because gauge elements were not found.");
             return;
         }
 
-        // Determine color based on score
         let mainColor = 'var(--color-danger)';
         if (score >= 80) mainColor = 'var(--neon-green)';
         else if (score >= 50) mainColor = 'var(--color-yellow)';
         
-        // Update text and color
         percentageEl.textContent = `${score}%`;
         percentageEl.style.setProperty('--progress-color', mainColor);
 
-        // Animate the SVG progress ring
         const radius = progressRingEl.r.baseVal.value;
         const circumference = 2 * Math.PI * radius;
         const offset = circumference - (score / 100) * circumference;

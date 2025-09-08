@@ -10,7 +10,6 @@
 }
 
 /* --- MAIN WRAPPER --- */
-/* Establishes the positioning context and dimensions for the entire component. */
 .vibescore-wrapper {
     position: relative;
     width: var(--container-size);
@@ -70,50 +69,6 @@
     stroke-linecap: round; /* Gives the line a soft, rounded end */
     transition: stroke-dashoffset 0.8s cubic-bezier(0.5, 0, 0.2, 1), stroke 0.5s ease;
 }
-
-
-/* --- GAUGE-SPECIFIC LAYERS --- */
-
-/* 1. Bezel - The outer ring with tick marks */
-.gauge-bezel {
-    transform: translateZ(10px); /* Lifts the bezel slightly forward in 3D space */
-}
-.bezel-ticks {
-    stroke: #444; /* Dark gray for subtle tick marks */
-    stroke-width: 1.5;
-}
-
-/* 2. Progress - The colored conic gradient showing the score */
-.gauge-progress {
-    /* The background is dynamically set by JS, e.g., conic-gradient(...) */
-    background: conic-gradient(var(--neon-green) 0%, #1C1C1E 0);
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.5); /* Inner shadow for depth */
-}
-
-/* 3. Inner Ring - The animated, dashed ring */
-.gauge-inner-ring {
-    animation: rotate-reverse 20s linear infinite; /* Constant, slow rotation */
-    transform: translateZ(-10px); /* Pushes the ring back in 3D space */
-}
-.inner-ring-dashes {
-    stroke: var(--neon-green);
-    stroke-width: 2;
-    stroke-dasharray: 2 10; /* Creates a dashed line effect */
-    opacity: 0.3; /* Subtle and not distracting */
-}
-
-/* 4. Glass - The top layer creating a reflective, glass-like effect */
-.gauge-glass {
-    background: rgba(10, 10, 10, 0.5);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.1); /* Faint border to catch light */
-    transform: translateZ(20px); /* Lifts it furthest forward */
-}
-
-/*
- * FIX: The entire 3D hover/tilt animation block has been removed to prevent the gauge from moving.
- */
 
 /* --- TEXT ELEMENTS --- */
 .vibescore-inner-text {
