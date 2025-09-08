@@ -5,15 +5,17 @@
     --color-yellow: #FFD700;
     --color-green: #90EE90;
     --color-nodata: #555;
+    --bg-color: #000;
+    --container-size: 700px;
     --center-ring-size: 220px;
     --hud-radius: 300px;
     --bubble-width: 150px;
     --bubble-height: 55px;
 }
-body { background-color: #000; color: #FFFFFF; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body { background-color: var(--bg-color); color: #FFFFFF; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 /* --- MAIN VIBESCORE WRAPPER --- */
-.vibescore-wrapper { position: relative; width: 700px; height: 700px; display: flex; align-items: center; justify-content: center; margin: -4rem auto -2rem auto; perspective: 1200px; }
+.vibescore-wrapper { position: relative; width: var(--container-size); height: var(--container-size); display: flex; align-items: center; justify-content: center; margin: -4rem auto -2rem auto; }
 
 /* --- CENTRAL GAUGE (Multi-layered SVG & Divs) --- */
 .vibescore-gauge { width: var(--center-ring-size); height: var(--center-ring-size); position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); transform-style: preserve-3d; }
@@ -24,7 +26,7 @@ body { background-color: #000; color: #FFFFFF; font-family: 'Inter', sans-serif;
 .gauge-inner-ring { animation: rotate-reverse 20s linear infinite; transform: translateZ(-10px); }
 .inner-ring-dashes { stroke: var(--neon-green); stroke-width: 2; stroke-dasharray: 2 10; opacity: 0.3; }
 .gauge-glass { background: rgba(10, 10, 10, 0.5); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.1); transform: translateZ(20px); }
-.vibescore-wrapper:hover .vibescore-gauge { transform: perspective(1200px) rotateX(10deg) rotateY(-5deg); }
+.vibescore-wrapper:hover .vibescore-gauge { transform: perspective(1000px) rotateX(10deg) rotateY(-5deg); }
 .vibescore-wrapper:hover .gauge-bezel { transform: translateZ(30px) scale(1.05); }
 .vibescore-wrapper:hover .gauge-progress { transform: translateZ(10px); }
 .vibescore-wrapper:hover .gauge-inner-ring { transform: translateZ(-20px); }

@@ -36,26 +36,22 @@ document.addEventListener('DOMContentLoaded', () => {
         'Net Worth':{calc:calculateNetWorthScore,gen:generateNetWorthInsight,dataKey:'netWorth'},'Emergency Fund':{calc:calculateEmergencyFundScore,gen:generateEmergencyFundInsight,dataKey:'emergencyFund'}
     };
 
-    // --- VIBESCORE & HUD INITIALIZATION ---
+    // --- NEW: MAIN VIBESCORE INITIALIZATION FUNCTION ---
     function initializeVibeScoreComponent(vibeScore, financialData) {
-        const progressRing = document.querySelector('.gauge-progress');
-        const percentageText = document.getElementById('vibe-score-percentage');
+        // Get all necessary elements
+        const vibeScorePercentage = document.getElementById('vibe-score-percentage');
+        const gaugeProgress = document.querySelector('.gauge-progress');
         const hudPlane = document.getElementById('hud-plane');
         const insightPanelContainer = document.getElementById('insight-panel-container');
 
-        if (!progressRing || !percentageText || !hudPlane) return;
-
-        let statusColor = 'var(--color-danger)';
-        if (vibeScore >= 80) statusColor = 'var(--neon-green)';
-        else if (vibeScore >= 50) statusColor = 'var(--color-yellow)';
-        percentageText.style.color = statusColor;
+        // 1. Set the main VibeScore value and color
+        vibeScorePercentage.textContent = `${vibeScore}%`;
+        let mainColor = 'var(--color-danger)';
+        if (vibeScore >= 80) mainColor = 'var(--neon-green)';
+        else if (vibeScore >= 50) mainColor = 'var(--color-yellow)';
+        gaugeProgress.style.background = `conic-gradient(${mainColor} ${vibeScore}%, #1C1C1E 0)`;
         
-        let currentScore = 0;
-        const interval = setInterval(() => {
-            if (currentScore >= vibeScore) { clearInterval(interval); } 
-            else { currentScore++; percentageText.textContent = `${currentScore}%`; progressRing.style.background = `conic-gradient(${statusColor} ${currentScore}%, #1C1C1E 0%)`; }
-        }, 20);
-
+        // 2. Inject the Insight Panel HTML
         insightPanelContainer.innerHTML = `
             <div id="insight-panel" class="insight-panel">
                 <div class="flex justify-between items-center mb-2"><h3 id="insight-title" class="insight-title text-lg font-semibold"></h3><p id="insight-score" class="insight-score font-bold text-lg"></p></div>
@@ -67,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const insightScore = document.getElementById('insight-score');
         const insightText = document.getElementById('insight-text');
         
+        // 3. Create and animate the surrounding HUD bubbles
         const angleStep = 360 / financialData.length;
         const startingAngle = -90;
 
@@ -90,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const scoreText = item.hasData ? item.score.toFixed(2) : 'N/A';
             const coreContent = `<div class="bubble-core"><span>${item.name}</span><span class="bubble-score">${scoreText}</span></div><div class="tracer-line"></div>`;
             bubble.innerHTML = item.hasData ? coreContent : `<a href="../pages/profile.html" class="bubble-core-link">${coreContent}</a>`;
+
             hudPlane.appendChild(bubble);
 
             bubble.addEventListener('mouseenter', () => {
