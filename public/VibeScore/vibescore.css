@@ -39,8 +39,7 @@
     transform-style: preserve-3d;
     transition: opacity 0.25s ease;
     pointer-events: auto;
-    /* Add a subtle background color for depth */
-    background-color: #050505;
+    /* FIX: This background color was hiding the particle canvas. It has been removed. */
 }
 
 /*
@@ -107,5 +106,6 @@
     color: #FFF;
     margin-top: 0.25rem;
 }
+
 
 

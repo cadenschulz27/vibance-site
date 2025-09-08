@@ -42,7 +42,10 @@ export const VibeScoreUI = {
     wrapperEl: null,
 
     _createLocalInsightPanel() {
-        if (this.insightPanelEl || !this.wrapperEl) return;
+        // FIX: Find the existing container from the HTML instead of creating a new element.
+        const container = document.getElementById('insight-panel-container');
+        if (this.insightPanelEl || !container) return;
+
         const panel = document.createElement('div');
         panel.id = 'insight-panel';
         panel.className = 'insight-panel';
@@ -53,7 +56,8 @@ export const VibeScoreUI = {
             </div>
             <p class="insight-text text-gray-400 text-sm leading-relaxed"></p>
         `;
-        this.wrapperEl.appendChild(panel);
+        // FIX: Append the panel to the correct container.
+        container.appendChild(panel);
         this.insightPanelEl = panel;
     },
     
@@ -220,5 +224,6 @@ export const VibeScoreUI = {
         }
     }
 };
+
 
 
