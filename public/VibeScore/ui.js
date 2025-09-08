@@ -85,14 +85,9 @@ export const VibeScoreUI = {
         if (score >= 80) mainColor = 'var(--neon-green)';
         else if (score >= 50) mainColor = 'var(--color-yellow)';
         
-        // FIX: Get the parent gauge container to apply the color variable correctly.
-        const gaugeContainer = percentageEl.closest('.vibescore-gauge');
-        if (gaugeContainer) {
-            gaugeContainer.style.setProperty('--progress-color', mainColor);
-        }
-
-        // Update text content
+        // Update text content and color directly
         percentageEl.textContent = `${score}%`;
+        percentageEl.style.color = mainColor;
 
         // Animate the SVG progress ring
         const radius = progressRingEl.r.baseVal.value;
@@ -101,7 +96,9 @@ export const VibeScoreUI = {
 
         progressRingEl.style.strokeDasharray = `${circumference} ${circumference}`;
         progressRingEl.style.strokeDashoffset = offset;
-        // The stroke color is now handled by the CSS variable, so this line is removed.
+        
+        // FIX: Apply the stroke color directly to the ring element.
+        progressRingEl.style.stroke = mainColor;
     },
 
     createHudBubbles(plane, data) {
