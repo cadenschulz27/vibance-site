@@ -33,17 +33,34 @@
 /* --- HUD BUBBLE --- */
 /* The base styles for each individual data point orbiting the center gauge. */
 .hud-bubble {
+    /* Set dimensions from variables */
     width: var(--bubble-width);
     height: var(--bubble-height);
+    
+    /* Positioning magic: place the bubble's center at the center of the plane */
     position: absolute;
     top: calc(50% - (var(--bubble-height) / 2));
     left: calc(50% - (var(--bubble-width) / 2));
+    
+    /* The transform-origin is key for rotation */
     transform-origin: center;
+    
+    /* * The transform is controlled by JS-injected CSS variables (--angle, --hud-radius).
+     * 1. Rotate the bubble to its designated spot on the circle.
+     * 2. Translate it outwards from the center by the radius.
+     * 3. Un-rotate the bubble itself so its text remains horizontal.
+    */
     transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1));
+    
+    /* Initial state for the fan-out animation */
     opacity: 0;
+    
+    /* Animation definition */
     animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    animation-delay: var(--delay);
+    animation-delay: var(--delay); /* Staggered animation for each bubble */
+    
     transition: opacity 0.3s ease;
+    pointer-events: auto; /* FIX: Explicitly make each bubble interactive. */
 }
 
 /* --- BUBBLE CORE & LINK --- */
@@ -108,4 +125,5 @@
         transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1);
     }
 }
+
 

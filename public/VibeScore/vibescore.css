@@ -20,6 +20,7 @@
     align-items: center;
     justify-content: center;
     margin: -4rem auto -2rem auto; /* Vertical margin to pull it up slightly */
+    pointer-events: none; /* FIX: Make the wrapper ignore mouse events. */
 }
 
 /* --- CENTRAL GAUGE --- */
@@ -37,6 +38,7 @@
     transform-style: preserve-3d;
     /* Smooth transition for the 3D hover effect */
     transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: auto; /* FIX: Explicitly make the gauge interactive. */
 }
 
 /* --- GAUGE LAYERS (Shared Properties) --- */
@@ -125,4 +127,5 @@
     from { transform: rotate(360deg) translateZ(-10px); }
     to { transform: rotate(0deg) translateZ(-10px); }
 }
+
 
