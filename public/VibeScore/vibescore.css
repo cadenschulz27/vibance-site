@@ -18,12 +18,6 @@
     align-items: center;
     justify-content: center;
     margin: -4rem auto -2rem auto;
-    pointer-events: none;
-}
-
-.vibescore-wrapper.insight-is-active .vibescore-gauge {
-    opacity: 0;
-    pointer-events: none;
 }
 
 /* --- CENTRAL GAUGE --- */
@@ -39,13 +33,14 @@
     transform-style: preserve-3d;
     transition: opacity 0.25s ease;
     pointer-events: auto;
-    /* FIX: This background color was hiding the particle canvas. It has been removed. */
 }
 
-/*
- * NEW: Styles for the particle effect canvas.
- * It sits absolutely positioned inside the gauge, rounded, and behind the text.
-*/
+/* New class added by JS when insight panel is active */
+.vibescore-wrapper.insight-is-active .vibescore-gauge {
+    opacity: 0;
+    pointer-events: none;
+}
+
 .vibescore-particle-canvas {
     position: absolute;
     top: 0;
@@ -66,7 +61,8 @@
     border-radius: 50%;
 }
 
-/* * Progress Ring SVG Styles 
+/*
+ * Progress Ring SVG Styles 
 */
 .progress-ring {
     transform: rotate(-90deg); /* Start the ring from the top */
@@ -74,29 +70,32 @@
 }
 
 .progress-ring__track {
-    stroke-width: 8px;
-    stroke: #1f1f1f; /* Dark background track */
+    stroke-width: 8;
+    stroke: #1f1f1f; /* Dark track for contrast */
 }
 
 .progress-ring__progress {
-    stroke-width: 8px;
-    /* FIX: Color is now set directly by JS, so the variable is removed. */
-    stroke-linecap: round;
-    transition: stroke-dashoffset 0.8s cubic-bezier(0.5, 0, 0.2, 1), stroke 0.5s ease;
+    stroke-width: 8;
+    stroke-linecap: round; /* Rounded ends for a softer look */
+    transition: stroke-dashoffset 0.5s ease-out, stroke 0.5s ease;
 }
 
 /* --- TEXT ELEMENTS --- */
 .vibescore-inner-text {
     position: relative;
-    z-index: 15; /* Ensure text is on top of all layers */
+    z-index: 15;
     text-align: center;
+    /* FIX: Use Flexbox to stack and center the text elements */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .vibescore-percentage {
     font-size: 2.5rem;
     font-weight: 700;
     line-height: 1;
-    /* FIX: Color is now set directly by JS, so the variable is removed. */
     transition: color 0.5s ease;
 }
 
@@ -106,6 +105,4 @@
     color: #FFF;
     margin-top: 0.25rem;
 }
-
-
 
