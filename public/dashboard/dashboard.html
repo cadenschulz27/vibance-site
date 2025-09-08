@@ -8,45 +8,54 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- FIX: Link the old dashboard CSS and all the new VibeScore CSS files -->
     <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="../VibeScore/vibescore.css">
+    <link rel="stylesheet" href="../VibeScore/hud.css">
+    <link rel="stylesheet" href="../VibeScore/insight-panel.css">
 </head>
 <body class="bg-black text-white font-['Inter']">
 
     <div id="header-placeholder"></div>
 
     <main class="pt-24">
-        <section class="vibescore-wrapper">
-            <div class="vibescore-gauge">
-                <div class="gauge-layer gauge-progress"></div>
-                <svg class="gauge-layer gauge-bezel" viewBox="0 0 100 100">
-                    <circle class="bezel-ticks" cx="50" cy="50" r="48" fill="none" stroke-dasharray="1 3" pathLength="120"/>
-                </svg>
-                <svg class="gauge-layer gauge-inner-ring" viewBox="0 0 100 100">
-                    <circle class="inner-ring-dashes" cx="50" cy="50" r="38" fill="none"/>
-                </svg>
-                <div class="gauge-layer gauge-glass"></div>
-                <div class="vibescore-inner-text">
-                    <span id="vibe-score-percentage" class="vibescore-percentage">75%</span>
-                    <span class="vibescore-label">VibeScore</span>
-                </div>
+        <!-- FIX: Replaced the old structure with the new, simplified wrapper that ui.js will populate. -->
+        <section id="vibescore-section" class="vibescore-wrapper">
+            <div id="vibescore-container" class="vibescore-gauge">
+                <!-- The VibeScoreUI module will inject the gauge layers and text here -->
             </div>
-
-            <div id="hud-plane" class="hud-plane"></div>
-            <div id="insight-panel-container"></div>
+            <div id="hud-plane" class="hud-plane">
+                <!-- The VibeScoreUI module will inject the HUD bubbles here -->
+            </div>
+            <div id="insight-panel-container">
+                <!-- The VibeScoreUI module will inject the insight panel here -->
+            </div>
         </section>
 
         <section id="financial-news" class="content-section">
             <h2 class="section-header">Financial News</h2>
-            <div id="news-grid" class="news-grid"></div>
+            <div id="news-grid" class="news-grid">
+                <!-- dashboard.js will populate this -->
+            </div>
         </section>
 
-        <section id="savings-goals" class="content-section"><h2 class="section-header">Savings Goals</h2><div class="placeholder-box"><span>Savings Goals Content Here</span></div></section>
-        <section id="achievements" class="content-section"><h2 class="section-header">Achievements</h2><div class="placeholder-box"><span>Achievements Content Here</span></div></section>
+        <section id="savings-goals" class="content-section">
+            <h2 class="section-header">Savings Goals</h2>
+            <div class="placeholder-box"><span>Savings Goals Content Here</span></div>
+        </section>
+        
+        <section id="achievements" class="content-section">
+            <h2 class="section-header">Achievements</h2>
+            <div class="placeholder-box"><span>Achievements Content Here</span></div>
+        </section>
     </main>
 
+    <!-- FIX: Updated script imports to load the new VibeScore controller -->
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
+    <script type="module" src="../VibeScore/vibescore.js"></script>
     <script type="module" src="dashboard.js"></script>
 </body>
 </html>
