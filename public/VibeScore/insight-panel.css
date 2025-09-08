@@ -15,8 +15,11 @@
 /* A simple container to hold the panel, ensuring proper layering. */
 .insight-panel-container {
     position: absolute;
-    /* Positioned at the bottom, centered horizontally */
-    bottom: -20px;
+    /* * FIX: Changed 'bottom: -20px' to 'bottom: 20px'.
+     * This moves the panel from appearing just outside the component's boundary
+     * to appearing comfortably inside it, preventing the page from shifting.
+     */
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     width: var(--insight-panel-width);
@@ -74,3 +77,4 @@
     color: var(--insight-text-color);
     line-height: 1.6; /* Improves readability for descriptive text */
 }
+
