@@ -108,6 +108,12 @@ export const VibeScoreUI = {
      * @param {Array<Object>} data - The array of financial data objects.
      */
     createHudBubbles(plane, data) {
+        // FIX: Add a guard clause to ensure data is a valid array before proceeding.
+        if (!data || !Array.isArray(data)) {
+            console.error("VibeScore UI Error: Invalid or missing financial data provided to createHudBubbles.", data);
+            return; // Stop the function to prevent the crash.
+        }
+
         const angleStep = 360 / data.length;
         const startingAngle = -90; // Start at the top
 
