@@ -9,18 +9,17 @@
 /**
  * Creates the HTML elements for the central VibeScore gauge.
  * @param {HTMLElement} container - The main container for the VibeScore gauge.
- * @returns {{progressEl: HTMLElement, percentageEl: HTMLElement}} References to the key gauge elements.
+ * @returns {Object} References to the key gauge elements.
  */
 function _createGaugeLayers(container) {
-    if (!container) return { progressEl: null, percentageEl: null };
+    if (!container) return {};
     container.innerHTML = `
-        <div class="gauge-layer gauge-progress"></div>
-        <svg class="gauge-layer gauge-bezel" viewBox="0 0 100 100">
-            <circle class="bezel-ticks" cx="50" cy="50" r="48" fill="none" stroke-dasharray="1 3" pathLength="120"/>
+        <!-- NEW: SVG for the progress ring -->
+        <svg class="gauge-layer progress-ring" viewBox="0 0 120 120">
+            <circle class="progress-ring__track" cx="60" cy="60" r="54" fill="transparent" />
+            <circle class="progress-ring__progress" cx="60" cy="60" r="54" fill="transparent" />
         </svg>
-        <svg class="gauge-layer gauge-inner-ring" viewBox="0 0 100 100">
-            <circle class="inner-ring-dashes" cx="50" cy="50" r="38" fill="none"/>
-        </svg>
+
         <div class="gauge-layer gauge-glass"></div>
         <div class="vibescore-inner-text">
             <span id="vibe-score-percentage" class="vibescore-percentage">0%</span>
@@ -28,8 +27,8 @@ function _createGaugeLayers(container) {
         </div>
     `;
     return {
-        progressEl: container.querySelector('.gauge-progress'),
-        percentageEl: container.querySelector('#vibe-score-percentage')
+        percentageEl: container.querySelector('#vibe-score-percentage'),
+        progressRingEl: container.querySelector('.progress-ring__progress') // Return a reference to the progress circle
     };
 }
 
@@ -38,15 +37,10 @@ function _createGaugeLayers(container) {
 
 export const VibeScoreUI = {
     insightPanelEl: null,
-    wrapperEl: null, // Keep a reference to the main wrapper
+    wrapperEl: null,
 
-    /**
-     * Creates the insight panel element once and attaches it inside the VibeScore wrapper.
-     * This keeps it within the component's context for centered positioning.
-     */
     _createLocalInsightPanel() {
         if (this.insightPanelEl || !this.wrapperEl) return;
-
         const panel = document.createElement('div');
         panel.id = 'insight-panel';
         panel.className = 'insight-panel';
@@ -77,18 +71,34 @@ export const VibeScoreUI = {
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
     },
 
-    updateVibeScoreDisplay(score, { progressEl, percentageEl }) {
-        if (!percentageEl || !progressEl) {
-            console.error("VibeScore UI Error: Cannot update display because gauge elements were not found or passed correctly.");
+    /**
+     * Updates the central VibeScore display and animates the progress ring.
+     * @param {number} score - The overall VibeScore (0-100).
+     * @param {Object} elements - Direct references to the gauge elements.
+     */
+    updateVibeScoreDisplay(score, { percentageEl, progressRingEl }) {
+        if (!percentageEl || !progressRingEl) {
+            console.error("VibeScore UI Error: Cannot update display because gauge elements were not found.");
             return;
         }
-        percentageEl.textContent = `${score}%`;
-        
+
+        // Determine color based on score
         let mainColor = 'var(--color-danger)';
         if (score >= 80) mainColor = 'var(--neon-green)';
         else if (score >= 50) mainColor = 'var(--color-yellow)';
         
-        progressEl.style.background = `conic-gradient(${mainColor} ${score}%, #1C1C1E 0)`;
+        // Update text and color
+        percentageEl.textContent = `${score}%`;
+        percentageEl.style.setProperty('--progress-color', mainColor);
+
+        // Animate the SVG progress ring
+        const radius = progressRingEl.r.baseVal.value;
+        const circumference = 2 * Math.PI * radius;
+        const offset = circumference - (score / 100) * circumference;
+
+        progressRingEl.style.strokeDasharray = `${circumference} ${circumference}`;
+        progressRingEl.style.strokeDashoffset = offset;
+        progressRingEl.style.stroke = mainColor;
     },
 
     createHudBubbles(plane, data) {
@@ -140,14 +150,12 @@ export const VibeScoreUI = {
         this.insightPanelEl.style.setProperty('--border-color', colors.borderColor);
         this.insightPanelEl.querySelector('.insight-score').style.color = colors.textColor;
 
-        // FIX: Add classes to show the panel and hide the gauge
         this.insightPanelEl.classList.add('visible');
         this.wrapperEl.classList.add('insight-is-active');
     },
 
     hideInsight() {
         if (this.insightPanelEl && this.wrapperEl) {
-            // FIX: Remove classes to hide the panel and show the gauge
             this.insightPanelEl.classList.remove('visible');
             this.wrapperEl.classList.remove('insight-is-active');
         }
