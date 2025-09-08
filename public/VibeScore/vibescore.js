@@ -21,53 +21,53 @@ import { VibeScoreUI } from './ui.js';
  */
 const calculationMap = {
     'Savings': {
-        calc: VibeScoreCalculations.calculateSavingsScore,
-        gen: VibeScoreInsights.generateSavingsInsight,
+        calc: VibeScoreCalculations.Savings,
+        gen: VibeScoreInsights.Savings,
         dataKey: 'savings'
     },
     'Budgeting': {
-        calc: VibeScoreCalculations.calculateBudgetingScore,
-        gen: VibeScoreInsights.generateBudgetingInsight,
+        calc: VibeScoreCalculations.Budgeting,
+        gen: VibeScoreInsights.Budgeting,
         dataKey: 'budgeting'
     },
     'Income': {
-        calc: VibeScoreCalculations.calculateIncomeScore,
-        gen: VibeScoreInsights.generateIncomeInsight,
+        calc: VibeScoreCalculations.Income,
+        gen: VibeScoreInsights.Income,
         dataKey: 'income'
     },
     'Cash Flow': {
-        calc: VibeScoreCalculations.calculateCashFlowScore,
-        gen: VibeScoreInsights.generateCashFlowInsight,
+        calc: VibeScoreCalculations['Cash Flow'],
+        gen: VibeScoreInsights['Cash Flow'],
         dataKey: 'cashFlow'
     },
     'Credit Score': {
-        calc: VibeScoreCalculations.calculateCreditScore,
-        gen: VibeScoreInsights.generateCreditInsight,
+        calc: VibeScoreCalculations['Credit Score'],
+        gen: VibeScoreInsights['Credit Score'],
         dataKey: 'credit'
     },
     'Investing': {
-        calc: VibeScoreCalculations.calculateInvestingScore,
-        gen: VibeScoreInsights.generateInvestingInsight,
+        calc: VibeScoreCalculations.Investing,
+        gen: VibeScoreInsights.Investing,
         dataKey: 'investing'
     },
     'Retirement': {
-        calc: VibeScoreCalculations.calculateRetirementScore,
-        gen: VibeScoreInsights.generateRetirementInsight,
+        calc: VibeScoreCalculations.Retirement,
+        gen: VibeScoreInsights.Retirement,
         dataKey: 'retirement'
     },
     'Debt': {
-        calc: VibeScoreCalculations.calculateDebtScore,
-        gen: VibeScoreInsights.generateDebtInsight,
+        calc: VibeScoreCalculations.Debt,
+        gen: VibeScoreInsights.Debt,
         dataKey: 'debt'
     },
     'Net Worth': {
-        calc: VibeScoreCalculations.calculateNetWorthScore,
-        gen: VibeScoreInsights.generateNetWorthInsight,
+        calc: VibeScoreCalculations['Net Worth'],
+        gen: VibeScoreInsights['Net Worth'],
         dataKey: 'netWorth'
     },
     'Emergency Fund': {
-        calc: VibeScoreCalculations.calculateEmergencyFundScore,
-        gen: VibeScoreInsights.generateEmergencyFundInsight,
+        calc: VibeScoreCalculations['Emergency Fund'],
+        gen: VibeScoreInsights['Emergency Fund'],
         dataKey: 'emergencyFund'
     }
 };
