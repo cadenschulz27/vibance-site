@@ -79,6 +79,16 @@ export const VibeScoreUI = {
         
         // Pass the direct references to the update function.
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
+        
+        // --- FIX: JAVASCRIPT-CONTROLLED HOVER ---
+        // Add event listeners directly to the gauge container to toggle the '.is-tilted' class.
+        // This gives us precise control over the animation, solving the hover issue.
+        vibeScoreContainer.addEventListener('mouseenter', () => {
+            vibeScoreContainer.classList.add('is-tilted');
+        });
+        vibeScoreContainer.addEventListener('mouseleave', () => {
+            vibeScoreContainer.classList.remove('is-tilted');
+        });
     },
 
     /**
@@ -108,10 +118,9 @@ export const VibeScoreUI = {
      * @param {Array<Object>} data - The array of financial data objects.
      */
     createHudBubbles(plane, data) {
-        // FIX: Add a guard clause to ensure data is a valid array before proceeding.
         if (!data || !Array.isArray(data)) {
             console.error("VibeScore UI Error: Invalid or missing financial data provided to createHudBubbles.", data);
-            return; // Stop the function to prevent the crash.
+            return;
         }
 
         const angleStep = 360 / data.length;

@@ -91,29 +91,30 @@
     transform: translateZ(20px); /* Lifts it furthest forward */
 }
 
-/* --- 3D HOVER INTERACTION --- */
-/* FIX: Changed selectors from '.vibescore-wrapper:hover' to '.vibescore-gauge:hover'
- * This ensures the 3D tilt effect only triggers when hovering the central gauge,
- * not the entire component wrapper or the outer bubbles.
+/* --- 3D INTERACTION (JAVASCRIPT CONTROLLED) --- */
+/*
+ * FIX: Replaced the ':hover' pseudo-class with a '.is-tilted' class.
+ * This class will now be added and removed by JavaScript to precisely control the animation.
  */
-.vibescore-gauge:hover {
+.vibescore-gauge.is-tilted {
     transform: perspective(1000px) rotateX(10deg) rotateY(-5deg);
 }
-.vibescore-gauge:hover .gauge-bezel {
+.vibescore-gauge.is-tilted .gauge-bezel {
     transform: translateZ(30px) scale(1.05); /* Lifts and scales up */
 }
-.vibescore-gauge:hover .gauge-progress {
+.vibescore-gauge.is-tilted .gauge-progress {
     transform: translateZ(10px); /* Lifts slightly */
 }
-.vibescore-gauge:hover .gauge-inner-ring {
+.vibescore-gauge.is-tilted .gauge-inner-ring {
     transform: translateZ(-20px); /* Pushes further back */
 }
-.vibescore-gauge:hover .gauge-glass {
+.vibescore-gauge.is-tilted .gauge-glass {
     transform: translateZ(40px) scale(0.95); /* Lifts significantly and shrinks slightly */
 }
-.vibescore-gauge:hover .vibescore-inner-text {
+.vibescore-gauge.is-tilted .vibescore-inner-text {
     transform: translateZ(60px) scale(0.95); /* Lifts the text even further forward */
 }
+
 
 /* --- TEXT ELEMENTS --- */
 .vibescore-inner-text {
