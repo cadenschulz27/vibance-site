@@ -37,18 +37,16 @@ function _createGaugeLayers(container) {
 // --- PUBLIC MODULE ---
 
 export const VibeScoreUI = {
-    // A property to hold a reference to our globally-positioned insight panel
     insightPanelEl: null,
 
     /**
      * Creates the insight panel element once and attaches it to the document body.
-     * This completely decouples it from the VibeScore component's layout.
      */
     _createGlobalInsightPanel() {
-        if (this.insightPanelEl) return; // Only create it once
+        if (this.insightPanelEl) return;
 
         const panel = document.createElement('div');
-        panel.id = 'insight-panel'; // Give it an ID for easier selection
+        panel.id = 'insight-panel';
         panel.className = 'insight-panel';
         panel.innerHTML = `
             <div class="flex justify-between items-center mb-2">
@@ -61,11 +59,6 @@ export const VibeScoreUI = {
         this.insightPanelEl = panel;
     },
     
-    /**
-     * Initializes the entire VibeScore component on the dashboard.
-     * @param {number} vibeScore - The overall VibeScore (0-100).
-     * @param {Array<Object>} financialData - Array of financial category data objects.
-     */
     init(vibeScore, financialData) {
         const vibeScoreContainer = document.getElementById('vibescore-container');
         const hudPlane = document.getElementById('hud-plane');
@@ -76,16 +69,11 @@ export const VibeScoreUI = {
         }
 
         const gaugeElements = _createGaugeLayers(vibeScoreContainer);
-        this._createGlobalInsightPanel(); // Create the panel and attach it to the body
+        this._createGlobalInsightPanel();
         this.createHudBubbles(hudPlane, financialData);
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
     },
 
-    /**
-     * Updates the central VibeScore display using direct element references.
-     * @param {number} score - The overall VibeScore (0-100).
-     * @param {{progressEl: HTMLElement, percentageEl: HTMLElement}} elements - Direct references to the gauge elements.
-     */
     updateVibeScoreDisplay(score, { progressEl, percentageEl }) {
         if (!percentageEl || !progressEl) {
             console.error("VibeScore UI Error: Cannot update display because gauge elements were not found or passed correctly.");
@@ -100,12 +88,6 @@ export const VibeScoreUI = {
         progressEl.style.background = `conic-gradient(${mainColor} ${score}%, #1C1C1E 0)`;
     },
 
-
-    /**
-     * Creates and animates the surrounding HUD bubbles for each financial category.
-     * @param {HTMLElement} plane - The container for the HUD bubbles.
-     * @param {Array<Object>} data - The array of financial data objects.
-     */
     createHudBubbles(plane, data) {
         if (!data || !Array.isArray(data)) {
             console.error("VibeScore UI Error: Invalid or missing financial data provided to createHudBubbles.", data);
@@ -138,21 +120,16 @@ export const VibeScoreUI = {
             bubble.style.setProperty('--glow-color', colors.glowColor);
             
             const scoreText = item.hasData ? item.score.toFixed(0) : 'N/A';
-            // FIX: Removed the tracer line div from the template string.
             const coreContent = `<div class="bubble-core" style="--text-color: ${colors.textColor};"><span>${item.name}</span><span class="bubble-score">${scoreText}</span></div>`;
             bubble.innerHTML = item.hasData ? coreContent : `<a href="../pages/profile.html" class="bubble-core-link">${coreContent}</a>`;
             plane.appendChild(bubble);
 
-            bubble.addEventListener('mouseenter', () => this.showInsight(item, colors));
-            bubble.addEventListener('mouseleave', () => this.hideInsight());
+            // FIX: Replaced 'mouseenter' and 'mouseleave' with the more robust 'pointerenter' and 'pointerleave' events.
+            bubble.addEventListener('pointerenter', () => this.showInsight(item, colors));
+            bubble.addEventListener('pointerleave', () => this.hideInsight());
         });
     },
 
-    /**
-     * Displays and positions the insight panel with details for a specific financial category.
-     * @param {Object} item - The financial data object for the hovered category.
-     * @param {Object} colors - The color scheme for the hovered category.
-     */
     showInsight(item, colors) {
         if (!this.insightPanelEl) return;
 
@@ -172,13 +149,8 @@ export const VibeScoreUI = {
         this.insightPanelEl.querySelector('.insight-score').style.color = colors.textColor;
 
         this.insightPanelEl.classList.add('visible');
-
-        // FIX: Removed the logic that calculated the height for the deleted tracer line.
     },
 
-    /**
-     * Hides the insight panel.
-     */
     hideInsight() {
         if (this.insightPanelEl) {
             this.insightPanelEl.classList.remove('visible');
