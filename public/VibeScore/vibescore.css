@@ -39,6 +39,22 @@
     transform-style: preserve-3d;
     transition: opacity 0.25s ease;
     pointer-events: auto;
+    /* Add a subtle background color for depth */
+    background-color: #050505;
+}
+
+/*
+ * NEW: Styles for the particle effect canvas.
+ * It sits absolutely positioned inside the gauge, rounded, and behind the text.
+*/
+.vibescore-particle-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    z-index: 1; /* Behind text (15) and ring (10) */
 }
 
 /* --- GAUGE LAYERS (Shared Properties) --- */
@@ -55,6 +71,7 @@
 */
 .progress-ring {
     transform: rotate(-90deg); /* Start the ring from the top */
+    z-index: 10; /* Ensure it's above the canvas */
 }
 
 .progress-ring__track {
@@ -72,9 +89,8 @@
 /* --- TEXT ELEMENTS --- */
 .vibescore-inner-text {
     position: relative;
-    z-index: 15;
+    z-index: 15; /* Ensure text is on top of all layers */
     text-align: center;
-    text-shadow: 0 0 15px rgba(0,0,0,0.8);
 }
 
 .vibescore-percentage {
@@ -91,4 +107,5 @@
     color: #FFF;
     margin-top: 0.25rem;
 }
+
 

@@ -14,6 +14,9 @@
 function _createGaugeLayers(container) {
     if (!container) return {};
     container.innerHTML = `
+        <!-- The new canvas for the starry background goes here -->
+        <canvas id="vibescore-particle-canvas" class="vibescore-particle-canvas"></canvas>
+
         <svg class="gauge-layer progress-ring" viewBox="0 0 120 120">
             <circle class="progress-ring__track" cx="60" cy="60" r="54" fill="transparent" />
             <circle class="progress-ring__progress" cx="60" cy="60" r="54" fill="transparent" />
@@ -25,7 +28,9 @@ function _createGaugeLayers(container) {
     `;
     return {
         percentageEl: container.querySelector('#vibe-score-percentage'),
-        progressRingEl: container.querySelector('.progress-ring__progress')
+        progressRingEl: container.querySelector('.progress-ring__progress'),
+        // Return a reference to the new canvas
+        particleCanvasEl: container.querySelector('#vibescore-particle-canvas')
     };
 }
 
@@ -68,8 +73,8 @@ export const VibeScoreUI = {
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
     },
 
-    updateVibeScoreDisplay(score, { percentageEl, progressRingEl }) {
-        if (!percentageEl || !progressRingEl) {
+    updateVibeScoreDisplay(score, { percentageEl, progressRingEl, particleCanvasEl }) {
+        if (!percentageEl || !progressRingEl || !particleCanvasEl) {
             console.error("VibeScore UI Error: Cannot update display because gauge elements were not found.");
             return;
         }
@@ -92,6 +97,67 @@ export const VibeScoreUI = {
         
         // FIX: Set the stroke color directly on the element.
         progressRingEl.style.stroke = mainColor;
+
+        // Initialize the particle background with the canvas and color
+        this._initParticleBackground(particleCanvasEl, mainColor);
+    },
+
+    /**
+     * NEW: Initializes the Three.js particle animation inside the gauge.
+     * @param {HTMLCanvasElement} canvas - The canvas element to render on.
+     * @param {string} color - The hex color for the particles.
+     */
+    _initParticleBackground(canvas, color) {
+        // Prevent re-initialization
+        if (canvas.hasAttribute('data-initialized')) return;
+        canvas.setAttribute('data-initialized', 'true');
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCnt = 1000; // Fewer particles for the smaller area
+        const posArray = new Float32Array(particlesCnt * 3);
+        for (let i = 0; i < particlesCnt * 3; i++) {
+            // Distribute particles in a sphere-like shape
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            posArray[i * 3 + 0] = Math.sin(phi) * Math.cos(theta); // x
+            posArray[i * 3 + 1] = Math.sin(phi) * Math.sin(theta); // y
+            posArray[i * 3 + 2] = Math.cos(phi); // z
+        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.008,
+            color: new THREE.Color(color),
+            transparent: true,
+            opacity: 0.8
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+        camera.position.z = 1.5;
+
+        const clock = new THREE.Clock();
+        const animate = () => {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            particlesMesh.rotation.y = elapsedTime * 0.1;
+            particlesMesh.rotation.x = elapsedTime * 0.1;
+            renderer.render(scene, camera);
+        };
+        animate();
+
+        // Keep the renderer size in sync with the canvas
+        new ResizeObserver(() => {
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+        }).observe(canvas);
     },
 
     createHudBubbles(plane, data) {
@@ -154,4 +220,5 @@ export const VibeScoreUI = {
         }
     }
 };
+
 
