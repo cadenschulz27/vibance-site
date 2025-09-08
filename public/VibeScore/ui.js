@@ -74,9 +74,10 @@ export const VibeScoreUI = {
             return;
         }
 
-        let mainColor = 'var(--color-danger)';
-        if (score >= 80) mainColor = 'var(--neon-green)';
-        else if (score >= 50) mainColor = 'var(--color-yellow)';
+        // FIX: Define the final color values directly here
+        let mainColor = '#FF4500'; // --color-danger
+        if (score >= 80) mainColor = '#CCFF00'; // --neon-green
+        else if (score >= 50) mainColor = '#FFD700'; // --color-yellow
         
         // Update text content and color
         percentageEl.textContent = `${score}%`;
@@ -89,8 +90,8 @@ export const VibeScoreUI = {
         progressRingEl.style.strokeDasharray = `${circumference} ${circumference}`;
         progressRingEl.style.strokeDashoffset = offset;
         
-        // FIX: Set the CSS variable that the stylesheet is waiting for.
-        progressRingEl.style.setProperty('--progress-color', mainColor);
+        // FIX: Set the stroke color directly on the element.
+        progressRingEl.style.stroke = mainColor;
     },
 
     createHudBubbles(plane, data) {
