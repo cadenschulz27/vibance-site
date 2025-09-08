@@ -19,8 +19,6 @@ function _createGaugeLayers(container) {
             <circle class="progress-ring__progress" cx="60" cy="60" r="54" fill="transparent" />
         </svg>
 
-        <!-- FIX: The "gauge-glass" element has been removed to eliminate the blur effect. -->
-
         <div class="vibescore-inner-text">
             <span id="vibe-score-percentage" class="vibescore-percentage">0%</span>
             <span class="vibescore-label">VibeScore</span>
@@ -71,26 +69,39 @@ export const VibeScoreUI = {
         this.updateVibeScoreDisplay(vibeScore, gaugeElements);
     },
 
+    /**
+     * Updates the central VibeScore display and animates the progress ring.
+     * @param {number} score - The overall VibeScore (0-100).
+     * @param {Object} elements - Direct references to the gauge elements.
+     */
     updateVibeScoreDisplay(score, { percentageEl, progressRingEl }) {
         if (!percentageEl || !progressRingEl) {
             console.error("VibeScore UI Error: Cannot update display because gauge elements were not found.");
             return;
         }
 
+        // Determine color based on score
         let mainColor = 'var(--color-danger)';
         if (score >= 80) mainColor = 'var(--neon-green)';
         else if (score >= 50) mainColor = 'var(--color-yellow)';
         
-        percentageEl.textContent = `${score}%`;
-        percentageEl.style.setProperty('--progress-color', mainColor);
+        // FIX: Get the parent gauge container to apply the color variable correctly.
+        const gaugeContainer = percentageEl.closest('.vibescore-gauge');
+        if (gaugeContainer) {
+            gaugeContainer.style.setProperty('--progress-color', mainColor);
+        }
 
+        // Update text content
+        percentageEl.textContent = `${score}%`;
+
+        // Animate the SVG progress ring
         const radius = progressRingEl.r.baseVal.value;
         const circumference = 2 * Math.PI * radius;
         const offset = circumference - (score / 100) * circumference;
 
         progressRingEl.style.strokeDasharray = `${circumference} ${circumference}`;
         progressRingEl.style.strokeDashoffset = offset;
-        progressRingEl.style.stroke = mainColor;
+        // The stroke color is now handled by the CSS variable, so this line is removed.
     },
 
     createHudBubbles(plane, data) {
