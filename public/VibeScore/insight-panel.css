@@ -15,11 +15,13 @@
 /* A simple container to hold the panel, ensuring proper layering. */
 .insight-panel-container {
     position: absolute;
-    /* * FIX: Changed 'bottom: -20px' to 'bottom: 20px'.
-     * This moves the panel from appearing just outside the component's boundary
-     * to appearing comfortably inside it, preventing the page from shifting.
+    /*
+     * FIX: Repositioned the panel to be below the VibeScore wrapper.
+     * 'top: 100%' places the top of the panel at the bottom of the wrapper.
+     * 'margin-top' adds some spacing between them.
      */
-    bottom: 20px;
+    top: 100%;
+    margin-top: 1rem;
     left: 50%;
     transform: translateX(-50%);
     width: var(--insight-panel-width);
@@ -42,7 +44,8 @@
     /* Initial state: hidden */
     opacity: 0;
     visibility: hidden;
-    transform: translateY(20px); /* Start slightly lower for a subtle upward slide-in */
+    /* Start slightly lower for a subtle upward slide-in */
+    transform: translateY(20px); 
 
     /* Smooth transitions for all animated properties */
     transition: 

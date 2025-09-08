@@ -91,30 +91,9 @@
     transform: translateZ(20px); /* Lifts it furthest forward */
 }
 
-/* --- 3D INTERACTION (JAVASCRIPT CONTROLLED) --- */
 /*
- * FIX: Replaced the ':hover' pseudo-class with a '.is-tilted' class.
- * This class will now be added and removed by JavaScript to precisely control the animation.
+ * FIX: The entire 3D hover/tilt animation block has been removed to prevent the gauge from moving.
  */
-.vibescore-gauge.is-tilted {
-    transform: perspective(1000px) rotateX(10deg) rotateY(-5deg);
-}
-.vibescore-gauge.is-tilted .gauge-bezel {
-    transform: translateZ(30px) scale(1.05); /* Lifts and scales up */
-}
-.vibescore-gauge.is-tilted .gauge-progress {
-    transform: translateZ(10px); /* Lifts slightly */
-}
-.vibescore-gauge.is-tilted .gauge-inner-ring {
-    transform: translateZ(-20px); /* Pushes further back */
-}
-.vibescore-gauge.is-tilted .gauge-glass {
-    transform: translateZ(40px) scale(0.95); /* Lifts significantly and shrinks slightly */
-}
-.vibescore-gauge.is-tilted .vibescore-inner-text {
-    transform: translateZ(60px) scale(0.95); /* Lifts the text even further forward */
-}
-
 
 /* --- TEXT ELEMENTS --- */
 .vibescore-inner-text {
