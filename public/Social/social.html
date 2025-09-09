@@ -8,26 +8,66 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-            background-color: #000;
-            color: #FFFFFF;
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
+    
+    <!-- Link to the new social stylesheet -->
+    <link rel="stylesheet" href="social.css">
 </head>
-<body class="bg-black">
+<body class="bg-black text-white font-['Inter']">
 
-    <!-- The shared header will be dynamically injected here by header.js -->
+    <!-- Standard site header -->
     <div id="header-placeholder"></div>
 
-    <main class="container mx-auto px-6 py-24">
-        <!-- Page-specific content for Social will go here in the future -->
+    <main class="social-container">
+        <header class="social-header">
+            <h1 class="social-title">Community Feed</h1>
+            <button id="create-post-btn" class="btn-neon px-5 py-2 rounded-full font-semibold">Create Post</button>
+        </header>
+
+        <!-- Container where posts will be dynamically loaded -->
+        <div id="feed-container" class="feed-container">
+            <!-- social.js will populate this area with posts -->
+            <p class="text-center text-gray-500">Loading feed...</p>
+        </div>
     </main>
 
-    <!-- Essential scripts for authentication and header loading -->
+    <!-- "Create Post" Modal (hidden by default) -->
+    <div id="create-post-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 class="modal-title">Create a New Post</h2>
+                <button id="close-modal-btn" class="text-gray-500 hover:text-white text-2xl">&times;</button>
+            </header>
+            
+            <form id="post-form">
+                <div class="post-form-group">
+                    <label for="post-description" class="block mb-2 text-sm font-medium text-gray-400">Description</label>
+                    <textarea id="post-description" name="description" rows="4" class="w-full p-3 rounded input-field" placeholder="What's on your mind?"></textarea>
+                </div>
+
+                <div class="post-form-group">
+                    <label class="block mb-2 text-sm font-medium text-gray-400">Image (Optional)</label>
+                    <div id="image-drop-zone" class="image-drop-zone">
+                        <p class="text-gray-500">Drag & drop an image here, or click to select</p>
+                        <input type="file" id="image-input" name="image" class="hidden" accept="image/*">
+                    </div>
+                    <div id="image-preview-container" class="hidden">
+                        <img id="image-preview" src="#" alt="Image preview"/>
+                        <button type="button" id="remove-image-btn" class="hidden">&times;</button>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button type="submit" class="w-full btn-neon py-3 rounded-full font-bold">Post to Feed</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script imports -->
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
+    <script type="module" src="social.js"></script>
 </body>
 </html>
+
