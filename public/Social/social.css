@@ -1,20 +1,21 @@
 /**
  * @file /Social/social.css
- * @description Styles for the Social page, including the post feed, individual posts,
- * and the 'create post' modal.
+ * @description Stylesheet for the Social page, including the feed, posts, and create-post modal.
  */
 
 /* --- GLOBAL VARIABLES --- */
 :root {
-    --social-bg-color: #0A0A0A; /* A slightly off-black for depth */
-    --post-bg-color: #121212;
-    --post-border-color: #2d2d2d;
+    --social-bg-color: #000;
+    --feed-max-width: 700px;
+    --modal-bg-color: rgba(0, 0, 0, 0.7);
+    --card-bg-color: #121212;
+    --card-border-color: #2d2d2d;
     --neon-green: #CCFF00;
 }
 
-/* --- MAIN LAYOUT --- */
+/* --- PAGE LAYOUT --- */
 .social-container {
-    max-width: 800px;
+    max-width: var(--feed-max-width);
     margin: 2rem auto;
     padding: 0 1rem;
 }
@@ -23,97 +24,324 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--post-border-color);
     margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--card-border-color);
 }
 
 .social-title {
     font-family: 'Lora', serif;
-    font-size: 2.25rem;
-    font-weight: 700;
+    font-size: 2.5rem;
+    font-weight: 600;
 }
 
-/* --- "CREATE POST" MODAL --- */
+#create-post-btn {
+    background-color: var(--neon-green);
+    color: #000;
+    font-weight: 700;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+#create-post-btn:hover {
+    transform: translateY(-2px);
+}
 
-/* The full-screen backdrop for the modal */
-.modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 50;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+/* --- POST FEED --- */
+#feed-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.post-card {
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--card-border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.post-author {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.post-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.post-timestamp {
+    font-size: 0.875rem;
+    color: #a0a0a0;
+}
+
+.post-body {
+    /* FIX: Added relative positioning to contain the edit form correctly. */
+    position: relative;
+}
+
+.post-description {
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    white-space: pre-wrap;
+}
+
+.post-image {
+    width: 100%;
+    max-height: 500px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* --- POST ACTIONS --- */
+.post-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--card-border-color);
+}
+
+.action-btn {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.action-btn:hover {
+    background: #444;
+}
+
+.delete-btn {
+    background-color: transparent;
+    color: #666;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+.delete-btn:hover {
+    background-color: #ff3b30;
+    color: #fff;
 }
 
-/* Add a class to show the modal with a fade-in */
-.modal-backdrop:not(.hidden) {
-    opacity: 1;
+/* FIX: New styles for the Edit button */
+.edit-btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    background-color: #444;
+}
+.edit-btn:hover {
+    background-color: #555;
+}
+
+.like-btn.liked {
+    background-color: var(--neon-green);
+    color: #000;
+    font-weight: 600;
+}
+
+.like-count {
+    font-size: 0.875rem;
+    color: #a0a0a0;
+    margin-right: auto;
+}
+
+/* --- EDIT FORM STYLES --- */
+.edit-form-container {
+    margin-top: 1rem;
+}
+
+.edit-textarea {
+    width: 100%;
+    background: #1C1C1E;
+    border: 1px solid #3A3A3C;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    color: #fff;
+    min-height: 100px;
+    resize: vertical;
+    margin-bottom: 0.75rem;
+}
+.edit-textarea:focus {
+    outline: none;
+    border-color: var(--neon-green);
+}
+
+.edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.save-edit-btn {
+    background-color: var(--neon-green);
+    color: #000;
+    font-weight: 600;
+}
+
+
+/* --- COMMENT SECTION --- */
+.comment-section {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--card-border-color);
+    padding-top: 1.5rem;
+    display: none;
+}
+
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.comment {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.comment-author {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.comment-text {
+    font-size: 0.95rem;
+    color: #d1d5db;
+}
+
+.comment-timestamp {
+    font-size: 0.75rem;
+    color: #777;
+}
+
+.comment-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.comment-input {
+    flex-grow: 1;
+    background: #1C1C1E;
+    border: 1px solid #3A3A3C;
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    color: #fff;
+}
+.comment-input:focus {
+    outline: none;
+    border-color: var(--neon-green);
+}
+
+.comment-submit-btn {
+    background-color: var(--neon-green);
+    color: #000;
+    border: none;
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+
+/* --- CREATE POST MODAL --- */
+#create-post-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--modal-bg-color);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: opacity 0.3s ease-in-out;
+}
+#create-post-modal.hidden {
+    display: none;
 }
 
 .modal-content {
-    background-color: var(--post-bg-color);
-    border: 1px solid var(--post-border-color);
+    background: #1C1C1E;
     width: 100%;
     max-width: 550px;
     border-radius: 0.75rem;
     padding: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
+    position: relative;
 }
 
-.modal-backdrop:not(.hidden) .modal-content {
-    transform: scale(1);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
+#close-modal-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #a0a0a0;
+    font-size: 1.5rem;
+    cursor: pointer;
 }
 
 .modal-title {
     font-family: 'Lora', serif;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
-}
-
-/* Form elements within the modal */
-.post-form-group {
     margin-bottom: 1.5rem;
 }
 
-.image-drop-zone {
-    border: 2px dashed var(--post-border-color);
+#post-form textarea {
+    width: 100%;
+    background: #121212;
+    border: 1px solid #3A3A3C;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    color: #fff;
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* --- IMAGE UPLOAD AREA --- */
+#image-drop-zone {
+    border: 2px dashed #3A3A3C;
     border-radius: 0.5rem;
     padding: 2rem;
     text-align: center;
+    color: #a0a0a0;
     cursor: pointer;
     transition: border-color 0.2s ease;
 }
-
-.image-drop-zone:hover,
-.image-drop-zone.dragover {
+#image-drop-zone.dragover {
     border-color: var(--neon-green);
 }
 
 #image-preview-container {
-    margin-top: 1rem;
     position: relative;
+    margin-top: 1rem;
 }
 
 #image-preview {
+    max-width: 100%;
     max-height: 200px;
     border-radius: 0.5rem;
 }
@@ -123,21 +351,12 @@
     top: 0.5rem;
     right: 0.5rem;
     background: rgba(0,0,0,0.7);
+    color: #fff;
+    border: none;
     border-radius: 50%;
-    padding: 0.25rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.2rem;
+    cursor: pointer;
 }
 
-/* --- FEED & POSTS --- */
-.feed-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-/* Placeholder for individual post styles - we will build these out later */
-.post-card {
-    background-color: var(--post-bg-color);
-    border: 1px solid var(--post-border-color);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-}
