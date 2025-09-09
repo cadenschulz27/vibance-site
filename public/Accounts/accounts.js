@@ -8,10 +8,10 @@
 import { auth, db } from '../api/firebase.js';
 import {
   onAuthStateChanged
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import {
   collection, getDocs, doc, getDoc, deleteDoc
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
 // ---------- DOM ----------
 const els = {
@@ -71,11 +71,11 @@ async function callPlaidFn(payload) {
     },
     body: JSON.stringify(payload),
   });
+  const text = await res.text().catch(() => '');
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
     throw new Error(`Request failed (${res.status}) ${text || ''}`.trim());
   }
-  return await res.json();
+  try { return JSON.parse(text || '{}'); } catch { return {}; }
 }
 
 // ---------- Plaid Link loader ----------
@@ -84,7 +84,6 @@ function ensurePlaidLinkLoaded() {
   return new Promise((resolve, reject) => {
     if (window.Plaid) return resolve();
     if (plaidScriptLoaded) {
-      // In-flight; wait a tick
       const i = setInterval(() => {
         if (window.Plaid) {
           clearInterval(i);
@@ -195,12 +194,15 @@ async function openPlaidLink() {
       token: link_token,
       onSuccess: async (public_token, metadata) => {
         try {
+          // IMPORTANT: send 'metadata' (not 'institution') because the server reads metadata.institution.name
           await callPlaidFn({
             action: 'exchange_public_token',
             public_token,
-            institution: {
-              name: metadata?.institution?.name,
-              institution_id: metadata?.institution?.institution_id,
+            metadata: {
+              institution: {
+                name: metadata?.institution?.name,
+                institution_id: metadata?.institution?.institution_id,
+              }
             }
           });
           resolve(metadata);
@@ -282,7 +284,6 @@ function attachAccountCardHandlers(cardEl) {
   // Optional: auto first sync if never synced
   const last = cardEl.querySelector('[data-field="last-synced"]')?.textContent?.trim().toLowerCase();
   if (!last || last === '—' || last.includes('not synced yet')) {
-    // Debounce a little so the page feels responsive
     setTimeout(() => syncBtn?.click(), 500);
   }
 }
