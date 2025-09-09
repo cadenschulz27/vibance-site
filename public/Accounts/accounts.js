@@ -43,7 +43,6 @@ function setBtnBusy(btn, busyText = 'Working…', isBusy = true) {
 
 function showToast(msg) {
   if (!els.toast) {
-    // Fallback
     console.log('[Toast]', msg);
     return;
   }
@@ -225,7 +224,10 @@ async function syncItem(cardEl) {
     const result = await callPlaidFn({ action: 'sync_transactions', item_id: itemId });
     // Prefer reading Firestore for authoritative timestamp (function also updates it)
     await refreshFromFirestore(cardEl);
-    showToast(`Synced ✓  Added: ${result.addedCount} • Updated: ${result.modifiedCount} • Removed: ${result.removedCount}`);
+    showToast(`Synced ✓  Added: ${result.addedCount ?? 0} • Updated: ${result.modifiedCount ?? 0} • Removed: ${result.removedCount ?? 0}`);
+  } catch (e) {
+    console.error(e);
+    showToast('Sync failed');
   } finally {
     setSyncingState(cardEl, false);
   }
@@ -249,15 +251,18 @@ async function unlinkItem(cardEl) {
 
     cardEl.remove();
     // Update empty state if needed
-    if (!els.list.querySelector('.account-card')) renderEmptyState(true);
+    if (els.list && !els.list.querySelector('.account-card')) renderEmptyState(true);
     showToast('Account unlinked.');
+  } catch (e) {
+    console.error(e);
+    showToast('Unlink failed');
   } finally {
     setBtnBusy(unlinkBtn, '', false);
   }
 }
 
 // ---------- Wiring ----------
-function attachCardHandlers(cardEl) {
+function attachAccountCardHandlers(cardEl) {
   const syncBtn = cardEl.querySelector('[data-action="sync"]');
   const unlinkBtn = cardEl.querySelector('[data-action="unlink"]');
 
@@ -283,6 +288,13 @@ function attachCardHandlers(cardEl) {
 }
 
 async function renderList(uid) {
+  // Guard: page is missing expected container
+  if (!els.list) {
+    console.error('Missing #accounts-list element on the page.');
+    showToast('Missing #accounts-list in Accounts page');
+    return;
+  }
+
   els.list.innerHTML = '';
   const items = await fetchItems(uid);
 
@@ -297,7 +309,7 @@ async function renderList(uid) {
     wrapper.innerHTML = accountCardTemplate(it);
     const cardEl = wrapper.firstElementChild;
     els.list.appendChild(cardEl);
-    attachCardHandlers(cardEl);
+    attachAccountCardHandlers(cardEl);
   }
 }
 
