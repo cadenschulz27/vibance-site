@@ -1,52 +1,69 @@
-<header class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md">
-    <style>
-        .main-nav .nav-link {
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #a0a0a0;
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-        .main-nav .nav-link:hover {
-            background-color: #222;
-            color: #fff;
-        }
-        .main-nav .nav-link.active {
-            background-color: #CCFF00;
-            color: #000;
-        }
-    </style>
-    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <!-- Logo -->
-        <a href="../dashboard/dashboard.html" class="flex items-center space-x-3">
-            <img src="../images/logo_white.png" alt="Vibance Logo" class="h-8 w-8">
-            <span class="text-xl font-bold">Vibance</span>
-        </a>
-        
-        <!-- Main Navigation -->
-        <nav class="main-nav hidden md:flex items-center space-x-2">
-            <a href="../dashboard/dashboard.html" class="nav-link">Dashboard</a>
-            <a href="../Expenses/expenses.html" class="nav-link">Expenses</a>
-            <a href="../Budgeting/budgeting.html" class="nav-link">Budgeting</a>
-            <a href="../Social/social.html" class="nav-link">Social</a>
-        </nav>
+<header class="sticky top-0 z-40 bg-neutral-950/80 backdrop-blur border-b border-neutral-900">
+  <div class="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2">
+      <img src="/images/logo_white.png" class="h-7 w-7" alt="Vibance">
+      <span class="font-semibold tracking-wide">Vibance</span>
+    </a>
 
-        <!-- Profile & Welcome -->
-        <div class="flex items-center space-x-4">
-            <span id="user-welcome" class="text-sm text-gray-300 hidden md:block">Welcome!</span>
-            <div class="relative">
-                <button id="profile-button" class="block">
-                    <img src="https://placehold.co/40x40/444444/FFFFFF?text=P" alt="User Profile" class="h-8 w-8 rounded-full bg-gray-700">
-                </button>
-                <div id="logout-menu" class="hidden absolute right-0 mt-2 w-48 bg-[#1C1C1E] rounded-md shadow-lg py-1 z-50">
-                    <a href="../pages/profile.html" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Profile</a>
-                    <!-- FIX: New link to the Manage Accounts page -->
-                    <a href="../Accounts/accounts.html" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Manage Accounts</a>
-                    <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Log Out</a>
-                </div>
-            </div>
+    <!-- Desktop nav -->
+    <nav class="hidden md:flex items-center gap-6" data-header="desktop-nav">
+      <a href="/dashboard/dashboard.html" class="text-neutral-300 hover:text-white">Dashboard</a>
+      <a href="/Accounts/accounts.html" class="text-neutral-300 hover:text-white">Accounts</a>
+      <a href="/Expenses/expenses.html" class="text-neutral-300 hover:text-white">Expenses</a>
+      <a href="/Budgeting/budgeting.html" class="text-neutral-300 hover:text-white">Budgeting</a>
+      <a href="/Social/social.html" class="text-neutral-300 hover:text-white">Community</a>
+      <a href="/pages/blog.html" class="text-neutral-300 hover:text-white">Blog</a>
+    </nav>
+
+    <!-- Right side -->
+    <div class="flex items-center gap-3">
+      <!-- Notifications (optional) -->
+      <a href="/dashboard/dashboard.html" class="relative hidden md:inline-block">
+        <svg class="h-5 w-5 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 17h5l-1.4-1.4a2 2 0 0 1-.6-1.4V11a6 6 0 0 0-5-5.9V4a2 2 0 1 0-4 0v.1A6 6 0 0 0 5 11v3.2c0 .5-.2 1-.6 1.4L3 17h5m7 0v1a3 3 0 1 1-6 0v-1m6 0H9"/></svg>
+        <span data-header="notif-badge" class="hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-emerald-500 text-[10px] text-white grid place-content-center"></span>
+      </a>
+
+      <!-- Auth CTAs -->
+      <div class="flex items-center gap-2" data-header="auth-ctas">
+        <a href="/login.html" class="px-3 py-1.5 rounded-lg border border-neutral-700 text-neutral-200 hover:bg-neutral-900">Log in</a>
+        <a href="/signup.html" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Sign up</a>
+      </div>
+
+      <!-- User menu -->
+      <div class="relative hidden" data-header="user-menu">
+        <button class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-900">
+          <img data-header="avatar" src="/images/logo_white.png" class="h-8 w-8 rounded-full object-cover" alt="Avatar">
+          <span data-header="display-name" class="hidden sm:inline text-neutral-200">Account</span>
+          <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd"/></svg>
+        </button>
+        <div class="absolute right-0 mt-2 w-48 rounded-xl border border-neutral-800 bg-neutral-950 shadow-lg p-1 hidden group-[&:focus-within]:block">
+          <a href="/pages/profile.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Profile</a>
+          <a href="/dashboard/dashboard.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Dashboard</a>
+          <a href="/Accounts/accounts.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Accounts</a>
+          <a href="/Expenses/expenses.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Expenses</a>
+          <a href="/Budgeting/budgeting.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Budgeting</a>
+          <hr class="my-1 border-neutral-800">
+          <button data-header="logout" class="w-full text-left px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10">Log out</button>
         </div>
-    </div>
-</header>
+      </div>
 
+      <!-- Mobile toggle -->
+      <button class="md:hidden p-2 rounded-lg hover:bg-neutral-900" data-header="mobile-toggle" aria-expanded="false" aria-label="Toggle menu">
+        <svg class="h-6 w-6 text-neutral-200" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile nav -->
+  <nav class="md:hidden hidden border-t border-neutral-900" data-header="mobile-nav">
+    <div class="px-4 py-3 grid gap-2">
+      <a href="/dashboard/dashboard.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Dashboard</a>
+      <a href="/Accounts/accounts.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Accounts</a>
+      <a href="/Expenses/expenses.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Expenses</a>
+      <a href="/Budgeting/budgeting.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Budgeting</a>
+      <a href="/Social/social.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Community</a>
+      <a href="/pages/blog.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Blog</a>
+      <a href="/pages/profile.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900 md:hidden">Profile</a>
+    </div>
+  </nav>
+</header>

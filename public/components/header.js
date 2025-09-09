@@ -1,89 +1,226 @@
-// FILE: public/components/header.js
+// public/components/header.js
+// ------------------------------------------------------------
+// Header Controller
+//  - Injects /components/header.html into the page
+//  - Auth-aware: shows Login/Signup or user avatar + dropdown
+//  - Highlights active nav item
+//  - Mobile menu toggle
+//  - Logout
+//
+// Requirements:
+//  - ../api/firebase.js must export { auth, db }
+//  - The HTML partial at /components/header.html should contain elements
+//    with the selectors referenced in `els` below (or adjust them).
+//
+// Suggested minimal hook in each page:
+//   <div id="site-header"></div>
+// ------------------------------------------------------------
 
 import { auth, db } from '../api/firebase.js';
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import {
+  onAuthStateChanged,
+  signOut,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {
+  doc, getDoc, collection, getDocs, query, where, limit
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-    const headerPlaceholder = document.getElementById('header-placeholder');
+// ----------------------------- DOM helpers -----------------------------
+const els = {
+  mount: () => document.getElementById('site-header') || document.querySelector('header'),
+  // These are queried *after* the header HTML is injected:
+  authCtas: () => document.querySelector('[data-header="auth-ctas"]'),         // Login / Signup wrapper
+  userMenu: () => document.querySelector('[data-header="user-menu"]'),         // Avatar + dropdown wrapper
+  avatarImg: () => document.querySelector('[data-header="avatar"]'),           // <img>
+  displayName: () => document.querySelector('[data-header="display-name"]'),   // <span>
+  logoutBtn: () => document.querySelector('[data-header="logout"]'),           // <button>
+  mobileToggle: () => document.querySelector('[data-header="mobile-toggle"]'), // hamburger button
+  mobileNav: () => document.querySelector('[data-header="mobile-nav"]'),       // mobile nav container
+  desktopNav: () => document.querySelector('[data-header="desktop-nav"]'),     // desktop nav container
+  notifBadge: () => document.querySelector('[data-header="notif-badge"]'),     // small unread bubble (optional)
+};
 
-    if (headerPlaceholder) {
-        fetch('../components/header.html')
-            .then(response => response.text())
-            .then(data => {
-                headerPlaceholder.innerHTML = data;
-                initializeHeader();
-            });
-    }
+const FALLBACK_AVATAR = '/images/logo_white.png';
 
-    /**
-     * Highlights the active navigation link based on the current URL.
-     */
-    function highlightActiveLink() {
-        // FIX: Move the element lookups inside the function. This ensures the DOM has been
-        // updated with the fetched HTML before we try to find the nav links.
-        const navLinks = {
-            '/dashboard/dashboard.html': document.getElementById('nav-dashboard'),
-            '/Expenses/expenses.html': document.getElementById('nav-expenses'),
-            '/Budgeting/budgeting.html': document.getElementById('nav-budgeting'),
-            '/Social/social.html': document.getElementById('nav-social')
-        };
-        
-        const currentPath = window.location.pathname;
+// ----------------------------- Fetch & Inject -----------------------------
+async function loadHeaderHtml() {
+  const res = await fetch('/components/header.html', { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`Failed to load header.html (${res.status})`);
+  return await res.text();
+}
 
-        // Use .endsWith() for a more precise match instead of .includes().
-        for (const path in navLinks) {
-            if (currentPath.endsWith(path)) {
-                // Use optional chaining (?) in case an element is not found
-                navLinks[path]?.classList.add('active');
-                break; // Stop after finding the first match
-            }
-        }
-    }
+function injectHeader(html) {
+  let mount = els.mount();
+  if (!mount) {
+    // Create a mount if not present: stick at top of body
+    mount = document.createElement('div');
+    mount.id = 'site-header';
+    document.body.prepend(mount);
+  }
+  mount.innerHTML = html;
+}
 
-    function initializeHeader() {
-        const userWelcome = document.getElementById('user-welcome');
-        const profileButton = document.getElementById('profile-button');
-        const logoutMenu = document.getElementById('logout-menu');
-        const logoutButton = document.getElementById('logout-button');
+// ----------------------------- Active Link Highlight -----------------------------
+function normalizePath(path) {
+  // Converts "/pages/blog.html?x=1#y" -> "/pages/blog.html"
+  try {
+    const u = new URL(path, window.location.origin);
+    return u.pathname.replace(/\/+$/, '');
+  } catch {
+    return path.replace(/[#?].*$/, '').replace(/\/+$/, '');
+  }
+}
 
-        // Call the highlighting function as soon as the header is initialized.
-        highlightActiveLink();
+function highlightActiveLinks() {
+  const current = normalizePath(window.location.pathname || '/');
+  const nav = document.querySelectorAll('[data-header="desktop-nav"] a, [data-header="mobile-nav"] a');
+  nav.forEach(a => {
+    const href = a.getAttribute('href') || '';
+    const normalized = normalizePath(href);
+    const isActive =
+      normalized === current ||
+      (normalized !== '/' && current.startsWith(normalized));
+    a.classList.toggle('text-emerald-400', !!isActive);
+    a.classList.toggle('font-semibold', !!isActive);
+  });
+}
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    const userName = userDoc.data().name.split(' ')[0];
-                    userWelcome.textContent = `Welcome, ${userName}`;
-                    userWelcome.classList.remove('hidden');
-                }
-            }
-        });
-        
-        if (profileButton) {
-            profileButton.addEventListener('click', () => {
-                logoutMenu?.classList.toggle('hidden');
-            });
-        }
+// ----------------------------- Notifications (optional) -----------------------------
+async function fetchUnreadCount(uid) {
+  // Optional: if you add a notifications collection later.
+  // Schema: users/{uid}/notifications/{id} with { read: boolean }
+  try {
+    const col = collection(db, 'users', uid, 'notifications');
+    const qUnread = query(col, where('read', '==', false), limit(10));
+    const snap = await getDocs(qUnread);
+    return snap.size || 0;
+  } catch {
+    return 0;
+  }
+}
 
-        if (logoutButton) {
-            logoutButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                signOut(auth).then(() => {
-                    window.location.href = '../login.html';
-                }).catch((error) => {
-                    console.error('Sign Out Error', error);
-                });
-            });
-        }
-        
-        document.addEventListener('click', (event) => {
-            if (profileButton && logoutMenu && !profileButton.contains(event.target) && !logoutMenu.contains(event.target)) {
-                logoutMenu.classList.add('hidden');
-            }
-        });
-    }
-});
+function renderNotifBadge(count) {
+  const badge = els.notifBadge();
+  if (!badge) return;
+  if (!count) {
+    badge.classList.add('hidden');
+  } else {
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.classList.remove('hidden');
+  }
+}
 
+// ----------------------------- Auth Rendering -----------------------------
+async function loadUserProfileDoc(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? (snap.data() || {}) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setAuthCtasVisible(showCtas) {
+  const ctas = els.authCtas();
+  const menu = els.userMenu();
+  if (ctas) ctas.classList.toggle('hidden', !showCtas);
+  if (menu) menu.classList.toggle('hidden', !!showCtas);
+}
+
+async function renderAuthedHeader(user) {
+  setAuthCtasVisible(false);
+
+  const nameEl = els.displayName();
+  const avatar = els.avatarImg();
+
+  // Prefer Auth fields; fallback to Firestore doc
+  let displayName = user.displayName || '';
+  let photoURL = user.photoURL || '';
+
+  if (!displayName || !photoURL) {
+    const docData = await loadUserProfileDoc(user.uid);
+    displayName = displayName || docData.displayName || '';
+    photoURL = photoURL || docData.photoURL || '';
+  }
+
+  if (nameEl) nameEl.textContent = displayName || user.email || 'Account';
+  if (avatar) avatar.src = photoURL || FALLBACK_AVATAR;
+
+  // Optional: show unread notifications badge
+  const unread = await fetchUnreadCount(user.uid);
+  renderNotifBadge(unread);
+
+  // Wire logout
+  const logout = els.logoutBtn();
+  if (logout) {
+    logout.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        await signOut(auth);
+        // Redirect to homepage or login
+        window.location.href = '/login.html';
+      } catch (err) {
+        console.error('Sign out failed', err);
+        alert('Failed to sign out. Please try again.');
+      }
+    });
+  }
+}
+
+function renderAnonHeader() {
+  setAuthCtasVisible(true);
+  renderNotifBadge(0);
+}
+
+// ----------------------------- Mobile Menu -----------------------------
+function wireMobileMenu() {
+  const btn = els.mobileToggle();
+  const menu = els.mobileNav();
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', () => {
+    const isOpen = !menu.classList.contains('hidden');
+    menu.classList.toggle('hidden', isOpen);
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  });
+
+  // Close on nav click (for single-page feel)
+  menu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      menu.classList.add('hidden');
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
+
+// ----------------------------- Init -----------------------------
+async function boot() {
+  try {
+    const html = await loadHeaderHtml();
+    injectHeader(html);
+    wireMobileMenu();
+    highlightActiveLinks();
+
+    // React to auth changes
+    onAuthStateChanged(auth, async (user) => {
+      try {
+        if (user) await renderAuthedHeader(user);
+        else renderAnonHeader();
+      } catch (e) {
+        console.error('Header auth render failed', e);
+      } finally {
+        // Re-apply active link highlighting (in case menu content changed)
+        highlightActiveLinks();
+      }
+    });
+  } catch (e) {
+    console.error('Header init failed', e);
+  }
+}
+
+// Run once DOM is ready (header is safe to mount early)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
