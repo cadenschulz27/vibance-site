@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Expenses • Vibance</title>
 
-  <!-- Tailwind (CDN) -->
+  <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Fonts (optional, match rest of site if used) -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,12 +16,54 @@
   <style>
     :root { color-scheme: dark; }
     html, body { background: #0a0a0a; color: #e5e7eb; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif; }
-    .container { max-width: 1100px; }
+    .container { max-width: 1120px; }
     /* thin scrollbars */
     * { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
     *::-webkit-scrollbar { height: 8px; width: 8px; }
     *::-webkit-scrollbar-track { background: #18181b; }
     *::-webkit-scrollbar-thumb { background-color: #3f3f46; border-radius: 8px; }
+
+    /* Subtle glass card */
+    .card {
+      background: linear-gradient(180deg, rgba(24,24,27,0.9), rgba(10,10,10,0.9));
+      border: 1px solid #1f2937; /* neutral-800/900 */
+      border-radius: 1rem;
+      backdrop-filter: blur(6px);
+    }
+
+    /* Sticky toolbar under the header */
+    .toolbar-sticky {
+      position: sticky;
+      top: 64px; /* header height ~ h-16 */
+      z-index: 30;
+      backdrop-filter: blur(6px);
+    }
+
+    /* Inputs */
+    .field {
+      @apply bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm placeholder-neutral-500;
+    }
+
+    /* Table */
+    .table-head {
+      background: rgba(10,10,10,0.8);
+      border-bottom: 1px solid #1f2937;
+      position: sticky;
+      top: calc(64px + 74px); /* header + toolbar approx for sticky head */
+      z-index: 20;
+      backdrop-filter: blur(6px);
+    }
+
+    /* Hover row */
+    .row-hov:hover { background: #0f1012; }
+
+    /* Stat tiles glow ring */
+    .ring-soft {
+      box-shadow: 0 0 0 1px rgba(16,185,129,0.15), 0 10px 30px rgba(16,185,129,0.08);
+    }
+
+    /* Toast transitions (already in JS) */
+    #toast { transition: opacity 200ms ease; }
   </style>
 </head>
 <body class="bg-neutral-950 text-neutral-100">
@@ -29,71 +71,93 @@
   <div id="site-header"></div>
 
   <main class="container mx-auto px-4 py-6 md:py-10">
+    <!-- Page title -->
     <header class="mb-6 md:mb-8">
-      <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Expenses</h1>
-      <p class="text-neutral-400 mt-1">View, search, and categorize your recent transactions.</p>
-    </header>
-
-    <!-- Toolbar -->
-    <section class="bg-neutral-950/60 border border-neutral-900 rounded-2xl p-4 md:p-5 mb-5">
-      <div class="flex flex-wrap items-center gap-2 md:gap-3">
-        <button id="sync-all-expenses" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Expenses</h1>
+          <p class="text-neutral-400 mt-1">Review, search, and categorize your recent transactions.</p>
+        </div>
+        <button id="sync-all-expenses" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shadow ring-soft">
           Sync all
         </button>
-
-        <div class="h-6 w-px bg-neutral-800 hidden md:block"></div>
-
-        <select id="account-filter" class="px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm">
-          <option>Loading accounts…</option>
-        </select>
-
-        <input id="start-date" type="date" class="px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm" />
-        <input id="end-date" type="date" class="px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm" />
-
-        <div class="relative flex-1 min-w-[200px]">
-          <input id="search-input" type="text" placeholder="Search name, merchant, category…"
-                 class="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm pr-8" />
-          <svg class="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path>
-          </svg>
-        </div>
-
-        <input id="min-amount" type="number" step="0.01" placeholder="Min"
-               class="w-32 px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm" />
-        <input id="max-amount" type="number" step="0.01" placeholder="Max"
-               class="w-32 px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm" />
-        <input id="category-filter" type="text" placeholder="Category…" list="category-list"
-               class="w-44 px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm" />
-
-        <div class="h-6 w-px bg-neutral-800 hidden md:block"></div>
-
-        <button id="reset-filters" class="px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-sm">
-          Reset
-        </button>
-        <button id="export-csv" class="px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-sm">
-          Export CSV
-        </button>
       </div>
+    </header>
 
-      <!-- Totals -->
-      <div class="mt-4 text-sm text-neutral-300 flex flex-wrap items-center gap-4">
-        <span>Rows: <strong id="tx-count" class="text-neutral-100">0</strong></span>
-        <span>Income: <strong id="totals-income" class="text-emerald-400">—</strong></span>
-        <span>Expenses: <strong id="totals-expense" class="text-red-400">—</strong></span>
-        <span>Net: <strong id="totals-net" class="text-neutral-100">—</strong></span>
+    <!-- Summary tiles -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-5">
+      <div class="card p-4 ring-soft">
+        <div class="text-xs uppercase tracking-wider text-neutral-400">Income</div>
+        <div id="totals-income" class="mt-1 text-xl md:text-2xl font-semibold text-emerald-400">—</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider text-neutral-400">Expenses</div>
+        <div id="totals-expense" class="mt-1 text-xl md:text-2xl font-semibold text-red-400">—</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider text-neutral-400">Net</div>
+        <div id="totals-net" class="mt-1 text-xl md:text-2xl font-semibold">—</div>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="toolbar-sticky">
+      <div class="card p-3 md:p-4">
+        <div class="flex flex-wrap items-center gap-2 md:gap-3">
+          <div class="flex items-center gap-2">
+            <label for="account-filter" class="text-xs text-neutral-400">Account</label>
+            <select id="account-filter" class="field min-w-[10rem]">
+              <option>Loading accounts…</option>
+            </select>
+          </div>
+
+          <div class="h-6 w-px bg-neutral-800 hidden md:block"></div>
+
+          <div class="flex items-center gap-2">
+            <label for="start-date" class="text-xs text-neutral-400">From</label>
+            <input id="start-date" type="date" class="field" />
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="end-date" class="text-xs text-neutral-400">To</label>
+            <input id="end-date" type="date" class="field" />
+          </div>
+
+          <div class="relative flex-1 min-w-[220px]">
+            <input id="search-input" type="text" placeholder="Search name, merchant, category…" class="field w-full pr-9" />
+            <svg class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path>
+            </svg>
+          </div>
+
+          <input id="min-amount" type="number" step="0.01" placeholder="Min" class="field w-28" />
+          <input id="max-amount" type="number" step="0.01" placeholder="Max" class="field w-28" />
+          <input id="category-filter" type="text" placeholder="Category…" list="category-list" class="field w-44" />
+
+          <div class="ml-auto flex items-center gap-2">
+            <span class="hidden sm:inline text-xs text-neutral-400">Rows:</span>
+            <span id="tx-count" class="text-sm font-medium">0</span>
+
+            <button id="reset-filters" class="px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-sm">
+              Reset
+            </button>
+            <button id="export-csv" class="px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-sm">
+              Export CSV
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Empty state -->
-    <div id="tx-empty" class="hidden rounded-2xl border border-neutral-900 bg-neutral-950/60 p-8 text-center text-neutral-400">
+    <div id="tx-empty" class="hidden card p-8 mt-4 text-center text-neutral-400">
       No transactions found. Try syncing your accounts or adjusting filters.
     </div>
 
     <!-- Table -->
-    <section class="rounded-2xl border border-neutral-900 overflow-hidden">
+    <section class="card overflow-hidden mt-4">
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
-          <thead class="bg-neutral-950/80 border-b border-neutral-900 text-neutral-400">
+          <thead class="table-head text-neutral-400">
             <tr>
               <th class="px-4 py-3 text-left font-medium">Account</th>
               <th class="px-4 py-3 text-left font-medium">Date</th>
@@ -103,8 +167,8 @@
               <th class="px-4 py-3 text-left font-medium">Category</th>
             </tr>
           </thead>
-          <tbody id="tx-table-body" class="divide-y divide-neutral-900 bg-neutral-950/40">
-            <!-- rows injected by expenses.js -->
+          <tbody id="tx-table-body" class="divide-y divide-neutral-900">
+            <!-- rows injected by expenses.js; each <tr> gets .row-hov -->
           </tbody>
         </table>
       </div>
@@ -125,9 +189,9 @@
   <!-- Toast -->
   <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2
     rounded-lg bg-neutral-900 border border-neutral-800 text-white px-4 py-2
-    opacity-0 pointer-events-none transition-opacity"></div>
+    opacity-0 pointer-events-none"></div>
 
-  <!-- Optional datalist for quick category entry suggestions -->
+  <!-- Datalist for quick category suggestions -->
   <datalist id="category-list">
     <option value="Groceries"></option>
     <option value="Dining"></option>
@@ -157,5 +221,17 @@
   <script type="module" src="/auth/auth-check.js"></script>
   <script type="module" src="/components/header.js"></script>
   <script type="module" src="/Expenses/expenses.js"></script>
+
+  <script>
+    // Tiny enhancement: rows get a hover class automatically
+    document.addEventListener('DOMContentLoaded', () => {
+      const tbody = document.getElementById('tx-table-body');
+      if (!tbody) return;
+      const mo = new MutationObserver(() => {
+        Array.from(tbody.querySelectorAll('tr')).forEach(tr => tr.classList.add('row-hov'));
+      });
+      mo.observe(tbody, { childList: true });
+    });
+  </script>
 </body>
 </html>
