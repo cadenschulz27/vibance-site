@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgeting - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-black">
+
+    <!-- The shared header will be dynamically injected here by header.js -->
+    <div id="header-placeholder"></div>
+
+    <main class="container mx-auto px-6 py-24">
+        <!-- Page-specific content for Budgeting will go here in the future -->
+    </main>
+
+    <!-- Essential scripts for authentication and header loading -->
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+</body>
+</html>
