@@ -29,7 +29,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5.5rem;
+    margin-bottom: 2.5rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid var(--card-border-color);
 }
@@ -54,6 +54,14 @@ body {
 .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(204, 255, 0, 0.2);
+}
+
+.btn-primary:disabled {
+    background-color: #3A3A3C;
+    color: #9CA3AF;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 #linked-accounts-list {
@@ -101,13 +109,11 @@ body {
     font-size: 0.9rem;
 }
 
-/* FIX: New container for action buttons */
 .account-actions {
     display: flex;
     gap: 0.75rem;
 }
 
-/* FIX: New style for the secondary (sync) button */
 .btn-secondary {
     background-color: #333;
     color: #fff;
