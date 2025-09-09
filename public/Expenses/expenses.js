@@ -14,28 +14,14 @@
 //       users/{uid}/plaid_items/{itemId}/transactions/{txId} -> { amount, date, category, categoryUser, ... }
 //
 // Expected HTML IDs (adjust if needed):
-//   #sync-all-expenses        <button> Sync all
-//   #account-filter           <select>
-//   #start-date               <input type="date">
-//   #end-date                 <input type="date">
-//   #search-input             <input type="text">
-//   #min-amount               <input type="number">
-//   #max-amount               <input type="number">
-//   #category-filter          <input type="text" list="category-list">
-//   #reset-filters            <button>
-//   #export-csv               <button>
-//   #tx-count                 <span>
-//   #totals-income            <span>
-//   #totals-expense           <span>
-//   #totals-net               <span>
-//   #tx-empty                 <div> (empty state)
-//   #tx-table-body            <tbody>
-//   #pagination-prev          <button>
-//   #pagination-next          <button>
-//   #pagination-label         <span>
+//   #sync-all-expenses, #account-filter, #start-date, #end-date, #search-input,
+//   #min-amount, #max-amount, #category-filter, #reset-filters, #export-csv,
+//   #tx-count, #totals-income, #totals-expense, #totals-net, #tx-empty,
+//   #tx-table-body, #pagination-prev, #pagination-next, #pagination-label
 //
 // Notes:
 //   - AUTO_FIRST_SYNC toggles auto "Sync all" on first load for fresh users.
+//   - Date filtering uses LOCAL midnight for YYYY-MM-DD strings to avoid UTC off-by-one.
 // ----------------------------------------------------
 
 import { auth, db } from '../api/firebase.js';
@@ -94,6 +80,35 @@ let FILTERED = [];
 let PAGE = 1;
 
 // -------------------- Utils --------------------
+
+// Parse YYYY-MM-DD as LOCAL midnight to avoid UTC off-by-one.
+// For other date formats, fall back to Date.parse.
+function parseLocalDateEpoch(str) {
+  if (!str) return 0;
+  if (typeof str !== 'string') {
+    const d = (typeof str?.toDate === 'function') ? str.toDate() : new Date(str);
+    const t = d?.getTime?.() ?? NaN;
+    return Number.isNaN(t) ? 0 : t;
+  }
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) {
+    const y = Number(m[1]), mon = Number(m[2]) - 1, day = Number(m[3]);
+    return new Date(y, mon, day, 0, 0, 0, 0).getTime(); // LOCAL midnight
+  }
+  const t = Date.parse(str);
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function toEpoch(d) {
+  return parseLocalDateEpoch(d);
+}
+
+function formatLocalDate(epoch) {
+  const dt = new Date(epoch || 0);
+  if (Number.isNaN(dt.getTime())) return '—';
+  return dt.toLocaleDateString();
+}
+
 function toast(msg) {
   if (!els.toast) { console.log('[toast]', msg); return; }
   els.toast.textContent = msg;
@@ -121,12 +136,6 @@ function fmtMoney(n, currency = 'USD') {
   if (typeof n !== 'number' || Number.isNaN(n)) return '—';
   try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n); }
   catch { return `$${n.toFixed(2)}`; }
-}
-function toEpoch(d) {
-  if (!d) return 0;
-  if (typeof d?.toDate === 'function') return d.toDate().getTime();
-  const t = new Date(d).getTime();
-  return Number.isNaN(t) ? 0 : t;
 }
 function escapeHtml(s) {
   return (s ?? '').toString()
@@ -200,11 +209,12 @@ async function fetchItemTransactions(uid, itemId, perItemLimit = PER_ITEM_LIMIT)
     const d = docSnap.data() || {};
     const dateStr = d.date || d.authorized_date || d.posted_at || d.timestamp || null;
     const amount = typeof d.amount === 'number' ? d.amount : Number(d.amount);
+    const epoch = toEpoch(dateStr);
     rows.push({
       id: docSnap.id,
       itemId,
       date: dateStr,
-      _epoch: toEpoch(dateStr),
+      _epoch: epoch,
       name: d.name || d.merchant_name || d.description || 'Transaction',
       amount: Number.isFinite(amount) ? amount : 0,
       isoCurrency: d.iso_currency_code || d.currency || 'USD',
@@ -248,8 +258,9 @@ async function loadAllTransactions(uid) {
 
 function readFilters() {
   const account = els.account?.value || '';
-  const start = els.start?.value ? new Date(els.start.value).getTime() : null;
-  const end = els.end?.value ? new Date(els.end.value).getTime() : null;
+  // Parse input[type="date"] (value is YYYY-MM-DD); use LOCAL midnight:
+  const start = els.start?.value ? parseLocalDateEpoch(els.start.value) : null;
+  const end = els.end?.value ? parseLocalDateEpoch(els.end.value) : null;
   const q = (els.search?.value || '').toLowerCase();
   const cat = (els.category?.value || '').toLowerCase();
   const minAmt = els.minAmt?.value === '' ? null : Number(els.minAmt.value);
@@ -263,8 +274,11 @@ function applyFilters() {
   let out = ALL_TX;
 
   if (account) out = out.filter(r => r.itemId === account);
-  if (start) out = out.filter(r => r._epoch && r._epoch >= start);
-  if (end) out = out.filter(r => r._epoch && r._epoch <= (end + 24*3600*1000 - 1));
+  if (start != null) out = out.filter(r => r._epoch && r._epoch >= start);
+  if (end != null) {
+    const endOfDay = end + (24*3600*1000 - 1); // inclusive end date (local)
+    out = out.filter(r => r._epoch && r._epoch <= endOfDay);
+  }
   if (q) {
     out = out.filter(r => {
       const hay = `${(r.name||'').toLowerCase()} ${(r.merchant||'').toLowerCase()} ${(r.categoryAuto||'').toLowerCase()} ${(r.categoryUser||'').toLowerCase()} ${(r.institution_name||'').toLowerCase()}`;
@@ -327,7 +341,7 @@ function renderRow(r) {
 
   tr.innerHTML = `
     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${escapeHtml(r.institution_name || '')}</td>
-    <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${escapeHtml(new Date(r._epoch || 0).toLocaleDateString() || '')}</td>
+    <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${escapeHtml(formatLocalDate(r._epoch))}</td>
     <td class="px-4 py-3 text-sm font-medium text-neutral-100">${escapeHtml(r.name || '')}</td>
     <td class="px-4 py-3 whitespace-nowrap text-sm ${amountCls} text-right">${escapeHtml(fmtMoney(Math.abs(r.amount), r.isoCurrency))}</td>
     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${escapeHtml(r.merchant || '')}</td>
