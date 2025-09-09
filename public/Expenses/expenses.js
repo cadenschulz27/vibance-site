@@ -7,7 +7,7 @@
 //  - Totals, pagination, CSV export
 //
 // Requirements:
-//   - ../api/firebase.js must export { auth, db }
+//   - ../api/firebase.js must export { auth, db } (initialized with Firebase v9 SDK)
 //   - Netlify function: /.netlify/functions/plaid supports 'sync_transactions'
 //   - Firestore schema written by your plaid.js function:
 //       users/{uid}/plaid_items/{itemId} -> { last_synced, institution_name, ... }
@@ -41,10 +41,11 @@
 import { auth, db } from '../api/firebase.js';
 import {
   onAuthStateChanged
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import {
-  collection, getDocs, doc, getDoc, setDoc, query, orderBy, limit
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  collection, getDocs, doc, getDoc, setDoc,
+  query, orderBy, limit
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
 // -------------------- Config --------------------
 const PER_ITEM_LIMIT = 500;    // how many tx to fetch per item from Firestore
@@ -148,11 +149,11 @@ async function callPlaidFn(payload) {
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(payload)
   });
+  const text = await res.text().catch(() => '');
   if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    throw new Error(`Plaid function failed (${res.status}) ${txt}`);
+    throw new Error(`Plaid function failed (${res.status}) ${text}`);
   }
-  return await res.json();
+  try { return JSON.parse(text || '{}'); } catch { return {}; }
 }
 
 async function listPlaidItems(uid) {
