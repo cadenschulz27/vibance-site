@@ -6,6 +6,8 @@
 //  - Highlights active nav item
 //  - Mobile menu toggle
 //  - Logout
+//  - Removes "Blog" tab from header nav (desktop + mobile)
+//  - When authenticated, brand logo routes to /dashboard/dashboard.html
 //
 // Requirements:
 //  - ../api/firebase.js must export { auth, db }
@@ -20,10 +22,10 @@ import { auth, db } from '../api/firebase.js';
 import {
   onAuthStateChanged,
   signOut,
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import {
   doc, getDoc, collection, getDocs, query, where, limit
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
 // ----------------------------- DOM helpers -----------------------------
 const els = {
@@ -38,9 +40,11 @@ const els = {
   mobileNav: () => document.querySelector('[data-header="mobile-nav"]'),       // mobile nav container
   desktopNav: () => document.querySelector('[data-header="desktop-nav"]'),     // desktop nav container
   notifBadge: () => document.querySelector('[data-header="notif-badge"]'),     // small unread bubble (optional)
+  brandLink: () => document.querySelector('header a[href="/"]'),               // site logo/home link
 };
 
 const FALLBACK_AVATAR = '/images/logo_white.png';
+const DASHBOARD_PATH = '/dashboard/dashboard.html';
 
 // ----------------------------- Fetch & Inject -----------------------------
 async function loadHeaderHtml() {
@@ -127,8 +131,30 @@ function setAuthCtasVisible(showCtas) {
   if (menu) menu.classList.toggle('hidden', !!showCtas);
 }
 
+function setHomeLinkForUser(isAuthed) {
+  const brand = els.brandLink();
+  if (!brand) return;
+
+  // Remove any prior handler so we don't double-bind
+  const newBrand = brand.cloneNode(true);
+  brand.parentNode.replaceChild(newBrand, brand);
+
+  if (isAuthed) {
+    newBrand.setAttribute('href', DASHBOARD_PATH);
+    newBrand.addEventListener('click', (e) => {
+      // Ensure SPA-like feel and avoid flashing public home
+      e.preventDefault();
+      window.location.href = DASHBOARD_PATH;
+    });
+  } else {
+    newBrand.setAttribute('href', '/');
+    // Default behavior to go home
+  }
+}
+
 async function renderAuthedHeader(user) {
   setAuthCtasVisible(false);
+  setHomeLinkForUser(true);
 
   const nameEl = els.displayName();
   const avatar = els.avatarImg();
@@ -157,7 +183,8 @@ async function renderAuthedHeader(user) {
       e.preventDefault();
       try {
         await signOut(auth);
-        // Redirect to homepage or login
+        // After logout, the home link should go to public home
+        setHomeLinkForUser(false);
         window.location.href = '/login.html';
       } catch (err) {
         console.error('Sign out failed', err);
@@ -169,7 +196,28 @@ async function renderAuthedHeader(user) {
 
 function renderAnonHeader() {
   setAuthCtasVisible(true);
+  setHomeLinkForUser(false);
   renderNotifBadge(0);
+}
+
+// ----------------------------- Remove Blog Nav -----------------------------
+function removeBlogLinks() {
+  // Remove any link that points to /pages/blog.html
+  const selectors = [
+    'a[href="/pages/blog.html"]',
+    'a[href="/pages/blog.html/"]',
+  ];
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(a => {
+      // Remove the entire nav item container if reasonable
+      const liLike = a.closest('a, li, div');
+      if (liLike && (liLike !== document.body)) {
+        liLike.remove();
+      } else {
+        a.remove();
+      }
+    });
+  });
 }
 
 // ----------------------------- Mobile Menu -----------------------------
@@ -184,7 +232,7 @@ function wireMobileMenu() {
     btn.setAttribute('aria-expanded', String(!isOpen));
   });
 
-  // Close on nav click (for single-page feel)
+  // Close on nav click
   menu.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', () => {
       menu.classList.add('hidden');
@@ -198,6 +246,10 @@ async function boot() {
   try {
     const html = await loadHeaderHtml();
     injectHeader(html);
+
+    // Remove Blog from both desktop and mobile navs
+    removeBlogLinks();
+
     wireMobileMenu();
     highlightActiveLinks();
 
@@ -218,7 +270,7 @@ async function boot() {
   }
 }
 
-// Run once DOM is ready (header is safe to mount early)
+// Run once DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot);
 } else {
