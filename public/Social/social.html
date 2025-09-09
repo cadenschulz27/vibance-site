@@ -8,66 +8,55 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Link to the new social stylesheet -->
     <link rel="stylesheet" href="social.css">
 </head>
 <body class="bg-black text-white font-['Inter']">
 
-    <!-- Standard site header -->
     <div id="header-placeholder"></div>
 
     <main class="social-container">
-        <header class="social-header">
+        <div class="social-header">
             <h1 class="social-title">Community Feed</h1>
-            <button id="create-post-btn" class="btn-neon px-5 py-2 rounded-full font-semibold">Create Post</button>
-        </header>
-
-        <!-- Container where posts will be dynamically loaded -->
-        <div id="feed-container" class="feed-container">
-            <!-- social.js will populate this area with posts -->
-            <p class="text-center text-gray-500">Loading feed...</p>
+            <button id="create-post-btn">Create Post</button>
+        </div>
+        <div id="feed-container">
+            <!-- Posts will be loaded here by feed-manager.js -->
         </div>
     </main>
 
-    <!-- "Create Post" Modal (hidden by default) -->
-    <div id="create-post-modal" class="modal-backdrop hidden">
+    <!-- Create Post Modal -->
+    <div id="create-post-modal" class="hidden">
         <div class="modal-content">
-            <header class="modal-header">
-                <h2 class="modal-title">Create a New Post</h2>
-                <button id="close-modal-btn" class="text-gray-500 hover:text-white text-2xl">&times;</button>
-            </header>
-            
+            <button id="close-modal-btn">&times;</button>
+            <h2 class="modal-title">Create a New Post</h2>
             <form id="post-form">
-                <div class="post-form-group">
-                    <label for="post-description" class="block mb-2 text-sm font-medium text-gray-400">Description</label>
-                    <textarea id="post-description" name="description" rows="4" class="w-full p-3 rounded input-field" placeholder="What's on your mind?"></textarea>
+                <textarea id="post-description" placeholder="What's on your mind?" class="mb-4"></textarea>
+                <div id="image-drop-zone">
+                    <p>Drag & drop an image here, or click to select</p>
+                    <input type="file" id="image-input" class="hidden" accept="image/*">
                 </div>
-
-                <div class="post-form-group">
-                    <label class="block mb-2 text-sm font-medium text-gray-400">Image (Optional)</label>
-                    <div id="image-drop-zone" class="image-drop-zone">
-                        <p class="text-gray-500">Drag & drop an image here, or click to select</p>
-                        <input type="file" id="image-input" name="image" class="hidden" accept="image/*">
-                    </div>
-                    <div id="image-preview-container" class="hidden">
-                        <img id="image-preview" src="#" alt="Image preview"/>
-                        <button type="button" id="remove-image-btn" class="hidden">&times;</button>
-                    </div>
+                <div id="image-preview-container" class="hidden">
+                    <img id="image-preview" src="" alt="Image preview">
+                    <button type="button" id="remove-image-btn" class="hidden">&times;</button>
                 </div>
-
-                <div class="mt-6">
-                    <button type="submit" class="w-full btn-neon py-3 rounded-full font-bold">Post to Feed</button>
+                <div class="flex justify-end mt-4">
+                    <button type="submit" class="font-bold">Post to Feed</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Script imports -->
+    <!-- Image Lightbox Modal -->
+    <div id="image-lightbox" class="lightbox-modal hidden">
+        <span id="close-lightbox-btn" class="lightbox-close-btn">&times;</span>
+        <img id="lightbox-image" class="lightbox-content" src="">
+    </div>
+
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
     <script type="module" src="social.js"></script>
+
 </body>
 </html>
 

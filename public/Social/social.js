@@ -7,6 +7,7 @@
 import { PostManager } from './post-manager.js';
 import { FeedManager } from './feed-manager.js';
 import { InteractionManager } from './interaction-manager.js';
+import { auth } from '../api/firebase.js';
 
 /**
  * Initializes all functionality for the Social page.
@@ -18,10 +19,66 @@ function initSocialPage() {
     const closeModalBtn = document.getElementById('close-modal-btn');
     const postForm = document.getElementById('post-form');
     const feedContainer = document.getElementById('feed-container');
+    const lightbox = document.getElementById('image-lightbox');
+    const lightboxImage = document.getElementById('lightbox-image');
+    const closeLightboxBtn = document.getElementById('close-lightbox-btn');
 
     // --- MODAL VISIBILITY FUNCTIONS ---
     const openModal = () => modal?.classList.remove('hidden');
     const closeModal = () => modal?.classList.add('hidden');
+    const openLightbox = (imageUrl) => {
+        if (lightbox && lightboxImage) {
+            lightboxImage.src = imageUrl;
+            lightbox.classList.remove('hidden');
+        }
+    };
+    const closeLightbox = () => lightbox?.classList.add('hidden');
+
+
+    // --- STATE MANAGEMENT ---
+    let postListeners = {};
+    let commentListeners = {};
+
+    // --- REAL-TIME UPDATE LOGIC ---
+    function clearPostListeners() {
+        Object.values(postListeners).forEach(unsubscribe => unsubscribe());
+        postListeners = {};
+    }
+
+    function attachPostListeners(postIds) {
+        clearPostListeners(); 
+
+        postIds.forEach(postId => {
+            const updateCallback = (postData) => {
+                const postCard = document.getElementById(`post-${postId}`);
+                if (!postCard) return;
+
+                const { likes = [], commentCount = 0, description } = postData;
+                const currentUser = auth.currentUser;
+
+                const likeBtn = postCard.querySelector('.like-btn');
+                const likeCountEl = postCard.querySelector('.like-count');
+                if (likeBtn && likeCountEl) {
+                    const userHasLiked = currentUser && likes.includes(currentUser.uid);
+                    likeBtn.textContent = userHasLiked ? 'Liked' : 'Like';
+                    likeBtn.classList.toggle('liked', userHasLiked);
+                    likeCountEl.textContent = `${likes.length} Likes`;
+                }
+
+                const commentBtn = postCard.querySelector('.comment-btn');
+                if (commentBtn) {
+                    commentBtn.textContent = `Comment (${commentCount})`;
+                }
+                
+                const descriptionEl = postCard.querySelector('.post-description');
+                const editContainer = postCard.querySelector('.edit-form-container');
+                if (descriptionEl && editContainer.style.display === 'none') {
+                    descriptionEl.textContent = description;
+                }
+            };
+            postListeners[postId] = InteractionManager.createPostListener(postId, updateCallback);
+        });
+    }
 
     // --- EVENT LISTENERS ---
 
@@ -31,10 +88,15 @@ function initSocialPage() {
         if (e.target === modal) closeModal();
     });
 
+    closeLightboxBtn?.addEventListener('click', closeLightbox);
+    lightbox?.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+            closeLightbox();
+        }
+    });
+
     postForm?.addEventListener('submit', (e) => {
         e.preventDefault();
-        // FIX: The onPostCreated callback now only needs to close the modal.
-        // The real-time listener in FeedManager will handle updating the feed automatically.
         PostManager.handlePostCreation(e, closeModal);
     });
 
@@ -42,33 +104,37 @@ function initSocialPage() {
         const target = e.target;
         const postId = target.dataset.postId;
 
+        if (target.classList.contains('post-image')) {
+            openLightbox(target.src);
+            return;
+        }
+
         if (target.classList.contains('like-btn')) {
-            const result = await InteractionManager.handleLike(postId);
-            if (result) {
-                target.textContent = result.userHasLiked ? 'Liked' : 'Like';
-                target.classList.toggle('liked', result.userHasLiked);
-                const likeCountEl = document.querySelector(`#post-${postId} .like-count`);
-                if (likeCountEl) likeCountEl.textContent = `${result.newLikeCount} Likes`;
-            }
+            await InteractionManager.handleLike(postId);
         }
 
         if (target.classList.contains('comment-btn')) {
             const commentSection = document.getElementById(`comments-${postId}`);
+            const commentsList = commentSection.querySelector('.comments-list');
             const isVisible = commentSection.style.display === 'block';
+
             if (isVisible) {
                 commentSection.style.display = 'none';
+                if (commentListeners[postId]) {
+                    commentListeners[postId]();
+                    delete commentListeners[postId];
+                }
             } else {
                 commentSection.style.display = 'block';
-                if (!commentSection.hasAttribute('data-comments-loaded')) {
-                    InteractionManager.loadAndDisplayComments(postId);
-                    commentSection.setAttribute('data-comments-loaded', 'true');
-                }
+                const callback = (commentsHTML) => {
+                    commentsList.innerHTML = commentsHTML;
+                };
+                commentListeners[postId] = InteractionManager.createCommentListener(postId, callback);
             }
         }
 
         if (target.classList.contains('delete-btn')) {
-            if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-                // No need to manually remove the element, the real-time listener will do it.
+            if (confirm('Are you sure you want to delete this post?')) {
                 await InteractionManager.handleDeletePost(postId);
             }
         }
@@ -88,9 +154,9 @@ function initSocialPage() {
         if (target.classList.contains('save-edit-btn')) {
             const postCard = document.getElementById(`post-${postId}`);
             const textarea = postCard.querySelector('.edit-textarea');
-            const newDescription = textarea.value;
-            // The listener will automatically update the UI on success.
-            await InteractionManager.handleEditPost(postId, newDescription);
+            await InteractionManager.handleEditPost(postId, textarea.value);
+            postCard.querySelector('.post-description').style.display = 'block';
+            postCard.querySelector('.edit-form-container').style.display = 'none';
         }
     });
     
@@ -100,24 +166,17 @@ function initSocialPage() {
             const form = e.target;
             const postId = form.dataset.postId;
             const input = form.querySelector('.comment-input');
-            const commentText = input.value;
-            const success = await InteractionManager.handleComment(postId, commentText);
+            
+            const success = await InteractionManager.handleComment(postId, input.value);
             if (success) {
                 input.value = '';
-                InteractionManager.loadAndDisplayComments(postId);
-                const commentBtn = document.querySelector(`.comment-btn[data-post-id="${postId}"]`);
-                if (commentBtn) {
-                    const currentCount = parseInt(commentBtn.textContent.match(/\d+/)[0] || 0);
-                    commentBtn.textContent = `Comment (${currentCount + 1})`;
-                }
             }
         }
     });
 
     // --- INITIALIZATION ---
     PostManager.init();
-    // FIX: Call the new function to set up the real-time listener.
-    FeedManager.initializeFeedListener();
+    FeedManager.initializeFeedListener(attachPostListeners);
 }
 
 document.addEventListener('DOMContentLoaded', initSocialPage);

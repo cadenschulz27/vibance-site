@@ -4,7 +4,6 @@
  */
 
 import { auth, db } from '../api/firebase.js';
-// FIX: Import 'onSnapshot' for real-time feed updates.
 import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 /**
@@ -91,30 +90,36 @@ function createPostHTML(postData, postId) {
 
 export const FeedManager = {
     /**
-     * FIX: Replaced the one-time fetch with a real-time listener.
-     * This function now sets up a listener that automatically updates the feed
-     * whenever there's a change in the posts collection.
+     * FIX: The listener now accepts a callback function.
+     * @param {Function} onFeedRendered - A function to call after the feed HTML is rendered.
      */
-    initializeFeedListener() {
+    initializeFeedListener(onFeedRendered) {
         const feedContainer = document.getElementById('feed-container');
         if (!feedContainer) return;
 
         const postsCollection = collection(db, "posts");
         const q = query(postsCollection, orderBy("createdAt", "desc"));
         
-        // onSnapshot sets up the real-time listener.
         onSnapshot(q, (querySnapshot) => {
             if (querySnapshot.empty) {
                 feedContainer.innerHTML = '<p class="text-center text-gray-500">No posts yet. Be the first to share something!</p>';
                 return;
             }
 
+            const postIds = [];
             let feedHTML = '';
             querySnapshot.forEach(doc => {
                 feedHTML += createPostHTML(doc.data(), doc.id);
+                postIds.push(doc.id);
             });
 
             feedContainer.innerHTML = feedHTML;
+
+            // FIX: After rendering, call the provided callback with the IDs of all rendered posts.
+            if (onFeedRendered) {
+                onFeedRendered(postIds);
+            }
+
         }, (error) => {
             console.error("Error listening to feed:", error);
             feedContainer.innerHTML = '<p class="text-center text-red-500">Could not load the feed. Please try again later.</p>';
