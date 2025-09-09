@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Accounts - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="accounts.css">
+</head>
+<body class="bg-black">
+
+    <div id="header-placeholder"></div>
+
+    <main class="accounts-container">
+        <div class="accounts-header">
+            <h1 class="accounts-title">Linked Accounts</h1>
+            <button id="link-account-btn" class="btn-primary">
+                Link New Account
+            </button>
+        </div>
+
+        <div id="linked-accounts-list">
+            <!-- This will be populated by accounts.js -->
+            <p class="loading-text">Loading linked accounts...</p>
+        </div>
+    </main>
+
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+    <script type="module" src="accounts.js"></script>
+    
+    <!-- Plaid Link script will be loaded by accounts.js when needed -->
+</body>
+</html>
