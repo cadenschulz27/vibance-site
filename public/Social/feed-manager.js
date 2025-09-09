@@ -90,7 +90,8 @@ function createPostHTML(postData, postId) {
 
 export const FeedManager = {
     /**
-     * FIX: The listener now accepts a callback function.
+     * Sets up a real-time listener that automatically updates the feed
+     * whenever there's a change in the posts collection.
      * @param {Function} onFeedRendered - A function to call after the feed HTML is rendered.
      */
     initializeFeedListener(onFeedRendered) {
@@ -115,7 +116,6 @@ export const FeedManager = {
 
             feedContainer.innerHTML = feedHTML;
 
-            // FIX: After rendering, call the provided callback with the IDs of all rendered posts.
             if (onFeedRendered) {
                 onFeedRendered(postIds);
             }

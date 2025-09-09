@@ -97,12 +97,6 @@ export const InteractionManager = {
         }
     },
 
-    /**
-     * FIX: Replaced one-time fetch with a real-time listener for comments.
-     * @param {string} postId - The ID of the post for which to load comments.
-     * @param {Function} callback - A function to call with the updated comments HTML.
-     * @returns {Function} An unsubscribe function to stop the listener.
-     */
     createCommentListener(postId, callback) {
         const commentsCollectionRef = collection(db, 'posts', postId, 'comments');
         const q = query(commentsCollectionRef, orderBy('createdAt', 'asc'));
@@ -183,7 +177,7 @@ export const InteractionManager = {
             }
             await updateDoc(postRef, { description: newDescription });
             return true;
-        } catch (error)_mod
+        } catch (error) {
             console.error("Error editing post:", error);
             alert("There was an error saving your changes. Please try again.");
             return false;
