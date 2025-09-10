@@ -4,19 +4,19 @@
  */
 
 import { auth, db } from '../api/firebase.js';
-import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /**
  * Formats a Firestore Timestamp into a human-readable date string.
  * @param {object} timestamp - The Firestore Timestamp object.
- * @returns {string} A formatted date string (e.g., "September 8, 2025").
+ * @returns {string} A formatted date string (e.g., "September 10, 2025").
  */
 function formatTimestamp(timestamp) {
     if (!timestamp || typeof timestamp.toDate !== 'function') {
         return 'Just now';
     }
     const date = timestamp.toDate();
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
@@ -126,4 +126,3 @@ export const FeedManager = {
         });
     }
 };
-

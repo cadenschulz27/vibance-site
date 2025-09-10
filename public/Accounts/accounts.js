@@ -6,19 +6,17 @@
 
 // ---------- Imports ----------
 import { auth, db } from '../api/firebase.js';
-import {
-  onAuthStateChanged
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   collection, getDocs, doc, getDoc, deleteDoc
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // ---------- DOM ----------
 const els = {
-  list: document.getElementById('accounts-list'),          // <div id="accounts-list"></div>
-  linkBtn: document.getElementById('link-account-btn'),     // <button id="link-account-btn">Link new account</button>
-  empty: document.getElementById('empty-state'),            // <div id="empty-state">No accounts</div> (optional)
-  toast: document.getElementById('toast'),                  // optional mini toast element
+  list: document.getElementById('accounts-list'),
+  linkBtn: document.getElementById('link-account-btn'),
+  empty: document.getElementById('empty-state'),
+  toast: document.getElementById('toast'),
 };
 
 // ---------- Utilities ----------
@@ -194,7 +192,6 @@ async function openPlaidLink() {
       token: link_token,
       onSuccess: async (public_token, metadata) => {
         try {
-          // IMPORTANT: send 'metadata' (not 'institution') because the server reads metadata.institution.name
           await callPlaidFn({
             action: 'exchange_public_token',
             public_token,
@@ -224,9 +221,8 @@ async function syncItem(cardEl) {
   setSyncingState(cardEl, true);
   try {
     const result = await callPlaidFn({ action: 'sync_transactions', item_id: itemId });
-    // Prefer reading Firestore for authoritative timestamp (function also updates it)
     await refreshFromFirestore(cardEl);
-    showToast(`Synced ✓  Added: ${result.addedCount ?? 0} • Updated: ${result.modifiedCount ?? 0} • Removed: ${result.removedCount ?? 0}`);
+    showToast(`Synced ✓  Added: ${result.added ?? 0} • Updated: ${result.modified ?? 0} • Removed: ${result.removed ?? 0}`);
   } catch (e) {
     console.error(e);
     showToast('Sync failed');
@@ -244,15 +240,12 @@ async function unlinkItem(cardEl) {
   setBtnBusy(unlinkBtn, 'Unlinking…', true);
   try {
     await callPlaidFn({ action: 'unlink_item', item_id: itemId });
-
-    // Also remove local card and the Firestore doc (function should remove it, but double-check)
     try {
       const uid = auth.currentUser?.uid;
       if (uid) await deleteDoc(doc(db, 'users', uid, 'plaid_items', itemId));
     } catch (_e) {}
 
     cardEl.remove();
-    // Update empty state if needed
     if (els.list && !els.list.querySelector('.account-card')) renderEmptyState(true);
     showToast('Account unlinked.');
   } catch (e) {
@@ -281,7 +274,6 @@ function attachAccountCardHandlers(cardEl) {
     }));
   }
 
-  // Optional: auto first sync if never synced
   const last = cardEl.querySelector('[data-field="last-synced"]')?.textContent?.trim().toLowerCase();
   if (!last || last === '—' || last.includes('not synced yet')) {
     setTimeout(() => syncBtn?.click(), 500);
@@ -289,7 +281,6 @@ function attachAccountCardHandlers(cardEl) {
 }
 
 async function renderList(uid) {
-  // Guard: page is missing expected container
   if (!els.list) {
     console.error('Missing #accounts-list element on the page.');
     showToast('Missing #accounts-list in Accounts page');
@@ -337,7 +328,6 @@ function init() {
   wireLinkButton();
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
-      // If your auth-check.js handles redirects, we can just no-op here.
       return;
     }
     try {
@@ -349,5 +339,4 @@ function init() {
   });
 }
 
-// Kick off
 document.addEventListener('DOMContentLoaded', init);

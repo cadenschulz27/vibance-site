@@ -5,33 +5,14 @@
 //  - Loads transactions from Firestore and renders a filterable table
 //  - Inline category editing (saved to Firestore)
 //  - Totals, pagination, CSV export
-//
-// Requirements:
-//   - ../api/firebase.js must export { auth, db } (initialized with Firebase v9 SDK)
-//   - Netlify function: /.netlify/functions/plaid supports 'sync_transactions'
-//   - Firestore schema written by your plaid.js function:
-//       users/{uid}/plaid_items/{itemId} -> { last_synced, institution_name, ... }
-//       users/{uid}/plaid_items/{itemId}/transactions/{txId} -> { amount, date, category, categoryUser, ... }
-//
-// Expected HTML IDs (adjust if needed):
-//   #sync-all-expenses, #account-filter, #start-date, #end-date, #search-input,
-//   #min-amount, #max-amount, #category-filter, #reset-filters, #export-csv,
-//   #tx-count, #totals-income, #totals-expense, #totals-net, #tx-empty,
-//   #tx-table-body, #pagination-prev, #pagination-next, #pagination-label
-//
-// Notes:
-//   - AUTO_FIRST_SYNC toggles auto "Sync all" on first load for fresh users.
-//   - Date filtering uses LOCAL midnight for YYYY-MM-DD strings to avoid UTC off-by-one.
 // ----------------------------------------------------
 
 import { auth, db } from '../api/firebase.js';
-import {
-  onAuthStateChanged
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   collection, getDocs, doc, getDoc, setDoc,
   query, orderBy, limit
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // -------------------- Config --------------------
 const PER_ITEM_LIMIT = 500;    // how many tx to fetch per item from Firestore
@@ -69,20 +50,17 @@ const els = {
   next: document.getElementById('pagination-next'),
   pageLabel: document.getElementById('pagination-label'),
 
-  toast: document.getElementById('toast'), // optional small toast div
+  toast: document.getElementById('toast'),
 };
 
 // -------------------- State --------------------
 let UID = null;
-let ALL_ITEMS = [];  // [{ id, institution_name, last_synced }]
-let ALL_TX = [];     // flattened transactions
+let ALL_ITEMS = [];
+let ALL_TX = [];
 let FILTERED = [];
 let PAGE = 1;
 
 // -------------------- Utils --------------------
-
-// Parse YYYY-MM-DD as LOCAL midnight to avoid UTC off-by-one.
-// For other date formats, fall back to Date.parse.
 function parseLocalDateEpoch(str) {
   if (!str) return 0;
   if (typeof str !== 'string') {
@@ -93,7 +71,7 @@ function parseLocalDateEpoch(str) {
   const m = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (m) {
     const y = Number(m[1]), mon = Number(m[2]) - 1, day = Number(m[3]);
-    return new Date(y, mon, day, 0, 0, 0, 0).getTime(); // LOCAL midnight
+    return new Date(y, mon, day, 0, 0, 0, 0).getTime();
   }
   const t = Date.parse(str);
   return Number.isNaN(t) ? 0 : t;
@@ -201,7 +179,6 @@ async function syncAllItems(uid) {
 
 async function fetchItemTransactions(uid, itemId, perItemLimit = PER_ITEM_LIMIT) {
   const txRef = collection(db, 'users', uid, 'plaid_items', itemId, 'transactions');
-  // Order by 'date' desc (string/ISO in your schema); take a big slice and filter client-side
   const qTx = query(txRef, orderBy('date', 'desc'), limit(perItemLimit));
   const snap = await getDocs(qTx);
   const rows = [];
@@ -228,7 +205,6 @@ async function fetchItemTransactions(uid, itemId, perItemLimit = PER_ITEM_LIMIT)
   return rows;
 }
 
-// Save user category override
 async function saveCategory(uid, itemId, txId, categoryUser) {
   const txRef = doc(db, 'users', uid, 'plaid_items', itemId, 'transactions', txId);
   await setDoc(txRef, { categoryUser: categoryUser || '' }, { merge: true });
@@ -237,14 +213,12 @@ async function saveCategory(uid, itemId, txId, categoryUser) {
 // -------------------- Load & Render --------------------
 async function loadAllTransactions(uid) {
   ALL_ITEMS = await listPlaidItems(uid);
-  // Populate accounts dropdown
   if (els.account) {
     els.account.innerHTML =
       '<option value="">All accounts</option>' +
       ALL_ITEMS.map(it => `<option value="${it.id}">${escapeHtml(it.institution_name)}</option>`).join('');
   }
 
-  // Flatten recent tx from each item
   let all = [];
   for (const it of ALL_ITEMS) {
     const rows = await fetchItemTransactions(uid, it.id);
@@ -253,12 +227,11 @@ async function loadAllTransactions(uid) {
   }
   all.sort((a, b) => b._epoch - a._epoch);
   ALL_TX = all;
-  applyFilters(); // renders
+  applyFilters();
 }
 
 function readFilters() {
   const account = els.account?.value || '';
-  // Parse input[type="date"] (value is YYYY-MM-DD); use LOCAL midnight:
   const start = els.start?.value ? parseLocalDateEpoch(els.start.value) : null;
   const end = els.end?.value ? parseLocalDateEpoch(els.end.value) : null;
   const q = (els.search?.value || '').toLowerCase();
@@ -270,13 +243,12 @@ function readFilters() {
 
 function applyFilters() {
   const { account, start, end, q, cat, minAmt, maxAmt } = readFilters();
-
   let out = ALL_TX;
 
   if (account) out = out.filter(r => r.itemId === account);
   if (start != null) out = out.filter(r => r._epoch && r._epoch >= start);
   if (end != null) {
-    const endOfDay = end + (24*3600*1000 - 1); // inclusive end date (local)
+    const endOfDay = end + (24*3600*1000 - 1);
     out = out.filter(r => r._epoch && r._epoch <= endOfDay);
   }
   if (q) {
@@ -302,7 +274,6 @@ function paginate(list, page, size) {
 }
 
 function render() {
-  // totals
   const totalCount = FILTERED.length;
   const income = FILTERED.filter(r => r.amount < 0).reduce((s, r) => s + Math.abs(r.amount), 0);
   const expense = FILTERED.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0);
@@ -335,7 +306,6 @@ function render() {
 function renderRow(r) {
   const tr = document.createElement('tr');
   tr.className = 'border-b border-neutral-800 hover:bg-neutral-900';
-
   const amountCls = r.amount < 0 ? 'text-emerald-400' : 'text-red-400';
   const categoryText = r.categoryUser || r.categoryAuto || '';
 
@@ -416,7 +386,6 @@ function ensureCategoryDatalist() {
 }
 
 function wireUI() {
-  // Filters
   const rerun = () => applyFilters();
   els.account?.addEventListener('change', rerun);
   els.start?.addEventListener('change', rerun);
@@ -436,14 +405,12 @@ function wireUI() {
     applyFilters();
   });
 
-  // Export
   els.exportBtn?.addEventListener('click', () => {
     const csv = toCSV(FILTERED);
     const today = new Date().toISOString().slice(0,10);
     download(`expenses_${today}.csv`, csv);
   });
 
-  // Pagination
   els.prev?.addEventListener('click', () => { if (PAGE > 1) { PAGE--; render(); } });
   els.next?.addEventListener('click', () => {
     const total = FILTERED.length;
@@ -452,14 +419,13 @@ function wireUI() {
 
   ensureCategoryDatalist();
 
-  // Sync all
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
     setBtnBusy(els.syncAll, 'Syncing…', true);
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
       toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
-      await loadAllTransactions(UID); // refresh list after sync completes
+      await loadAllTransactions(UID);
     } catch (e) {
       console.error(e);
       toast('Sync failed');
@@ -474,11 +440,10 @@ function init() {
   wireUI();
 
   onAuthStateChanged(auth, async (user) => {
-    if (!user) return; // auth-check.js will likely redirect elsewhere
+    if (!user) return;
     UID = user.uid;
 
     try {
-      // Optional: kick off a first sync for freshness
       if (AUTO_FIRST_SYNC) {
         if (els.syncAll) setBtnBusy(els.syncAll, 'Syncing…', true);
         try {
@@ -490,7 +455,6 @@ function init() {
         }
       }
 
-      // Load & render
       await loadAllTransactions(UID);
       toast('Transactions loaded');
     } catch (e) {
