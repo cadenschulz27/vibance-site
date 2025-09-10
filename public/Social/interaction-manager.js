@@ -4,8 +4,11 @@
  */
 
 import { auth, db, storage } from '../api/firebase.js';
-import { doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, collection, addDoc, serverTimestamp, increment, query, orderBy, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
+import { 
+    doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, collection, 
+    addDoc, serverTimestamp, increment, query, orderBy, getDocs, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 
 /**
@@ -193,4 +196,3 @@ export const InteractionManager = {
         });
     }
 };
-
