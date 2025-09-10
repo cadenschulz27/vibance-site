@@ -11,12 +11,14 @@ import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/
  * @param {object} timestamp - The Firestore Timestamp object.
  * @returns {string} A formatted date string (e.g., "September 10, 2025").
  */
+// Inside feed-manager.js
 function formatTimestamp(timestamp) {
     if (!timestamp || typeof timestamp.toDate !== 'function') {
         return 'Just now';
     }
     const date = timestamp.toDate();
-    return date.toLocaleDateDateString('en-US', {
+    // Corrected to toLocaleDateString()
+    return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
