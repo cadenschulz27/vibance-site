@@ -11,7 +11,7 @@ let feedUnsubscribe = null;
 const commentListeners = new Map();
 
 export const ListenerManager = {
-    attachFeedListener(container) {
+    attachFeedListener(container, onPostsRendered) {
         if (feedUnsubscribe) feedUnsubscribe(); // Unsubscribe from any previous listener
 
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -19,11 +19,14 @@ export const ListenerManager = {
             container.innerHTML = '';
             if (querySnapshot.empty) {
                 container.innerHTML = '<p class="text-center text-gray-500 py-10">No posts yet. Be the first!</p>';
+                onPostsRendered([]);
                 return;
             }
+            
             const posts = await Promise.all(querySnapshot.docs.map(async (doc) => {
                 const postData = doc.data();
-                const author = await DataService.fetchAuthorDetails(postData.userId);
+                // FIX: Called the correct exported function 'fetchUserProfile'
+                const author = await DataService.fetchUserProfile(postData.userId);
                 return { id: doc.id, ...postData, author };
             }));
 
@@ -31,9 +34,12 @@ export const ListenerManager = {
                 const postElement = PostRenderer.renderPost(post);
                 container.appendChild(postElement);
             });
+            onPostsRendered(posts);
+
         }, (error) => {
             console.error("Error with feed listener:", error);
             container.innerHTML = '<p class="text-center text-red-500 py-10">Could not load feed.</p>';
+            onPostsRendered([]);
         });
     },
 
@@ -46,7 +52,8 @@ export const ListenerManager = {
         const unsubscribe = onSnapshot(q, async (snapshot) => {
             const comments = await Promise.all(snapshot.docs.map(async (doc) => {
                 const commentData = doc.data();
-                const author = await DataService.fetchAuthorDetails(commentData.userId);
+                // FIX: Called the correct exported function 'fetchUserProfile'
+                const author = await DataService.fetchUserProfile(commentData.userId);
                 return { ...commentData, author };
             }));
 
@@ -67,3 +74,4 @@ export const ListenerManager = {
         commentListeners.clear();
     }
 };
+
