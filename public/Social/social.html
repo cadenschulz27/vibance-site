@@ -15,7 +15,6 @@
     <div id="header-placeholder"></div>
 
     <main class="social-container">
-        <!-- New "Create Post" Input Field -->
         <div class="create-post-container">
             <div id="create-post-avatar-placeholder" class="create-post-avatar">
                 <!-- Avatar will be loaded by JS -->
@@ -33,10 +32,14 @@
         <div id="feed-container">
             <!-- Posts will be loaded here -->
         </div>
+        
+        <div id="load-more-container" class="load-more-container">
+            <button id="load-more-btn" class="load-more-btn">Load More</button>
+        </div>
     </main>
 
-    <!-- Create Post Modal -->
-    <div id="create-post-modal" class="hidden">
+    <!-- FIX: Added the 'modal-backdrop' class to apply the correct pop-up styles -->
+    <div id="create-post-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <button id="close-modal-btn">&times;</button>
             <h2 class="modal-title">Create a New Post</h2>
