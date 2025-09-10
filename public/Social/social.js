@@ -1,79 +1,154 @@
 /**
  * @file /Social/social.js
- * @description Main controller for the updated Social page.
+ * @description Main controller for the Social page. It handles UI interactions,
+ * orchestrates the post creation and feed loading processes, and manages all post interactions.
  */
-import { PostManager } from './post-manager.js';
-import { DataService } from './data-service.js';
-import { ModalManager } from './modal-manager.js';
-import { ListenerManager } from './listeners.js';
+
 import { auth } from '../api/firebase.js';
+import { DataService } from './data-service.js';
+import { PostRenderer } from './post-renderer.js';
+import { ModalManager } from './modal-manager.js';
+import { Listeners } from './listeners.js';
 import { createAvatar } from './ui-helpers.js';
 
-function initSocialPage() {
-    const createPostTrigger = document.getElementById('create-post-trigger');
-    const createPostBtnIcon = document.getElementById('create-post-btn-icon');
-    const createPostAvatarPlaceholder = document.getElementById('create-post-avatar-placeholder');
-    
-    const modal = document.getElementById('create-post-modal');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const postForm = document.getElementById('post-form');
-    const feedContainer = document.getElementById('feed-container');
+// --- STATE MANAGEMENT ---
+let lastVisiblePost = null;
+let isLoading = false;
+let allPostsLoaded = false;
+let activeOptionsMenu = null;
 
-    const openModal = () => modal?.classList.remove('hidden');
-    const closeModal = () => modal?.classList.add('hidden');
+// --- DOM ELEMENTS ---
+const feedContainer = document.getElementById('feed-container');
+const createPostBar = document.getElementById('create-post-bar');
+const loadMoreBtn = document.getElementById('load-more-btn');
 
-    createPostTrigger?.addEventListener('click', openModal);
-    createPostBtnIcon?.addEventListener('click', openModal);
-    
-    closeModalBtn?.addEventListener('click', closeModal);
-    modal?.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
+/**
+ * Main function to load posts and append them to the feed.
+ */
+async function loadPosts() {
+    if (isLoading || allPostsLoaded) return;
+    isLoading = true;
+    if (loadMoreBtn) loadMoreBtn.textContent = 'Loading...';
 
-    postForm?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        PostManager.handlePostCreation(e, closeModal);
-    });
+    const posts = await DataService.fetchPosts(lastVisiblePost);
+    if (posts.length > 0) {
+        lastVisiblePost = posts[posts.length - 1].doc;
+        const postsWithAuthors = await Listeners.attachAuthorDetailsToPosts(posts);
+        
+        postsWithAuthors.forEach(post => {
+            const postElement = document.createElement('div');
+            postElement.innerHTML = PostRenderer.createPostHTML(post);
+            feedContainer.appendChild(postElement.firstElementChild);
+        });
 
-    feedContainer?.addEventListener('click', async (e) => {
-        const button = e.target.closest('button');
-        if (!button) return;
+        Listeners.startPostListeners(posts.map(p => p.id));
+    }
 
-        const postCard = button.closest('.post-card');
-        const post = JSON.parse(postCard.dataset.postData);
+    if (posts.length < 10) {
+        allPostsLoaded = true;
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    }
 
-        if (button.classList.contains('like-btn')) {
-            await DataService.toggleLike(post.id, post.likes);
-        } else if (button.classList.contains('comment-btn') || button.classList.contains('view-comments-link')) {
-            ModalManager.showComments(post);
-        } else if (button.classList.contains('post-options-btn')) {
-            ModalManager.showOptions(post);
+    isLoading = false;
+    if (loadMoreBtn) loadMoreBtn.textContent = 'Load More';
+}
+
+/**
+ * Sets up the main event listener for all interactions within the feed.
+ */
+function setupFeedEventListeners() {
+    feedContainer.addEventListener('click', async (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+        const postId = target.dataset.postId;
+
+        switch (action) {
+            case 'like-post':
+                await DataService.toggleLike(postId);
+                break;
+            case 'comment-post':
+                ModalManager.openCommentsModal(postId);
+                break;
+            case 'view-image':
+                ModalManager.openCommentsModal(postId); // Opens the same detailed view
+                break;
+            case 'toggle-options':
+                toggleOptionsMenu(postId);
+                break;
+            case 'edit-post':
+                // This will be implemented in a future step
+                alert('Edit functionality coming soon!');
+                closeActiveOptionsMenu();
+                break;
+            case 'delete-post':
+                if (confirm('Are you sure you want to delete this post?')) {
+                    const imageUrl = target.dataset.imageUrl;
+                    await DataService.deletePost(postId, imageUrl);
+                    document.getElementById(`post-${postId}`).remove();
+                }
+                closeActiveOptionsMenu();
+                break;
         }
     });
 
-    async function initializePage() {
-        if (!feedContainer) return;
-        feedContainer.innerHTML = '<p class="text-center text-gray-500 py-10">Loading feed...</p>';
-        
-        const user = auth.currentUser;
+    // Close options menu if clicking elsewhere
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.post-options')) {
+            closeActiveOptionsMenu();
+        }
+    });
+}
+
+function toggleOptionsMenu(postId) {
+    const menu = document.querySelector(`[data-menu-for-post="${postId}"]`);
+    if (!menu) return;
+
+    if (activeOptionsMenu && activeOptionsMenu !== menu) {
+        activeOptionsMenu.classList.add('hidden');
+    }
+
+    menu.classList.toggle('hidden');
+    activeOptionsMenu = menu.classList.contains('hidden') ? null : menu;
+}
+
+function closeActiveOptionsMenu() {
+    if (activeOptionsMenu) {
+        activeOptionsMenu.classList.add('hidden');
+        activeOptionsMenu = null;
+    }
+}
+
+/**
+ * Main initialization function for the social page.
+ */
+async function initSocialPage() {
+    ModalManager.init();
+    
+    auth.onAuthStateChanged(async (user) => {
         if (user) {
             const userProfile = await DataService.fetchUserProfile(user.uid);
-            if (createPostAvatarPlaceholder) {
-                createPostAvatarPlaceholder.innerHTML = createAvatar(userProfile);
-            }
-            ListenerManager.attachFeedListener(feedContainer);
-        } else {
-            ListenerManager.detachAll();
-            feedContainer.innerHTML = '<p class="text-center text-gray-500 py-10">Please log in to see the feed.</p>';
-        }
-    }
-    
-    PostManager.init();
-    auth.onAuthStateChanged(user => {
-        initializePage();
-    });
+            
+            createPostBar.querySelector('.avatar-container').innerHTML = createAvatar(userProfile);
+            createPostBar.addEventListener('click', () => {
+                ModalManager.openCreatePostModal(userProfile);
+            });
 
-    window.addEventListener('feed-needs-refresh', initializePage);
+            // Listen for a custom event to refresh the feed after a new post is made
+            document.addEventListener('feed-needs-refresh', () => {
+                feedContainer.innerHTML = '';
+                lastVisiblePost = null;
+                allPostsLoaded = false;
+                if (loadMoreBtn) loadMoreBtn.style.display = 'block';
+                loadPosts();
+            });
+
+            setupFeedEventListeners();
+            loadPosts();
+            if (loadMoreBtn) loadMoreBtn.addEventListener('click', loadPosts);
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', initSocialPage);

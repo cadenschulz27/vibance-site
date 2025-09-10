@@ -1,147 +1,230 @@
 /**
  * @file /Social/modal-manager.js
- * @description Manages all modals for the social feed, including the comments view.
+ * @description Manages the creation, display, and interaction logic for all modals
+ * in the social feed, including the advanced "create post" and "comments" modals.
  */
-import { createAvatar, createIcon } from './ui-helpers.js';
-import { DataService } from './data-service.js';
+
 import { auth } from '../api/firebase.js';
+import { DataService } from './data-service.js';
+import { PostRenderer } from './post-renderer.js';
+import { createAvatar, createIcon } from './ui-helpers.js';
+import { formatRelativeTime } from '../utils.js';
 
-let activeModal = null;
-
-function createModal(content, type = 'default') {
-    const backdrop = document.createElement('div');
-    backdrop.className = 'modal-backdrop';
-    
-    const contentWrapper = document.createElement('div');
-    contentWrapper.className = `modal-content ${type}-modal-content`;
-    contentWrapper.innerHTML = content;
-
-    backdrop.appendChild(contentWrapper);
-    document.body.appendChild(backdrop);
-    
-    activeModal = backdrop;
-
-    const close = () => {
-        backdrop.remove();
-        activeModal = null;
-    };
-
-    backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) {
-            close();
-        }
-    });
-
-    contentWrapper.querySelector('.close-modal-btn')?.addEventListener('click', close);
-    
-    return { modalElement: contentWrapper, close };
-}
-
-async function showCommentsModal(post) {
-    const modalContent = `
-        <div class="comments-modal-image">
-            <img src="${post.imageUrl}" alt="Post image">
-        </div>
-        <div class="comments-modal-details">
-            <div class="modal-header">
-                <a href="/Social/user-profile.html?id=${post.userId}" class="author-info">
-                    ${createAvatar(post.author)}
-                    <span class="author-name">${post.author.name}</span>
-                </a>
-                <button class="close-modal-btn">&times;</button>
-            </div>
-            <div class="comments-list">
-                <div class="comment">
-                     ${createAvatar(post.author)}
-                    <div>
-                        <p class="comment-text">
-                            <a href="/Social/user-profile.html?id=${post.userId}" class="author-name">${post.author.name}</a>
-                            <span>${post.description}</span>
-                        </p>
-                    </div>
-                </div>
-                <!-- More comments will be loaded here -->
-            </div>
-            <div class="comment-form-container">
-                 <div class="post-actions" style="padding: 0 16px 8px;">
-                     <button class="action-btn like-btn ${post.likes.includes(auth.currentUser.uid) ? 'liked' : ''}" data-post-id="${post.id}">
-                        ${createIcon('like')}
-                    </button>
-                    <button class="action-btn comment-btn" data-post-id="${post.id}">
-                        ${createIcon('comment')}
-                    </button>
-                 </div>
-                 <p class="post-likes" style="padding: 0 16px 8px;">${post.likes.length} likes</p>
-                <form class="comment-form" data-post-id="${post.id}">
-                    <input type="text" class="comment-input" placeholder="Add a comment..." required>
-                    <button type="submit" class="btn-post" style="padding: 8px; border-radius: 8px;">Post</button>
-                </form>
-            </div>
-        </div>
-    `;
-    const { modalElement, close } = createModal(modalContent, 'comments');
-    const commentsListEl = modalElement.querySelector('.comments-list');
-    
-    const comments = await DataService.fetchComments(post.id);
-    comments.forEach(comment => {
-        const commentEl = document.createElement('div');
-        commentEl.className = 'comment';
-        commentEl.innerHTML = `
-            ${createAvatar(comment.author)}
-            <div>
-                 <p class="comment-text">
-                    <a href="/Social/user-profile.html?id=${comment.userId}" class="author-name">${comment.author.name}</a>
-                    <span>${comment.text}</span>
-                 </p>
-            </div>
-        `;
-        commentsListEl.appendChild(commentEl);
-    });
-
-    modalElement.querySelector('.comment-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const input = e.target.querySelector('.comment-input');
-        await DataService.postComment(post.id, input.value);
-        close();
-        // A full refresh is needed to see the new comment count on the main feed
-        window.dispatchEvent(new CustomEvent('feed-needs-refresh'));
-    });
-}
-
-async function showOptionsMenu(post) {
-     const isOwner = auth.currentUser.uid === post.userId;
-     let options = isOwner 
-        ? '<button class="option-btn delete-btn" data-post-id="'+post.id+'">Delete</button>'
-        : '<button class="option-btn">Report</button>';
-
-     const modalContent = `
-        <div class="options-modal">
-            ${options}
-            <button class="option-btn close-modal-btn">Cancel</button>
-        </div>
-     `;
-     const { modalElement, close } = createModal(modalContent, 'options');
-
-     modalElement.querySelector('.delete-btn')?.addEventListener('click', async () => {
-         if (confirm('Are you sure you want to delete this post?')) {
-            await DataService.deletePost(post.id, post.imageUrl);
-            close();
-            window.dispatchEvent(new CustomEvent('feed-needs-refresh'));
-         }
-     });
-}
+// Private variable to hold the currently active modal and its listeners.
+let activeModal = {
+    element: null,
+    commentListener: null,
+    selectedFile: null // To hold the image file for a new post
+};
 
 export const ModalManager = {
-    showComments(post) {
-        showCommentsModal(post);
+
+    /**
+     * Initializes the manager by creating the modal containers in the DOM.
+     */
+    init() {
+        if (document.getElementById('modal-root')) return;
+        const modalRoot = document.createElement('div');
+        modalRoot.id = 'modal-root';
+        document.body.appendChild(modalRoot);
     },
-    showOptions(post) {
-        showOptionsMenu(post);
+
+    /**
+     * Opens the modal for creating a new post.
+     * @param {object} userProfile - The profile object of the currently logged-in user.
+     */
+    openCreatePostModal(userProfile) {
+        const modalHTML = `
+            <div class="modal-content create-post-modal">
+                <div class="modal-header">
+                    <h2>Create New Post</h2>
+                    <button data-action="share-post" class="share-btn">Share</button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="post-description-input" placeholder="Write a caption..."></textarea>
+                    <div id="image-upload-area">
+                        ${createIcon('image')}
+                        <p>Drag and drop a photo here</p>
+                        <input type="file" id="image-file-input" class="hidden" accept="image/*">
+                    </div>
+                    <div id="image-preview-area" class="hidden">
+                        <img id="image-preview" src="" alt="Image preview"/>
+                        <button id="remove-image-btn" class="remove-image-btn">${createIcon('close')}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        this._openModal(modalHTML, (modalEl) => this._setupCreatePostListeners(modalEl, userProfile));
     },
-    closeActive() {
-        if(activeModal) {
-            activeModal.remove();
-            activeModal = null;
+
+    /**
+     * Opens the advanced, two-panel modal for viewing and adding comments.
+     * @param {string} postId - The ID of the post to display comments for.
+     */
+    async openCommentsModal(postId) {
+        const post = await DataService.fetchPostById(postId);
+        if (!post) return;
+
+        const modalHTML = `
+            <div class="modal-content comments-modal">
+                <div class="comments-image-panel">
+                    <img src="${post.data.imageUrl}" alt="Post image">
+                </div>
+                <div class="comments-panel">
+                    <div class="comments-header">
+                        ${PostRenderer.renderPostHeader(post)}
+                    </div>
+                    <div class="comments-list" id="modal-comments-list">
+                        <!-- Comments will be loaded here in real-time -->
+                    </div>
+                    <div class="comments-actions">
+                        ${PostRenderer.renderPostActions(post)}
+                    </div>
+                    <div class="comments-add-comment">
+                        <form id="modal-comment-form" data-post-id="${postId}">
+                            <input type="text" placeholder="Add a comment..." required>
+                            <button type="submit">Post</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+        this._openModal(modalHTML, (modalEl) => this._setupCommentsListeners(modalEl, post));
+    },
+
+    // --- Private Helper Methods ---
+
+    _openModal(modalHTML, setupListenersCallback) {
+        this.closeModal();
+        const modalRoot = document.getElementById('modal-root');
+        
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop';
+        backdrop.innerHTML = modalHTML;
+        
+        modalRoot.appendChild(backdrop);
+        
+        setTimeout(() => backdrop.classList.add('visible'), 10);
+        
+        activeModal.element = backdrop;
+        
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) this.closeModal();
+        });
+
+        if (setupListenersCallback) {
+            setupListenersCallback(backdrop);
         }
+    },
+
+    closeModal() {
+        if (activeModal.element) {
+            activeModal.element.classList.remove('visible');
+            setTimeout(() => activeModal.element.remove(), 300);
+        }
+        if (activeModal.commentListener) {
+            activeModal.commentListener();
+        }
+        activeModal = { element: null, commentListener: null, selectedFile: null };
+    },
+    
+    _setupCreatePostListeners(modalEl) {
+        const shareBtn = modalEl.querySelector('[data-action="share-post"]');
+        const descriptionInput = modalEl.querySelector('#post-description-input');
+        const uploadArea = modalEl.querySelector('#image-upload-area');
+        const fileInput = modalEl.querySelector('#image-file-input');
+        const previewArea = modalEl.querySelector('#image-preview-area');
+        const previewImg = modalEl.querySelector('#image-preview');
+        const removeImgBtn = modalEl.querySelector('#remove-image-btn');
+
+        const handleFile = (file) => {
+            if (file && file.type.startsWith('image/')) {
+                activeModal.selectedFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    uploadArea.classList.add('hidden');
+                    previewArea.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        removeImgBtn.addEventListener('click', () => {
+            activeModal.selectedFile = null;
+            fileInput.value = '';
+            previewArea.classList.add('hidden');
+            uploadArea.classList.remove('hidden');
+        });
+
+        shareBtn.addEventListener('click', async () => {
+            const description = descriptionInput.value;
+            const file = activeModal.selectedFile;
+
+            if (!description && !file) {
+                alert('Please add a caption or an image.');
+                return;
+            }
+
+            shareBtn.disabled = true;
+            shareBtn.textContent = 'Sharing...';
+
+            try {
+                await DataService.createPost(description, file);
+                this.closeModal();
+                // Dispatch a custom event to tell the main page to refresh the feed
+                document.dispatchEvent(new CustomEvent('feed-needs-refresh'));
+            } catch (error) {
+                console.error("Error creating post:", error);
+                alert("Could not create post. Please try again.");
+                shareBtn.disabled = false;
+                shareBtn.textContent = 'Share';
+            }
+        });
+    },
+
+    _setupCommentsListeners(modalEl, post) {
+        activeModal.commentListener = DataService.onCommentsSnapshot(post.id, (comments) => {
+            const listEl = modalEl.querySelector('#modal-comments-list');
+            listEl.innerHTML = comments.map(c => this._renderComment(c)).join('');
+        });
+        
+        modalEl.querySelector('#modal-comment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = e.target.querySelector('input');
+            await DataService.addComment(post.id, input.value);
+            input.value = '';
+        });
+    },
+
+    _renderComment(comment) {
+        return `
+            <div class="comment-item">
+                ${createAvatar(comment.author, 'h-8 w-8')}
+                <div class="comment-content">
+                    <p>
+                        <a href="#" class="comment-author-name">${comment.author.name}</a>
+                        ${comment.data.text}
+                    </p>
+                    <div class="comment-meta">
+                        <span>${formatRelativeTime(comment.data.createdAt)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 };
+
