@@ -5,8 +5,8 @@
  */
 
 import { auth, db, storage } from '../api/firebase.js';
-import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
+import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // A private variable to hold the file selected by the user.
 let selectedFile = null;
@@ -146,4 +146,3 @@ export const PostManager = {
         }
     }
 };
-
