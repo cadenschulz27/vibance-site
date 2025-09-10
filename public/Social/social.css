@@ -1,403 +1,254 @@
 /**
  * @file /Social/social.css
- * @description Stylesheet for the Social page, including the feed, posts, and create-post modal.
+ * @description Instagram-style redesign for the Social page.
  */
 
-/* --- GLOBAL VARIABLES --- */
 :root {
-    --social-bg-color: #000;
-    --feed-max-width: 700px;
-    --modal-bg-color: rgba(0, 0, 0, 0.7);
-    --card-bg-color: #121212;
-    --card-border-color: #2d2d2d;
+    --feed-max-width: 640px;
+    --card-bg-color: #000;
+    --card-border-color: #262626;
+    --primary-text-color: #f5f5f5;
+    --secondary-text-color: #a8a8a8;
     --neon-green: #CCFF00;
+    --link-color: #0095f6;
 }
 
-/* --- PAGE LAYOUT --- */
+body {
+    background-color: #000;
+}
+
 .social-container {
     max-width: var(--feed-max-width);
     margin: 2rem auto;
     padding: 0 1rem;
 }
 
-.social-header {
+/* --- Stories --- */
+.stories-container {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
+    gap: 1rem;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
     border-bottom: 1px solid var(--card-border-color);
 }
-
-.social-title {
-    font-family: 'Lora', serif;
-    font-size: 2.5rem;
-    font-weight: 600;
+.story-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: #1a1a1a;
+    border: 2px solid #363636;
 }
 
-#create-post-btn {
-    background-color: var(--neon-green);
-    color: #000;
-    font-weight: 700;
-    padding: 0.75rem 1.5rem;
-    border-radius: 9999px;
-    border: none;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-#create-post-btn:hover {
-    transform: translateY(-2px);
-}
-
-/* --- POST FEED --- */
-#feed-container {
+/* --- Feed --- */
+.feed-container {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 2rem;
 }
 
+/* --- Post Card --- */
 .post-card {
-    background-color: var(--card-bg-color);
     border: 1px solid var(--card-border-color);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
+    border-radius: 8px;
+    background-color: var(--card-bg-color);
 }
 
 .post-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    justify-content: space-between;
+    padding: 12px 16px;
 }
 
-.post-author {
-    font-weight: 600;
-    font-size: 1.1rem;
-}
-
-.post-meta {
+.author-info {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 12px;
+}
+.author-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #1a1a1a;
+}
+.author-name {
+    font-weight: 600;
+    color: var(--primary-text-color);
+    text-decoration: none;
+}
+.author-name:hover {
+    text-decoration: underline;
 }
 
-.post-timestamp {
-    font-size: 0.875rem;
-    color: #a0a0a0;
-}
-
-.post-body {
-    position: relative;
-}
-
-.post-description {
-    line-height: 1.6;
-    margin-bottom: 1rem;
-    white-space: pre-wrap;
+.post-options-btn {
+    background: none;
+    border: none;
+    color: var(--primary-text-color);
+    cursor: pointer;
 }
 
 .post-image {
     width: 100%;
-    max-height: 500px;
+    max-height: 700px;
     object-fit: cover;
-    border-radius: 0.5rem;
-    margin-top: 1rem;
-    /* FIX: Add cursor to indicate the image is clickable */
-    cursor: pointer;
+    border-top: 1px solid var(--card-border-color);
+    border-bottom: 1px solid var(--card-border-color);
 }
 
-/* --- POST ACTIONS --- */
+.post-content {
+    padding: 0 16px;
+}
+
 .post-actions {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--card-border-color);
+    gap: 16px;
+    padding: 8px 0;
 }
-
 .action-btn {
-    background: #333;
-    color: #fff;
+    background: none;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 9999px;
     cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    padding: 0;
 }
-.action-btn:hover {
-    background: #444;
+.action-btn svg {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.1s ease-in-out;
+}
+.action-btn:hover svg {
+    transform: scale(1.1);
+    opacity: 0.7;
 }
 
-.delete-btn {
-    background-color: transparent;
-    color: #666;
-    width: 1.75rem;
-    height: 1.75rem;
+.like-btn.liked svg {
+    fill: #ff3040;
+    stroke: #ff3040;
+}
+
+
+.post-likes {
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 4px 0;
+}
+
+.post-caption {
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+.caption-author {
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.view-comments-link {
+    font-size: 0.875rem;
+    color: var(--secondary-text-color);
+    margin-top: 8px;
+    cursor: pointer;
+    background: none;
+    border: none;
     padding: 0;
+    text-align: left;
+}
+
+.post-timestamp {
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    text-transform: uppercase;
+    padding: 12px 0;
+}
+
+/* --- Comment Modal --- */
+.comments-modal-content {
+    display: flex;
+    height: 80vh;
+    max-height: 600px;
+    width: 90vw;
+    max-width: 900px;
+}
+.comments-modal-image {
+    flex: 1.5;
+    background-color: #000;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    line-height: 1;
 }
-.delete-btn:hover {
-    background-color: #ff3b30;
-    color: #fff;
+.comments-modal-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
-
-.edit-btn {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.8rem;
-    background-color: #444;
-}
-.edit-btn:hover {
-    background-color: #555;
-}
-
-.like-btn.liked {
-    background-color: var(--neon-green);
-    color: #000;
-    font-weight: 600;
-}
-
-.like-count {
-    font-size: 0.875rem;
-    color: #a0a0a0;
-    margin-right: auto;
-}
-
-/* --- EDIT FORM STYLES --- */
-.edit-form-container {
-    margin-top: 1rem;
-}
-
-.edit-textarea {
-    width: 100%;
-    background: #1C1C1E;
-    border: 1px solid #3A3A3C;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    color: #fff;
-    min-height: 100px;
-    resize: vertical;
-    margin-bottom: 0.75rem;
-}
-.edit-textarea:focus {
-    outline: none;
-    border-color: var(--neon-green);
-}
-
-.edit-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-}
-
-.save-edit-btn {
-    background-color: var(--neon-green);
-    color: #000;
-    font-weight: 600;
-}
-
-
-/* --- COMMENT SECTION --- */
-.comment-section {
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--card-border-color);
-    padding-top: 1.5rem;
-    display: none;
-}
-
-.comments-list {
+.comments-modal-details {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    background-color: #000;
 }
-
+.comments-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 16px;
+    border-bottom: 1px solid var(--card-border-color);
+}
 .comment {
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    gap: 12px;
+    margin-bottom: 16px;
 }
+.comment-text { font-size: 0.875rem; }
+.comment-form { padding: 16px; }
 
-.comment-author {
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.comment-text {
-    font-size: 0.95rem;
-    color: #d1d5db;
-}
-
-.comment-timestamp {
-    font-size: 0.75rem;
-    color: #777;
-}
-
-.comment-form {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.comment-input {
-    flex-grow: 1;
-    background: #1C1C1E;
-    border: 1px solid #3A3A3C;
-    border-radius: 9999px;
-    padding: 0.5rem 1rem;
-    color: #fff;
-}
-.comment-input:focus {
-    outline: none;
-    border-color: var(--neon-green);
-}
-
-.comment-submit-btn {
-    background-color: var(--neon-green);
-    color: #000;
-    border: none;
-    border-radius: 9999px;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-
-/* --- CREATE POST MODAL --- */
-#create-post-modal {
+/* --- Modal Base Styles --- */
+.modal-backdrop {
     position: fixed;
     inset: 0;
     z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--modal-bg-color);
+    background-color: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: opacity 0.3s ease-in-out;
 }
-#create-post-modal.hidden {
-    display: none;
-}
-
 .modal-content {
-    background: #1C1C1E;
-    width: 100%;
-    max-width: 550px;
-    border-radius: 0.75rem;
-    padding: 2rem;
-    position: relative;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid var(--card-border-color);
 }
-
-#close-modal-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    color: #a0a0a0;
-    font-size: 1.5rem;
-    cursor: pointer;
+.modal-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--card-border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
+.modal-title { font-size: 1rem; font-weight: 600; }
+#close-modal-btn { background: none; border: none; font-size: 1.5rem; color: var(--secondary-text-color); cursor: pointer; }
 
-.modal-title {
-    font-family: 'Lora', serif;
-    font-size: 1.75rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-}
-
+/* --- Create Post Modal --- */
+#post-form { padding: 16px; }
 #post-form textarea {
     width: 100%;
-    background: #121212;
-    border: 1px solid #3A3A3C;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    color: #fff;
-    min-height: 120px;
-    resize: vertical;
-}
-
-/* --- IMAGE UPLOAD AREA --- */
-#image-drop-zone {
-    border: 2px dashed #3A3A3C;
-    border-radius: 0.5rem;
-    padding: 2rem;
-    text-align: center;
-    color: #a0a0a0;
-    cursor: pointer;
-    transition: border-color 0.2s ease;
-}
-#image-drop-zone.dragover {
-    border-color: var(--neon-green);
-}
-
-#image-preview-container {
-    position: relative;
-    margin-top: 1rem;
-}
-
-#image-preview {
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: 0.5rem;
-}
-
-#remove-image-btn {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: rgba(0,0,0,0.7);
-    color: #fff;
+    background: transparent;
     border: none;
-    border-radius: 50%;
-    width: 2rem;
-    height: 2rem;
-    font-size: 1.2rem;
-    cursor: pointer;
+    color: var(--primary-text-color);
+    min-height: 120px;
+    resize: none;
+    outline: none;
+    margin-bottom: 1rem;
 }
+#image-drop-zone { border: 2px dashed #3a3a3c; border-radius: 8px; padding: 2rem; text-align: center; color: var(--secondary-text-color); cursor: pointer; }
+#image-preview-container { margin-top: 1rem; position: relative; }
+#image-preview { max-width: 100%; border-radius: 8px; }
+.remove-image-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); border-radius: 50%; color: white; width: 24px; height: 24px; border: none; cursor: pointer; }
+.modal-footer { display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--card-border-color); }
+.btn-post { background-color: var(--neon-green); color: #000; font-weight: 600; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; }
 
-/* --- FIX: New styles for the Image Lightbox --- */
-.lightbox-modal {
-    position: fixed;
-    z-index: 100; /* Highest z-index */
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    /* Add a smooth fade-in transition */
-    transition: opacity 0.3s ease;
-}
-
-.lightbox-modal.hidden {
-    display: none;
-}
-
-.lightbox-content {
-    max-width: 90%;
-    max-height: 90%;
-    object-fit: contain;
-}
-
-.lightbox-close-btn {
-    position: absolute;
-    top: 15px;
-    right: 35px;
-    color: #f1f1f1;
-    font-size: 40px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-
-.lightbox-close-btn:hover {
-    color: #bbb;
-}
-
+/* Lightbox styles remain the same */
+.lightbox-modal { position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); display: flex; justify-content: center; align-items: center; transition: opacity 0.3s ease; }
+.lightbox-modal.hidden { display: none; }
+.lightbox-content { max-width: 90%; max-height: 90%; object-fit: contain; }
+.lightbox-close-btn { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; transition: color 0.3s ease; }
+.lightbox-close-btn:hover { color: #bbb; }

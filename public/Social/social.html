@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Social - Vibance</title>
+    <title>Community - Vibance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,32 +15,39 @@
     <div id="header-placeholder"></div>
 
     <main class="social-container">
-        <div class="social-header">
-            <h1 class="social-title">Community Feed</h1>
-            <button id="create-post-btn">Create Post</button>
+        <!-- Story section (placeholder) -->
+        <div class="stories-container">
+            <div class="story-placeholder"></div>
+            <div class="story-placeholder"></div>
+            <div class="story-placeholder"></div>
+            <div class="story-placeholder"></div>
         </div>
-        <div id="feed-container">
-            <!-- Posts will be loaded here by feed-manager.js -->
+
+        <!-- Main Feed -->
+        <div id="feed-container" class="feed-container">
+            <!-- Posts will be loaded here by social.js -->
         </div>
     </main>
 
     <!-- Create Post Modal -->
-    <div id="create-post-modal" class="hidden">
+    <div id="create-post-modal" class="modal-backdrop hidden">
         <div class="modal-content">
-            <button id="close-modal-btn">&times;</button>
-            <h2 class="modal-title">Create a New Post</h2>
+            <div class="modal-header">
+                <h2 class="modal-title">Create a New Post</h2>
+                <button id="close-modal-btn">&times;</button>
+            </div>
             <form id="post-form">
-                <textarea id="post-description" placeholder="What's on your mind?" class="mb-4"></textarea>
+                <textarea id="post-description" placeholder="What's on your mind?"></textarea>
                 <div id="image-drop-zone">
                     <p>Drag & drop an image here, or click to select</p>
                     <input type="file" id="image-input" class="hidden" accept="image/*">
                 </div>
                 <div id="image-preview-container" class="hidden">
                     <img id="image-preview" src="" alt="Image preview">
-                    <button type="button" id="remove-image-btn" class="hidden">&times;</button>
+                    <button type="button" id="remove-image-btn" class="remove-image-btn">&times;</button>
                 </div>
-                <div class="flex justify-end mt-4">
-                    <button type="submit" class="font-bold">Post to Feed</button>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-post">Post</button>
                 </div>
             </form>
         </div>
@@ -52,11 +59,11 @@
         <img id="lightbox-image" class="lightbox-content" src="">
     </div>
 
+    <!-- Scripts -->
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
+    <!-- We will update the script references in a later step -->
     <script type="module" src="social.js"></script>
-
 </body>
 </html>
-
