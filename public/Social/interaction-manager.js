@@ -63,7 +63,7 @@ export const InteractionManager = {
 
         } catch (error) {
             console.error("Error handling like:", error);
-            alert("There was an error processing your like. Please try again.");
+            alert("There was an error processing your like. Please try again!");
             return null;
         }
     },
