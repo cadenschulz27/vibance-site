@@ -9,22 +9,21 @@
     <!-- Desktop nav -->
     <nav class="hidden md:flex items-center gap-6" data-header="desktop-nav">
       <a href="/dashboard/dashboard.html" class="text-neutral-300 hover:text-white">Dashboard</a>
-      <a href="/Accounts/accounts.html" class="text-neutral-300 hover:text-white">Accounts</a>
+      <!-- Accounts removed from top nav (moved to dropdown) -->
       <a href="/Expenses/expenses.html" class="text-neutral-300 hover:text-white">Expenses</a>
       <a href="/Budgeting/budgeting.html" class="text-neutral-300 hover:text-white">Budgeting</a>
       <a href="/Social/social.html" class="text-neutral-300 hover:text-white">Community</a>
-      <!-- (Blog removed) -->
     </nav>
 
     <!-- Right side -->
     <div class="flex items-center gap-3">
-      <!-- Notifications (optional) -->
-      <a href="/dashboard/dashboard.html" class="relative hidden md:inline-block">
+      <!-- Notifications (kept; functionality later) -->
+      <button type="button" class="relative hidden md:inline-block" aria-label="Notifications">
         <svg class="h-5 w-5 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M15 17h5l-1.4-1.4a2 2 0 0 1-.6-1.4V11a6 6 0 0 0-5-5.9V4a2 2 0 1 0-4 0v.1A6 6 0 0 0 5 11v3.2c0 .5-.2 1-.6 1.4L3 17h5m7 0v1a3 3 0 1 1-6 0v-1m6 0H9"/>
         </svg>
         <span data-header="notif-badge" class="hidden absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-emerald-500 text-[10px] text-white grid place-content-center"></span>
-      </a>
+      </button>
 
       <!-- Auth CTAs -->
       <div class="flex items-center gap-2" data-header="auth-ctas">
@@ -32,24 +31,23 @@
         <a href="/signup.html" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Sign up</a>
       </div>
 
-      <!-- User menu -->
+      <!-- User menu (greeting + dropdown) -->
       <div class="relative hidden" data-header="user-menu">
-        <button class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-900">
-          <img data-header="avatar" src="/images/logo_white.png" class="h-8 w-8 rounded-full object-cover" alt="Avatar">
-          <span data-header="display-name" class="hidden sm:inline text-neutral-200">Account</span>
-          <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 20 20" fill="currentColor">
+        <button class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-900" data-header="user-menu-button" aria-haspopup="menu" aria-expanded="false">
+          <!-- Greeting text is filled by header.js -->
+          <span data-header="greeting" class="text-neutral-200 font-medium">Welcome</span>
+          <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd"/>
           </svg>
         </button>
-        <div class="absolute right-0 mt-2 w-48 rounded-xl border border-neutral-800 bg-neutral-950 shadow-lg p-1 hidden">
-          <a href="/pages/profile.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Profile</a>
-          <a href="/dashboard/dashboard.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Dashboard</a>
-          <a href="/Accounts/accounts.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Accounts</a>
-          <a href="/Expenses/expenses.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Expenses</a>
-          <a href="/Budgeting/budgeting.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Budgeting</a>
-          <a href="/Social/social.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Community</a>
+
+        <div class="absolute right-0 mt-2 w-56 rounded-xl border border-neutral-800 bg-neutral-950 shadow-lg p-1 hidden" role="menu" data-header="user-dropdown">
+          <a href="/pages/profile.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900" role="menuitem">Profile</a>
+          <a href="/Accounts/accounts.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900" role="menuitem">Account Linkage</a>
+          <a href="/pages/profile.html#settings" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900" role="menuitem">Settings</a>
+          <a href="/pages/about.html#help" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900" role="menuitem">Help</a>
           <hr class="my-1 border-neutral-800">
-          <button data-header="logout" class="w-full text-left px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10">Log out</button>
+          <button data-header="logout" class="w-full text-left px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10" role="menuitem">Log out</button>
         </div>
       </div>
 
@@ -62,16 +60,21 @@
     </div>
   </div>
 
-  <!-- Mobile nav -->
+  <!-- Mobile nav (Accounts removed here as well) -->
   <nav class="md:hidden hidden border-t border-neutral-900" data-header="mobile-nav">
     <div class="px-4 py-3 grid gap-2">
       <a href="/dashboard/dashboard.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Dashboard</a>
-      <a href="/Accounts/accounts.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Accounts</a>
       <a href="/Expenses/expenses.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Expenses</a>
       <a href="/Budgeting/budgeting.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Budgeting</a>
       <a href="/Social/social.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Community</a>
-      <a href="/pages/profile.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900 md:hidden">Profile</a>
-      <!-- (Blog removed) -->
+
+      <!-- Optional quick links on mobile -->
+      <div class="mt-2 border-t border-neutral-800 pt-2">
+        <a href="/pages/profile.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Profile</a>
+        <a href="/Accounts/accounts.html" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Account Linkage</a>
+        <a href="/pages/profile.html#settings" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Settings</a>
+        <a href="/pages/about.html#help" class="block px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-900">Help</a>
+      </div>
     </div>
   </nav>
 </header>
