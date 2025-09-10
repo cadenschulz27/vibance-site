@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - Vibance</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+        }
+        .font-headline {
+            font-family: 'Lora', serif;
+        }
+        .bg-neon {
+            background-color: #CCFF00;
+        }
+        .text-neon {
+            color: #CCFF00;
+        }
+        .section-bg {
+            background-color: #101010;
+        }
+        .btn-neon {
+            background-color: #CCFF00;
+            color: #000000;
+            font-weight: 700;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2);
+        }
+        .blog-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .blog-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-black text-white">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-black bg-opacity-80 backdrop-blur-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="flex items-center space-x-3">
+                <img src="../images/logo_white.png" alt="Vibance Logo" class="h-8 w-8">
+                <span class="text-xl font-bold">Vibance</span>
+            </a>
+            <div class="flex items-center space-x-4">
+                <a href="../login.html" class="text-sm font-medium hover:text-neon transition-colors">Log In</a>
+                <a href="../signup.html" class="btn-neon px-4 py-2 rounded-full text-sm">Sign Up</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Page Header -->
+        <section class="py-20 text-center">
+            <div class="container mx-auto px-6">
+                <h1 class="font-headline text-4xl md:text-6xl font-bold">The Vibance Blog</h1>
+                <p class="mt-4 text-lg text-gray-400">Insights and advice to help you master your financial journey.</p>
+            </div>
+        </section>
+
+        <!-- Featured Post -->
+        <section class="pb-20">
+            <div id="featured-post-container" class="container mx-auto px-6">
+                <p class="text-center text-gray-500">Loading featured post...</p>
+            </div>
+        </section>
+
+        <!-- Recent Posts -->
+        <section class="py-20 section-bg">
+            <div class="container mx-auto px-6">
+                <h2 class="font-headline text-3xl font-bold text-center mb-12">Recent Articles</h2>
+                <div id="recent-posts-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <p class="text-center text-gray-500 col-span-3">Loading recent articles...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="section-bg pt-16 pb-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+                <div>
+                    <h3 class="font-bold mb-4">Product</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Budgeting</a></li>
+                        <li><a href="#" class="hover:text-white">Expense Tracking</a></li>
+                        <li><a href="#" class="hover:text-white">Goals</a></li>
+                        <li><a href="#" class="hover:text-white">Literacy</a></li>
+                        <li><a href="#" class="hover:text-white">Community</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Company</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="about.html" class="hover:text-white">About us</a></li>
+                        <li><a href="blog.html" class="hover:text-white">Blog</a></li>
+                        <li><a href="careers.html" class="hover:text-white">Careers</a></li>
+                        <li><a href="press.html" class="hover:text-white">Press</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Legal & Regulatory</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="terms.html" class="hover:text-white">Terms & Conditions</a></li>
+                        <li><a href="privacy.html" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="disclosures.html" class="hover:text-white">Disclosures</a></li>
+                    </ul>
+                </div>
+                <div>
+                     <h3 class="font-bold mb-4">Follow Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><img src="../images/Instagram_Logo.webp" alt="Instagram" class="h-6 w-6"></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><img src="../images/LinkedIn_Logo.webp" alt="LinkedIn" class="h-6 w-6"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2025 Vibance. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- DYNAMIC CONTENT SCRIPT UPDATED -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4yxIaK9WDTwrk1riHfYxAvq9Z_v7wGDM",
+            authDomain: "vibanceco.firebaseapp.com",
+            projectId: "vibanceco",
+            storageBucket: "vibanceco.appspot.com",
+            messagingSenderId: "1068160687178",
+            appId: "1:1068160687178:web:3cbff24fe03c98fc521ab3",
+            measurementId: "G-T-9L0S3VSKP"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadBlogContent() {
+            const postsCollection = collection(db, 'siteContent', 'blog', 'posts');
+            const featuredContainer = document.getElementById('featured-post-container');
+            const recentGrid = document.getElementById('recent-posts-grid');
+            
+            try {
+                const q = query(postsCollection, orderBy('createdAt', 'desc'));
+                const querySnapshot = await getDocs(q);
+                const posts = [];
+                querySnapshot.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
+
+                if (posts.length > 0) {
+                    const [featuredPost, ...recentPosts] = posts;
+
+                    featuredContainer.innerHTML = `
+                        <a href="article.html?type=blog&id=${featuredPost.id}" class="block lg:grid grid-cols-2 gap-12 items-center bg-gray-900 rounded-lg overflow-hidden blog-card">
+                            <img src="${featuredPost.coverPhotoURL || 'https://placehold.co/800x600/101010/CCFF00?text=Vibance'}" alt="Cover image for ${featuredPost.title}" class="w-full h-full object-cover">
+                            <div class="p-8 md:p-12">
+                                <p class="text-sm text-neon font-semibold">FEATURED POST</p>
+                                <h2 class="font-headline text-3xl font-bold mt-4 mb-4">${featuredPost.title}</h2>
+                                <p class="text-gray-400 mb-6">${featuredPost.content.substring(0, 200)}...</p>
+                                <span class="font-semibold">Read More &rarr;</span>
+                            </div>
+                        </a>
+                    `;
+
+                    recentGrid.innerHTML = '';
+                    if (recentPosts.length > 0) {
+                        recentPosts.forEach(post => {
+                            const postCard = document.createElement('a');
+                            postCard.href = `article.html?type=blog&id=${post.id}`;
+                            postCard.className = 'bg-gray-900 rounded-lg overflow-hidden blog-card';
+                            postCard.innerHTML = `
+                                <img src="${post.coverPhotoURL || 'https://placehold.co/600x400/101010/FFFFFF?text=Vibance'}" alt="Cover image for ${post.title}" class="w-full h-48 object-cover">
+                                <div class="p-6">
+                                    <p class="text-sm text-gray-400">By ${post.author || 'Vibance Team'}</p>
+                                    <h3 class="font-headline text-xl font-bold mt-2 mb-3">${post.title}</h3>
+                                </div>
+                            `;
+                            recentGrid.appendChild(postCard);
+                        });
+                    } else {
+                        recentGrid.innerHTML = '<p class="text-center text-gray-500 col-span-3">No other articles yet.</p>';
+                    }
+                } else {
+                    featuredContainer.innerHTML = '<p class="text-center text-gray-500">No blog posts found.</p>';
+                    recentGrid.innerHTML = '';
+                }
+            } catch (error) {
+                console.error("Error fetching blog content:", error);
+                featuredContainer.innerHTML = '<p class="text-center text-red-500">Could not load posts.</p>';
+                recentGrid.innerHTML = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadBlogContent);
+    </script>
+
+</body>
+</html>
+

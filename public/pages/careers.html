@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers - Vibance</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body { background-color: #000; color: #FFF; font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Lora', serif; }
+        .section-bg { background-color: #101010; }
+        .btn-neon { background-color: #CCFF00; color: #000; font-weight: 700; }
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); }
+        .input-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
+        .input-field:focus { border-color: #CCFF00; outline: none; }
+        
+        /* NEW: Accordion Styles */
+        .job-description {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, padding 0.5s ease-out;
+            padding: 0 2rem;
+        }
+        .job-listing.open .job-description {
+            max-height: 2000px; /* Adjust if descriptions are very long */
+            padding: 1.5rem 2rem 2rem 2rem;
+            transition: max-height 0.5s ease-in, padding 0.5s ease-in;
+        }
+        .arrow {
+            transition: transform 0.3s ease;
+        }
+        .job-listing.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Styles for job description content from rich text editor */
+        .job-description-content h1, .job-description-content h2, .job-description-content h3 { font-family: 'Lora', serif; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #fff; }
+        .job-description-content p { margin-bottom: 1rem; line-height: 1.6; color: #d1d5db; }
+        .job-description-content ul, .job-description-content ol { margin-left: 1.5rem; margin-bottom: 1rem; color: #d1d5db; }
+    </style>
+</head>
+<body class="bg-black text-white">
+
+    <header class="sticky top-0 z-50 bg-black bg-opacity-80 backdrop-blur-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="flex items-center space-x-3"><img src="../images/logo_white.png" alt="Vibance Logo" class="h-8 w-8"><span class="text-xl font-bold">Vibance</span></a>
+            <div class="flex items-center space-x-4"><a href="../login.html" class="text-sm font-medium hover:text-neon transition-colors">Log In</a><a href="../signup.html" class="btn-neon px-4 py-2 rounded-full text-sm">Sign Up</a></div>
+        </div>
+    </header>
+    <main>
+        <section class="py-20 md:py-32 text-center"><div class="container mx-auto px-6"><h1 class="font-headline text-4xl md:text-6xl font-bold max-w-4xl mx-auto">Help us build the future of finance.</h1><p class="mt-6 text-lg text-gray-300 max-w-2xl mx-auto">We're a passionate team dedicated to making financial empowerment a reality for everyone. If you're driven by mission and innovation, you're in the right place.</p></div></section>
+        <section class="py-20 md:py-24 section-bg"><div class="container mx-auto px-6 text-center"><h2 class="font-headline text-3xl font-bold mb-12">Life at Vibance</h2><div class="grid md:grid-cols-3 gap-10"><div><div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div><h3 class="font-bold text-xl mb-2">Make an Impact</h3><p class="text-gray-400">Work on products that help millions of people improve their financial well-being.</p></div><div><div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.002 3.002 0 013.42-2.322M12 12a3 3 0 11-6 0 3 3 0 016 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div><h3 class="font-bold text-xl mb-2">People First</h3><p class="text-gray-400">We foster a collaborative and inclusive culture where everyone's voice is heard.</p></div><div><div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div><h3 class="font-bold text-xl mb-2">Grow With Us</h3><p class="text-gray-400">We invest in your professional development with continuous learning opportunities.</p></div></div></div></section>
+        <section id="openings" class="py-20 md:py-24"><div class="container mx-auto px-6"><h2 class="font-headline text-3xl font-bold text-center mb-12">Open Positions</h2><div id="careers-list-container" class="space-y-4 max-w-4xl mx-auto"></div><div class="text-center pt-8"><p class="text-gray-500">Don't see a role that fits? <a href="#" class="text-neon hover:underline">Get in touch.</a></p></div></div></section>
+    </main>
+    <div id="application-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden"><div class="bg-gray-900 w-full max-w-lg rounded-lg shadow-lg p-8"><div class="flex justify-between items-center mb-4"><div><h2 class="font-headline text-2xl font-bold">Apply Now</h2><p id="modal-job-title" class="text-neon font-semibold"></p></div><button id="close-modal-btn" class="text-gray-500 text-2xl">&times;</button></div><form id="application-form" class="space-y-4"><input type="text" placeholder="Full Name" required class="w-full p-3 rounded input-field"><input type="email" placeholder="Email Address" required class="w-full p-3 rounded input-field"><div><label class="text-sm text-gray-400">Resume/CV</label><input type="file" required class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neon file:text-black hover:file:opacity-90"></div><textarea rows="4" placeholder="Cover Letter (Optional)" class="w-full p-3 rounded input-field"></textarea><button type="submit" class="w-full btn-neon py-3 rounded-full font-bold">Submit Application</button></form></div></div>
+    
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="careers.js"></script>
+</body>
+</html>

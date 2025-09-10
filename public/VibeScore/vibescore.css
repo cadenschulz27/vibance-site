@@ -1,0 +1,108 @@
+/**
+ * @file VibeScore/vibescore.css
+ * @description Core styles for the central VibeScore gauge component.
+ */
+
+/* --- GLOBAL VIBESCORE VARIABLES --- */
+:root {
+    --container-size: 700px;
+    --center-ring-size: 220px;
+}
+
+/* --- MAIN WRAPPER --- */
+.vibescore-wrapper {
+    position: relative;
+    width: var(--container-size);
+    height: var(--container-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: -4rem auto -2rem auto;
+}
+
+/* --- CENTRAL GAUGE --- */
+.vibescore-gauge {
+    width: var(--center-ring-size);
+    height: var(--center-ring-size);
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transform-style: preserve-3d;
+    transition: opacity 0.25s ease;
+    pointer-events: auto;
+}
+
+/* New class added by JS when insight panel is active */
+.vibescore-wrapper.insight-is-active .vibescore-gauge {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.vibescore-particle-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    z-index: 1; /* Behind text (15) and ring (10) */
+}
+
+/* --- GAUGE LAYERS (Shared Properties) --- */
+.gauge-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+/*
+ * Progress Ring SVG Styles 
+*/
+.progress-ring {
+    transform: rotate(-90deg); /* Start the ring from the top */
+    z-index: 10; /* Ensure it's above the canvas */
+}
+
+.progress-ring__track {
+    stroke-width: 8;
+    stroke: #1f1f1f; /* Dark track for contrast */
+}
+
+.progress-ring__progress {
+    stroke-width: 8;
+    stroke-linecap: round; /* Rounded ends for a softer look */
+    transition: stroke-dashoffset 0.5s ease-out, stroke 0.5s ease;
+}
+
+/* --- TEXT ELEMENTS --- */
+.vibescore-inner-text {
+    position: relative;
+    z-index: 15;
+    text-align: center;
+    /* FIX: Use Flexbox to stack and center the text elements */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.vibescore-percentage {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: color 0.5s ease;
+}
+
+.vibescore-label {
+    font-family: 'Lora', serif;
+    font-size: 1.1rem;
+    color: #FFF;
+    margin-top: 0.25rem;
+}
+

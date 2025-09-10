@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="social.css">
+</head>
+<body class="bg-black text-white font-['Inter']">
+
+    <div id="header-placeholder"></div>
+
+    <main class="social-container">
+        <div class="social-header">
+            <h1 class="social-title">Community Feed</h1>
+            <button id="create-post-btn">Create Post</button>
+        </div>
+        <div id="feed-container">
+            <!-- Posts will be loaded here by feed-manager.js -->
+        </div>
+    </main>
+
+    <!-- Create Post Modal -->
+    <div id="create-post-modal" class="hidden">
+        <div class="modal-content">
+            <button id="close-modal-btn">&times;</button>
+            <h2 class="modal-title">Create a New Post</h2>
+            <form id="post-form">
+                <textarea id="post-description" placeholder="What's on your mind?" class="mb-4"></textarea>
+                <div id="image-drop-zone">
+                    <p>Drag & drop an image here, or click to select</p>
+                    <input type="file" id="image-input" class="hidden" accept="image/*">
+                </div>
+                <div id="image-preview-container" class="hidden">
+                    <img id="image-preview" src="" alt="Image preview">
+                    <button type="button" id="remove-image-btn" class="hidden">&times;</button>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button type="submit" class="font-bold">Post to Feed</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div id="image-lightbox" class="lightbox-modal hidden">
+        <span id="close-lightbox-btn" class="lightbox-close-btn">&times;</span>
+        <img id="lightbox-image" class="lightbox-content" src="">
+    </div>
+
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+    <script type="module" src="social.js"></script>
+
+</body>
+</html>
+

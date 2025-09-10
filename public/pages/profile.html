@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #000; color: #FFF; font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Lora', serif; }
+        .btn-neon { background-color: #CCFF00; color: #000; font-weight: 700; transition: all 0.2s ease; }
+        .btn-neon:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2); }
+        button.btn-neon:disabled {
+            background-color: #3A3A3C;
+            color: #9CA3AF;
+            cursor: not-allowed;
+        }
+        .input-field, .select-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
+        .input-field:focus, .select-field:focus { border-color: #CCFF00; outline: none; }
+        .form-section { background-color: #121212; border: 1px solid #2d2d2d; border-radius: 0.5rem; padding: 1.5rem; }
+    </style>
+</head>
+<body class="bg-black">
+
+    <div id="header-placeholder"></div>
+
+    <main class="container mx-auto px-6 py-12 md:py-20 max-w-4xl">
+        <h1 class="font-headline text-4xl font-bold mb-8">My Financial Profile</h1>
+
+        <form id="profile-form" class="space-y-8">
+            <div class="form-section">
+                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Income</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label for="primaryIncome" class="text-sm">Primary Monthly Income ($)</label><input id="primaryIncome" type="number" placeholder="5000" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="additionalIncome" class="text-sm">Additional Monthly Income ($)</label><input id="additionalIncome" type="number" placeholder="500" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="incomeStability" class="text-sm">Income Stability</label><select id="incomeStability" class="w-full mt-1 p-3 rounded select-field"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+                    <div><label for="incomeGrowth" class="text-sm">Income Growth Potential</label><select id="incomeGrowth" class="w-full mt-1 p-3 rounded select-field"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Savings & Emergency Fund</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label for="monthlySavingsRate" class="text-sm">Monthly Savings Rate (%)</label><input id="monthlySavingsRate" type="number" placeholder="20" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="totalLiquidSavings" class="text-sm">Total Liquid Savings ($)</label><input id="totalLiquidSavings" type="number" placeholder="14000" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="emergencyFundGoal" class="text-sm">Emergency Fund Goal (Months)</label><input id="emergencyFundGoal" type="number" placeholder="6" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="emergencyFundCurrent" class="text-sm">Current Emergency Fund (Months)</label><input id="emergencyFundCurrent" type="number" placeholder="5" class="w-full mt-1 p-3 rounded input-field"></div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Budgeting & Cash Flow</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label for="avgMonthlyIncome" class="text-sm">Average Monthly Income ($)</label><input id="avgMonthlyIncome" type="number" placeholder="5500" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="avgMonthlySpending" class="text-sm">Average Monthly Spending ($)</label><input id="avgMonthlySpending" type="number" placeholder="4200" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="avgMonthlySurplus" class="text-sm">Average Monthly Surplus ($)</label><input id="avgMonthlySurplus" type="number" placeholder="1300" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="budgetAdherence" class="text-sm">Budget Adherence</label><select id="budgetAdherence" class="w-full mt-1 p-3 rounded select-field"><option value="loose">Loose</option><option value="flexible">Flexible</option><option value="strict">Strict</option></select></div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Credit & Debt</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label for="creditScore" class="text-sm">Credit Score</label><input id="creditScore" type="number" placeholder="780" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="creditUtilization" class="text-sm">Credit Utilization (%)</label><input id="creditUtilization" type="number" placeholder="15" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="paymentHistory" class="text-sm">Payment History</label><select id="paymentHistory" class="w-full mt-1 p-3 rounded select-field"><option value="fair">Fair</option><option value="good">Good</option><option value="excellent">Excellent</option></select></div>
+                    <div><label for="totalDebt" class="text-sm">Total Debt ($)</label><input id="totalDebt" type="number" placeholder="25000" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="dtiRatio" class="text-sm">Debt-to-Income Ratio (%)</label><input id="dtiRatio" type="number" placeholder="25" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div class="flex items-center pt-6"><input id="hasHighInterestDebt" type="checkbox" class="h-4 w-4 rounded"><label for="hasHighInterestDebt" class="ml-2 text-sm">I have high-interest debt</label></div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Investing & Retirement</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label for="totalInvested" class="text-sm">Total Invested ($)</label><input id="totalInvested" type="number" placeholder="25000" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="investingContribution" class="text-sm">Monthly Investment ($)</label><input id="investingContribution" type="number" placeholder="500" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="portfolioDiversity" class="text-sm">Portfolio Diversity</label><select id="portfolioDiversity" class="w-full mt-1 p-3 rounded select-field"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+                    <div><label for="retirementValue" class="text-sm">Total Retirement Accounts ($)</label><input id="retirementValue" type="number" placeholder="75000" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="retirementContribution" class="text-sm">Monthly Retirement Contrib. (%)</label><input id="retirementContribution" type="number" placeholder="10" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div class="flex items-center pt-6"><input id="onTrackRetirement" type="checkbox" class="h-4 w-4 rounded"><label for="onTrackRetirement" class="ml-2 text-sm">I am on track for retirement goals</label></div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Net Worth</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label for="totalAssets" class="text-sm">Total Assets ($)</label><input id="totalAssets" type="number" placeholder="150000" class="w-full mt-1 p-3 rounded input-field"></div>
+                    <div><label for="totalLiabilities" class="text-sm">Total Liabilities ($)</label><input id="totalLiabilities" type="number" placeholder="30000" class="w-full mt-1 p-3 rounded input-field"></div>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" id="save-button" class="btn-neon px-8 py-3 rounded-full">Save Profile</button>
+            </div>
+        </form>
+    </main>
+
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+    <script type="module" src="profile.js"></script>
+</body>
+</html>
