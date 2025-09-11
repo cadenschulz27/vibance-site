@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - Vibance</title>
+    
+    <link rel="stylesheet" href="social.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="bg-black text-white font-['Inter']">
+
+    <div id="header-placeholder"></div>
+
+    <main class="social-container pt-8">
+        <div class="edit-profile-container">
+            <h1 class="edit-profile-title">Edit Profile</h1>
+
+            <div class="edit-profile-form-wrapper">
+                <div class="avatar-change-section">
+                    <div id="current-avatar-container" class="avatar-container">
+                        <!-- Current user avatar will be loaded here -->
+                    </div>
+                    <div>
+                        <p id="current-user-name" class="font-semibold">Loading...</p>
+                        <label for="avatar-file-input" class="change-photo-btn">
+                            Change photo
+                        </label>
+                        <input type="file" id="avatar-file-input" class="hidden" accept="image/*">
+                    </div>
+                </div>
+
+                <form id="profile-edit-form">
+                    <div class="form-field">
+                        <label for="name-input">Name</label>
+                        <input type="text" id="name-input" placeholder="Your name">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="save-profile-btn">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+    <script type="module" src="profile-editor.js"></script>
+</body>
+</html>
