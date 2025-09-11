@@ -1,230 +1,207 @@
-/**
- * @file /Social/modal-manager.js
- * @description Manages the creation, display, and interaction logic for all modals
- * in the social feed, including the advanced "create post" and "comments" modals.
- */
+// public/Social/modal-manager.js
+// ---------------------------------------------------------------------------
+// Vibance • Modal Manager
+// - Declarative triggers: 
+//     * [data-modal-open="#selector"] on any element to open a modal
+//     * [data-modal-close] inside a modal to close it
+// - JS API:
+//     * openModal(target, { onOpen, onClose, trapFocus })
+//     * closeModal(target)
+//     * registerModal(modalEl)  // initialize a modal dynamically added to DOM
+// - A11y:
+//     * ARIA roles/attributes set automatically if missing
+//     * Focus trap inside modal; ESC & backdrop click to close
+//     * Returns focus to trigger that opened it
+// - Idempotent wiring; safe to import multiple times
+// ---------------------------------------------------------------------------
 
-import { auth } from '../api/firebase.js';
-import { DataService } from './data-service.js';
-import { PostRenderer } from './post-renderer.js';
-import { createAvatar, createIcon } from './ui-helpers.js';
-import { formatRelativeTime } from '../utils.js';
+(() => {
+  if (window.__VB_MODAL_WIRED__) return;
+  window.__VB_MODAL_WIRED__ = true;
 
-// Private variable to hold the currently active modal and its listeners.
-let activeModal = {
-    element: null,
-    commentListener: null,
-    selectedFile: null // To hold the image file for a new post
-};
+  // ------------------------------ Utilities ------------------------------
+  const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const isHidden = (el) => el.classList.contains('hidden') || el.getAttribute('aria-hidden') === 'true';
+  const addClass = (el, c) => el && el.classList.add(c);
+  const rmClass = (el, c) => el && el.classList.remove(c);
+  const on = (el, ev, fn, opts) => el && el.addEventListener(ev, fn, opts);
+  const off = (el, ev, fn, opts) => el && el.removeEventListener(ev, fn, opts);
 
-export const ModalManager = {
+  // Simple focusable selector
+  const FOCUSABLE = [
+    'a[href]', 'area[href]', 'button:not([disabled])', 'input:not([disabled])',
+    'select:not([disabled])', 'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])', '[contenteditable="true"]'
+  ].join(',');
 
-    /**
-     * Initializes the manager by creating the modal containers in the DOM.
-     */
-    init() {
-        if (document.getElementById('modal-root')) return;
-        const modalRoot = document.createElement('div');
-        modalRoot.id = 'modal-root';
-        document.body.appendChild(modalRoot);
-    },
-
-    /**
-     * Opens the modal for creating a new post.
-     * @param {object} userProfile - The profile object of the currently logged-in user.
-     */
-    openCreatePostModal(userProfile) {
-        const modalHTML = `
-            <div class="modal-content create-post-modal">
-                <div class="modal-header">
-                    <h2>Create New Post</h2>
-                    <button data-action="share-post" class="share-btn">Share</button>
-                </div>
-                <div class="modal-body">
-                    <textarea id="post-description-input" placeholder="Write a caption..."></textarea>
-                    <div id="image-upload-area">
-                        ${createIcon('image')}
-                        <p>Drag and drop a photo here</p>
-                        <input type="file" id="image-file-input" class="hidden" accept="image/*">
-                    </div>
-                    <div id="image-preview-area" class="hidden">
-                        <img id="image-preview" src="" alt="Image preview"/>
-                        <button id="remove-image-btn" class="remove-image-btn">${createIcon('close')}</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        this._openModal(modalHTML, (modalEl) => this._setupCreatePostListeners(modalEl, userProfile));
-    },
-
-    /**
-     * Opens the advanced, two-panel modal for viewing and adding comments.
-     * @param {string} postId - The ID of the post to display comments for.
-     */
-    async openCommentsModal(postId) {
-        const post = await DataService.fetchPostById(postId);
-        if (!post) return;
-
-        const modalHTML = `
-            <div class="modal-content comments-modal">
-                <div class="comments-image-panel">
-                    <img src="${post.data.imageUrl}" alt="Post image">
-                </div>
-                <div class="comments-panel">
-                    <div class="comments-header">
-                        ${PostRenderer.renderPostHeader(post)}
-                    </div>
-                    <div class="comments-list" id="modal-comments-list">
-                        <!-- Comments will be loaded here in real-time -->
-                    </div>
-                    <div class="comments-actions">
-                        ${PostRenderer.renderPostActions(post)}
-                    </div>
-                    <div class="comments-add-comment">
-                        <form id="modal-comment-form" data-post-id="${postId}">
-                            <input type="text" placeholder="Add a comment..." required>
-                            <button type="submit">Post</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        `;
-        this._openModal(modalHTML, (modalEl) => this._setupCommentsListeners(modalEl, post));
-    },
-
-    // --- Private Helper Methods ---
-
-    _openModal(modalHTML, setupListenersCallback) {
-        this.closeModal();
-        const modalRoot = document.getElementById('modal-root');
-        
-        const backdrop = document.createElement('div');
-        backdrop.className = 'modal-backdrop';
-        backdrop.innerHTML = modalHTML;
-        
-        modalRoot.appendChild(backdrop);
-        
-        setTimeout(() => backdrop.classList.add('visible'), 10);
-        
-        activeModal.element = backdrop;
-        
-        backdrop.addEventListener('click', (e) => {
-            if (e.target === backdrop) this.closeModal();
-        });
-
-        if (setupListenersCallback) {
-            setupListenersCallback(backdrop);
-        }
-    },
-
-    closeModal() {
-        if (activeModal.element) {
-            activeModal.element.classList.remove('visible');
-            setTimeout(() => activeModal.element.remove(), 300);
-        }
-        if (activeModal.commentListener) {
-            activeModal.commentListener();
-        }
-        activeModal = { element: null, commentListener: null, selectedFile: null };
-    },
-    
-    _setupCreatePostListeners(modalEl) {
-        const shareBtn = modalEl.querySelector('[data-action="share-post"]');
-        const descriptionInput = modalEl.querySelector('#post-description-input');
-        const uploadArea = modalEl.querySelector('#image-upload-area');
-        const fileInput = modalEl.querySelector('#image-file-input');
-        const previewArea = modalEl.querySelector('#image-preview-area');
-        const previewImg = modalEl.querySelector('#image-preview');
-        const removeImgBtn = modalEl.querySelector('#remove-image-btn');
-
-        const handleFile = (file) => {
-            if (file && file.type.startsWith('image/')) {
-                activeModal.selectedFile = file;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImg.src = e.target.result;
-                    uploadArea.classList.add('hidden');
-                    previewArea.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-
-        uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            handleFile(e.dataTransfer.files[0]);
-        });
-        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-
-        removeImgBtn.addEventListener('click', () => {
-            activeModal.selectedFile = null;
-            fileInput.value = '';
-            previewArea.classList.add('hidden');
-            uploadArea.classList.remove('hidden');
-        });
-
-        shareBtn.addEventListener('click', async () => {
-            const description = descriptionInput.value;
-            const file = activeModal.selectedFile;
-
-            if (!description && !file) {
-                alert('Please add a caption or an image.');
-                return;
-            }
-
-            shareBtn.disabled = true;
-            shareBtn.textContent = 'Sharing...';
-
-            try {
-                await DataService.createPost(description, file);
-                this.closeModal();
-                // Dispatch a custom event to tell the main page to refresh the feed
-                document.dispatchEvent(new CustomEvent('feed-needs-refresh'));
-            } catch (error) {
-                console.error("Error creating post:", error);
-                alert("Could not create post. Please try again.");
-                shareBtn.disabled = false;
-                shareBtn.textContent = 'Share';
-            }
-        });
-    },
-
-    _setupCommentsListeners(modalEl, post) {
-        activeModal.commentListener = DataService.onCommentsSnapshot(post.id, (comments) => {
-            const listEl = modalEl.querySelector('#modal-comments-list');
-            listEl.innerHTML = comments.map(c => this._renderComment(c)).join('');
-        });
-        
-        modalEl.querySelector('#modal-comment-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const input = e.target.querySelector('input');
-            await DataService.addComment(post.id, input.value);
-            input.value = '';
-        });
-    },
-
-    _renderComment(comment) {
-        return `
-            <div class="comment-item">
-                ${createAvatar(comment.author, 'h-8 w-8')}
-                <div class="comment-content">
-                    <p>
-                        <a href="#" class="comment-author-name">${comment.author.name}</a>
-                        ${comment.data.text}
-                    </p>
-                    <div class="comment-meta">
-                        <span>${formatRelativeTime(comment.data.createdAt)}</span>
-                    </div>
-                </div>
-            </div>
-        `;
+  // Scroll lock handling
+  let lockCount = 0;
+  const lockScroll = () => {
+    lockCount++;
+    if (lockCount === 1) {
+      const sbw = window.innerWidth - document.documentElement.clientWidth;
+      document.documentElement.style.overflow = 'hidden';
+      // Prevent layout shift when scrollbar disappears
+      if (sbw > 0) document.documentElement.style.paddingRight = `${sbw}px`;
     }
-};
+  };
+  const unlockScroll = () => {
+    lockCount = Math.max(0, lockCount - 1);
+    if (lockCount === 0) {
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.paddingRight = '';
+    }
+  };
 
+  // Track opener -> modal mapping (for returning focus)
+  const openerMap = new WeakMap();
+
+  // ------------------------------ ARIA setup ------------------------------
+  function ensureAria(modal) {
+    if (!modal) return;
+    modal.setAttribute('role', modal.getAttribute('role') || 'dialog');
+    modal.setAttribute('aria-modal', modal.getAttribute('aria-modal') || 'true');
+    modal.setAttribute('aria-hidden', modal.getAttribute('aria-hidden') || 'true');
+    // Ensure there's a label
+    const hasLabel = modal.getAttribute('aria-label') || modal.getAttribute('aria-labelledby');
+    if (!hasLabel) {
+      const title = modal.querySelector('[data-modal-title], h1, h2, h3');
+      if (title && !title.id) title.id = `vb-modal-title-${Math.random().toString(36).slice(2, 9)}`;
+      if (title) modal.setAttribute('aria-labelledby', title.id);
+    }
+    // Backdrop: allow clicking outside content to close
+    modal.classList.add('vb-modal'); // hook for styling if needed
+  }
+
+  // ------------------------------ Focus trap ------------------------------
+  function trapFocus(modal) {
+    const focusables = qsa(FOCUSABLE, modal).filter(el => el.offsetParent !== null || el === document.activeElement);
+    const first = focusables[0] || modal;
+    const last = focusables[focusables.length - 1] || modal;
+
+    function onKey(e) {
+      if (e.key !== 'Tab') return;
+      if (focusables.length === 0) { e.preventDefault(); modal.focus(); return; }
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    }
+    on(modal, 'keydown', onKey);
+    return () => off(modal, 'keydown', onKey);
+  }
+
+  // ------------------------------ Open/Close ------------------------------
+  function openModal(target, opts = {}) {
+    const modal = typeof target === 'string' ? document.querySelector(target) : target;
+    if (!modal) return;
+
+    ensureAria(modal);
+    if (!isHidden(modal)) return; // already open
+
+    // Store opener to return focus later
+    if (document.activeElement instanceof HTMLElement) {
+      openerMap.set(modal, document.activeElement);
+    }
+
+    // Show modal
+    rmClass(modal, 'hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    lockScroll();
+
+    // Click outside to close: assume modal has an inner content wrapper
+    const content = modal.querySelector('[data-modal-content]') || modal.firstElementChild || modal;
+    function outsideClick(e) {
+      if (!content.contains(e.target)) { closeModal(modal); }
+    }
+    on(modal, 'mousedown', outsideClick);
+
+    // ESC to close
+    function onEsc(e) {
+      if (e.key === 'Escape') closeModal(modal);
+    }
+    on(document, 'keydown', onEsc);
+
+    // Focus handling
+    const releaseTrap = opts.trapFocus === false ? () => {} : trapFocus(modal);
+    setTimeout(() => {
+      // Focus first focusable or modal itself
+      const focusables = qsa(FOCUSABLE, modal);
+      (focusables[0] || modal).focus?.();
+    }, 0);
+
+    // Wire [data-modal-close]
+    const closeBtns = qsa('[data-modal-close]', modal);
+    const onBtn = () => closeModal(modal);
+    closeBtns.forEach(btn => on(btn, 'click', onBtn));
+
+    // Keep references to cleanup
+    modal.__vb_cleanup__ = () => {
+      off(modal, 'mousedown', outsideClick);
+      off(document, 'keydown', onEsc);
+      closeBtns.forEach(btn => off(btn, 'click', onBtn));
+      releaseTrap();
+    };
+
+    // Callback
+    opts.onOpen?.(modal);
+  }
+
+  function closeModal(target, opts = {}) {
+    const modal = typeof target === 'string' ? document.querySelector(target) : target;
+    if (!modal) return;
+
+    if (isHidden(modal)) return; // already closed
+
+    // Cleanup listeners & focus trap
+    try { modal.__vb_cleanup__?.(); } catch {}
+    modal.__vb_cleanup__ = null;
+
+    // Hide + unlock scroll
+    addClass(modal, 'hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    unlockScroll();
+
+    // Return focus to last opener
+    const opener = openerMap.get(modal);
+    if (opener && opener.focus) {
+      setTimeout(() => opener.focus(), 0);
+    }
+
+    // Callback
+    opts.onClose?.(modal);
+  }
+
+  function registerModal(el) {
+    ensureAria(el);
+    if (isHidden(el)) el.setAttribute('aria-hidden', 'true');
+    else el.setAttribute('aria-hidden', 'false');
+  }
+
+  // ------------------------------ Declarative wiring ------------------------------
+  // Any element with [data-modal-open="#selector"] opens the referenced modal
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    const opener = t.closest('[data-modal-open]');
+    if (!opener) return;
+
+    const target = opener.getAttribute('data-modal-open');
+    if (!target) return;
+    e.preventDefault();
+    openModal(target);
+  }, true);
+
+  // Auto-register any modal present at load (optional but nice)
+  qsa('.modal, .vb-modal, [role="dialog"][aria-modal="true"]').forEach(registerModal);
+
+  // ------------------------------ Export API ------------------------------
+  const api = Object.freeze({ openModal, closeModal, registerModal });
+
+  // ESM export (if supported by bundler) + global
+  try { window.VBModal = api; } catch { /* ignore */ }
+  if (typeof window !== 'undefined') {
+    window.VB = Object.freeze({ ...(window.VB || {}), ...api });
+  }
+})();

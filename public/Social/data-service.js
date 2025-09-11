@@ -1,326 +1,236 @@
+// public/Social/data-service.js
+// -------------------------------------------------------------------
+// Vibance Community • Data Service (Firestore + Storage helpers)
+// - Centralizes CRUD for posts, comments, follows, and user lookup
+// - Respects your Firestore/Storage security rules
+// - ESM module: import what you need
+//
+// Usage examples:
+//   import * as DS from './data-service.js';
+//   const page = await DS.fetchPostsPage({ pageSize: 12 });
+//   const id = await DS.createPost({ description: 'Hello', visibility: 'public' });
+//
+// NOTE: All functions assume the caller has ensured the user is signed in.
+// -------------------------------------------------------------------
+
+import { auth, db, storage } from '../api/firebase.js';
+import {
+  collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc,
+  serverTimestamp, query, where, orderBy, limit, startAfter,
+  arrayUnion, arrayRemove
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {
+  ref as sRef, uploadBytes, getDownloadURL, deleteObject
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+
+/* --------------------------------- Types --------------------------------- */
+// JSDoc typedefs for DX (optional)
 /**
- * @file /Social/data-service.js
- * @description A dedicated module for all Firestore interactions related to the social feed.
- * This service centralizes data fetching, creation, and updates for posts and comments.
+ * @typedef {'public'|'followers'} Visibility
+ * @typedef {{id:string,userId:string,displayName:string,photoURL:string,description:string,createdAt:any,visibility:Visibility,tags:string[],imageURL?:string,imagePath?:string,likes:string[],commentCount:number}} PostModel
  */
 
-import {
-    collection,
-    query,
-    orderBy,
-    limit,
-    getDocs,
-    doc,
-    getDoc,
-    addDoc,
-    serverTimestamp,
-    updateDoc,
-    deleteDoc,
-    startAfter,
-    onSnapshot,
-    where,
-    increment,
-    arrayUnion,
-    arrayRemove,
-    writeBatch
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { auth, db, storage } from '../api/firebase.js';
+/* ------------------------------- Utilities ------------------------------- */
+const cleanFileName = (name = '') => name.replace(/[^\w.\-]+/g, '_').slice(0, 120) || `file_${Date.now()}`;
+const nowServer = () => serverTimestamp();
 
-const POSTS_PER_PAGE = 10;
+/* --------------------------------- Users --------------------------------- */
+export async function loadUser(uid) {
+  // Owner reads to /users/{uid} are allowed; other reads may be blocked by rules.
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? (snap.data() || {}) : null;
+  } catch {
+    return null;
+  }
+}
 
-export const DataService = {
+export async function updateFollowing(targetUid, { follow }) {
+  const me = auth.currentUser;
+  if (!me) throw new Error('Not signed in');
+  const youRef = doc(db, 'users', me.uid);
+  const snap = await getDoc(youRef);
+  const curr = snap.exists() ? (snap.data()?.following || []) : [];
+  const next = follow ? Array.from(new Set([...curr, targetUid])) : curr.filter(x => x !== targetUid);
+  // Rules: owner can update 'following' + 'updatedAt'
+  await setDoc(youRef, { following: next, updatedAt: nowServer() }, { merge: true });
+  return next;
+}
 
-    /**
-     * Fetches a paginated list of all posts from Firestore for the "For You" feed.
-     * @param {DocumentSnapshot} lastVisible - The last document snapshot from the previous page.
-     * @returns {Promise<object>} An object containing the posts and the last visible document.
-     */
-    async fetchPosts(lastVisible = null) {
-        try {
-            const postsCollection = collection(db, "posts");
-            let q;
-            if (lastVisible) {
-                q = query(postsCollection, orderBy("createdAt", "desc"), startAfter(lastVisible), limit(POSTS_PER_PAGE));
-            } else {
-                q = query(postsCollection, orderBy("createdAt", "desc"), limit(POSTS_PER_PAGE));
-            }
-            const querySnapshot = await getDocs(q);
-            const posts = querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data(), doc: doc }));
-            return {
-                posts: posts,
-                lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1]
-            };
-        } catch (error) {
-            console.error("Error fetching posts:", error);
-            return { posts: [], lastVisible: null };
-        }
-    },
+/* ---------------------------------- Posts --------------------------------- */
+function toPostModel(id, d = {}) {
+  return {
+    id,
+    userId: d.userId,
+    displayName: d.displayName || 'Member',
+    photoURL: d.photoURL || '/images/logo_white.png',
+    description: d.description || '',
+    createdAt: d.createdAt || null,
+    visibility: d.visibility || 'public',
+    tags: Array.isArray(d.tags) ? d.tags : [],
+    imageURL: d.imageURL || null,
+    imagePath: d.imagePath || null,
+    likes: Array.isArray(d.likes) ? d.likes : [],
+    commentCount: Number(d.commentCount || 0),
+  };
+}
 
-    /**
-     * Fetches a paginated list of posts from users the current user is following.
-     * @param {DocumentSnapshot} lastVisible - The last document snapshot from the previous page.
-     * @returns {Promise<object>} An object containing the posts and the last visible document.
-     */
-    async fetchFollowingPosts(lastVisible = null) {
-        const currentUser = auth.currentUser;
-        if (!currentUser) return { posts: [], lastVisible: null };
+export async function fetchPostsPage({ after = null, pageSize = 12 } = {}) {
+  let qBase = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(pageSize));
+  if (after) qBase = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(after), limit(pageSize));
+  const snap = await getDocs(qBase);
+  const items = snap.docs.map(d => toPostModel(d.id, d.data() || {}));
+  const cursor = snap.docs[snap.docs.length - 1] || null;
+  return { items, cursor, rawDocs: snap.docs };
+}
 
-        try {
-            const userProfile = await this.fetchUserProfile(currentUser.uid);
-            const followingList = userProfile.following || [];
+export async function fetchUserPostsPage(uid, { after = null, pageSize = 10 } = {}) {
+  let qBase = query(
+    collection(db, 'posts'),
+    where('userId', '==', uid),
+    orderBy('createdAt', 'desc'),
+    limit(pageSize)
+  );
+  if (after) {
+    qBase = query(
+      collection(db, 'posts'),
+      where('userId', '==', uid),
+      orderBy('createdAt', 'desc'),
+      startAfter(after),
+      limit(pageSize)
+    );
+  }
+  const snap = await getDocs(qBase);
+  const items = snap.docs.map(d => toPostModel(d.id, d.data() || {}));
+  const cursor = snap.docs[snap.docs.length - 1] || null;
+  return { items, cursor, rawDocs: snap.docs };
+}
 
-            if (followingList.length === 0) {
-                return { posts: [], lastVisible: null }; // User isn't following anyone
-            }
+export async function getPost(postId) {
+  const ref = doc(db, 'posts', postId);
+  const snap = await getDoc(ref);
+  return snap.exists() ? toPostModel(snap.id, snap.data() || {}) : null;
+}
 
-            const postsCollection = collection(db, "posts");
-            let q;
-            if (lastVisible) {
-                q = query(postsCollection, where("userId", "in", followingList), orderBy("createdAt", "desc"), startAfter(lastVisible), limit(POSTS_PER_PAGE));
-            } else {
-                q = query(postsCollection, where("userId", "in", followingList), orderBy("createdAt", "desc"), limit(POSTS_PER_PAGE));
-            }
+/**
+ * Create a post (with optional image upload).
+ * Respects rules:
+ *  - create allowed if request.resource.data.userId == auth.uid
+ *  - fields we set are rule-compliant
+ */
+export async function createPost({ description = '', visibility = 'public', tags = [], file = null } = {}) {
+  const me = auth.currentUser;
+  if (!me) throw new Error('Not signed in');
 
-            const querySnapshot = await getDocs(q);
-            const posts = querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data(), doc: doc }));
-            return {
-                posts: posts,
-                lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1]
-            };
-        } catch (error) {
-            console.error("Error fetching following posts:", error);
-            return { posts: [], lastVisible: null };
-        }
-    },
-    
-    /**
-     * Fetches all posts created by a specific user.
-     * @param {string} userId - The ID of the user whose posts to fetch.
-     * @returns {Promise<Array<object>>} A promise that resolves to an array of post objects.
-     */
-    async fetchPostsByUserId(userId) {
-        try {
-            const postsCollection = collection(db, "posts");
-            const q = query(postsCollection, where("userId", "==", userId), orderBy("createdAt", "desc"));
-            const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-        } catch (error) {
-            console.error("Error fetching posts by user ID:", error);
-            return [];
-        }
-    },
+  const base = {
+    userId: me.uid,
+    displayName: me.displayName || 'Member',
+    photoURL: me.photoURL || '',
+    description: description.trim(),
+    createdAt: nowServer(),
+    visibility: visibility === 'followers' ? 'followers' : 'public',
+    tags: Array.isArray(tags) ? tags.slice(0, 5) : [],
+    likes: [],
+    commentCount: 0,
+  };
 
-    /**
-     * Fetches a single post by its ID.
-     * @param {string} postId - The ID of the post to fetch.
-     * @returns {Promise<object|null>} The post object or null if not found.
-     */
-    async fetchPostById(postId) {
-        try {
-            const postRef = doc(db, 'posts', postId);
-            const docSnap = await getDoc(postRef);
-            if (docSnap.exists()) {
-                const postData = { id: docSnap.id, data: docSnap.data() };
-                postData.author = await this.fetchUserProfile(postData.data.userId);
-                return postData;
-            }
-            return null;
-        } catch (error) {
-            console.error("Error fetching post by ID:", error);
-            return null;
-        }
-    },
+  // Optional image upload (Storage rules: write allowed to /posts/{userId} by owner)
+  if (file) {
+    const safe = `${Date.now()}_${cleanFileName(file.name)}`;
+    const path = `posts/${me.uid}/${safe}`;
+    const r = sRef(storage, path);
+    await uploadBytes(r, file, { contentType: file.type || 'image/jpeg' });
+    const url = await getDownloadURL(r);
+    base.imageURL = url;
+    base.imagePath = path;
+  }
 
-    /**
-     * Fetches a user's profile from the 'users' collection.
-     * @param {string} userId - The ID of the user to fetch.
-     * @returns {Promise<object>} The user's profile data.
-     */
-    async fetchUserProfile(userId) {
-        if (!userId) return { name: 'Anonymous', photoURL: null, followers: [], following: [] };
-        try {
-            const userRef = doc(db, 'users', userId);
-            const docSnap = await getDoc(userRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                return {
-                    name: data.name || 'Anonymous',
-                    photoURL: data.photoURL || null,
-                    followers: data.followers || [],
-                    following: data.following || []
-                };
-            }
-            return { name: 'Anonymous', photoURL: null, followers: [], following: [] };
-        } catch (error) {
-            console.error("Error fetching user profile:", error);
-            return { name: 'Anonymous', photoURL: null, followers: [], following: [] };
-        }
-    },
+  const docRef = await addDoc(collection(db, 'posts'), base);
+  return docRef.id;
+}
 
-    /**
-     * Fetches a list of users to suggest to the current user.
-     * @returns {Promise<Array<object>>} A list of user profiles to suggest.
-     */
-    async fetchUserSuggestions() {
-        const currentUser = auth.currentUser;
-        if (!currentUser) return [];
+/**
+ * Update post description (owner-only; rules enforce).
+ */
+export async function updatePostDescription(postId, nextText) {
+  await updateDoc(doc(db, 'posts', postId), { description: String(nextText || '') });
+}
 
-        try {
-            const usersCollection = collection(db, 'users');
-            const q = query(usersCollection, limit(10));
-            const snapshot = await getDocs(q);
+/**
+ * Delete a post (owner-only; rules enforce). Best-effort delete of image.
+ */
+export async function deletePost(post) {
+  if (post?.imagePath) {
+    try { await deleteObject(sRef(storage, post.imagePath)); } catch {}
+  }
+  await deleteDoc(doc(db, 'posts', post.id));
+}
 
-            const currentUserProfile = await this.fetchUserProfile(currentUser.uid);
-            const followingList = currentUserProfile.following || [];
+/**
+ * Toggle like for current user.
+ * Rules allow updating the 'likes' array.
+ */
+export async function toggleLike(postId, like) {
+  const me = auth.currentUser;
+  if (!me) throw new Error('Not signed in');
+  const ref = doc(db, 'posts', postId);
+  await updateDoc(ref, { likes: like ? arrayUnion(me.uid) : arrayRemove(me.uid) });
+}
 
-            const suggestions = snapshot.docs
-                .map(doc => ({ id: doc.id, data: doc.data() }))
-                .filter(user => user.id !== currentUser.uid && !followingList.includes(user.id));
+/* -------------------------------- Comments ------------------------------- */
+export async function fetchComments(postId, { pageSize = 40 } = {}) {
+  const snap = await getDocs(query(collection(db, 'posts', postId, 'comments'), orderBy('createdAt', 'desc'), limit(pageSize)));
+  return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+}
 
-            return suggestions.slice(0, 5); // Return up to 5 suggestions
-        } catch (error) {
-            console.error("Error fetching user suggestions:", error);
-            return [];
-        }
-    },
+/**
+ * Add a comment; then bump commentCount (allowed by rules).
+ */
+export async function addComment(postId, text) {
+  const me = auth.currentUser;
+  if (!me) throw new Error('Not signed in');
 
-    /**
-     * Creates a new post with an optional image.
-     * @param {string} description - The text content of the post.
-     * @param {File} imageFile - The image file to upload (optional).
-     */
-    async createPost(description, imageFile) {
-        const user = auth.currentUser;
-        if (!user) throw new Error("User not authenticated.");
+  await addDoc(collection(db, 'posts', postId, 'comments'), {
+    userId: me.uid,
+    displayName: me.displayName || 'You',
+    photoURL: me.photoURL || '',
+    text: String(text || ''),
+    createdAt: nowServer(),
+  });
 
-        let imageUrl = '';
-        if (imageFile) {
-            const filePath = `posts/${user.uid}/${Date.now()}_${imageFile.name}`;
-            const storageRef = ref(storage, filePath);
-            const snapshot = await uploadBytes(storageRef, imageFile);
-            imageUrl = await getDownloadURL(snapshot.ref);
-        }
-
-        const postsCollection = collection(db, 'posts');
-        await addDoc(postsCollection, {
-            userId: user.uid,
-            description: description,
-            imageUrl: imageUrl,
-            createdAt: serverTimestamp(),
-            likes: [],
-            commentCount: 0
-        });
-    },
-    
-    /**
-     * Updates the description of an existing post.
-     * @param {string} postId - The ID of the post to update.
-     * @param {string} newDescription - The new text content for the post.
-     */
-    async updatePost(postId, newDescription) {
-        const postRef = doc(db, 'posts', postId);
-        await updateDoc(postRef, { description: newDescription });
-    },
-
-    /**
-     * Deletes a post and its associated image from storage.
-     * @param {string} postId - The ID of the post to delete.
-     * @param {string} imageUrl - The URL of the image to delete from storage.
-     */
-    async deletePost(postId, imageUrl) {
-        if (imageUrl) {
-            const imageRef = ref(storage, imageUrl);
-            await deleteObject(imageRef).catch(err => console.error("Error deleting image:", err));
-        }
-        const postRef = doc(db, 'posts', postId);
-        await deleteDoc(postRef);
-    },
-
-    /**
-     * Toggles a user's like on a post.
-     * @param {string} postId - The ID of the post to like/unlike.
-     */
-    async toggleLike(postId) {
-        const user = auth.currentUser;
-        if (!user) throw new Error("User not authenticated.");
-
-        const postRef = doc(db, 'posts', postId);
-        const postSnap = await getDoc(postRef);
-        if (postSnap.exists()) {
-            const postData = postSnap.data();
-            const likes = postData.likes || [];
-            if (likes.includes(user.uid)) {
-                await updateDoc(postRef, { likes: arrayRemove(user.uid) });
-            } else {
-                await updateDoc(postRef, { likes: arrayUnion(user.uid) });
-            }
-        }
-    },
-
-    /**
-     * Adds or removes a follow relationship between the current user and another user.
-     * @param {string} profileUserId - The ID of the user to follow or unfollow.
-     */
-    async toggleFollow(profileUserId) {
-        const currentUserId = auth.currentUser.uid;
-        if (currentUserId === profileUserId) return;
-
-        const currentUserRef = doc(db, 'users', currentUserId);
-        const profileUserRef = doc(db, 'users', profileUserId);
-
-        const batch = writeBatch(db);
-        const profileDoc = await getDoc(profileUserRef);
-        const followers = profileDoc.data()?.followers || [];
-
-        if (followers.includes(currentUserId)) {
-            // Unfollow
-            batch.update(currentUserRef, { following: arrayRemove(profileUserId) });
-            batch.update(profileUserRef, { followers: arrayRemove(currentUserId) });
-        } else {
-            // Follow
-            batch.update(currentUserRef, { following: arrayUnion(profileUserId) });
-            batch.update(profileUserRef, { followers: arrayUnion(currentUserId) });
-        }
-        await batch.commit();
-    },
-
-    /**
-     * Adds a comment to a specific post.
-     * @param {string} postId - The ID of the post to comment on.
-     * @param {string} text - The text of the comment.
-     */
-    async addComment(postId, text) {
-        const user = auth.currentUser;
-        if (!user) throw new Error("User not authenticated.");
-
-        const commentsCollection = collection(db, 'posts', postId, 'comments');
-        await addDoc(commentsCollection, {
-            userId: user.uid,
-            text: text,
-            createdAt: serverTimestamp()
-        });
-        const postRef = doc(db, 'posts', postId);
-        await updateDoc(postRef, { commentCount: increment(1) });
-    },
-    
-    /**
-     * Creates a real-time listener for a post's comments.
-     * @param {string} postId - The ID of the post.
-     * @param {Function} callback - The function to call with the comments array.
-     * @returns {Function} The unsubscribe function for the listener.
-     */
-    onCommentsSnapshot(postId, callback) {
-        const commentsQuery = query(collection(db, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'));
-        
-        return onSnapshot(commentsQuery, async (snapshot) => {
-            const comments = await Promise.all(snapshot.docs.map(async (doc) => {
-                const commentData = doc.data();
-                const author = await this.fetchUserProfile(commentData.userId);
-                return { id: doc.id, data: commentData, author };
-            }));
-            callback(comments);
-        });
+  // Bump commentCount with read-modify-write (server-side increment not available here)
+  try {
+    const ref = doc(db, 'posts', postId);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const curr = Number(snap.data()?.commentCount || 0);
+      await updateDoc(ref, { commentCount: curr + 1 });
     }
-};
+  } catch {
+    // Ignore; UI can be optimistic.
+  }
+}
 
+/* ------------------------------- Directory ------------------------------- */
+/**
+ * Fetch a page of users for "Follow" directory.
+ * Reads to others' user docs may be restricted by rules; fetch best-effort.
+ */
+export async function fetchUsersPage({ after = null, pageSize = 18 } = {}) {
+  let qBase = query(collection(db, 'users'), orderBy('updatedAt', 'desc'), limit(pageSize));
+  if (after) qBase = query(collection(db, 'users'), orderBy('updatedAt', 'desc'), startAfter(after), limit(pageSize));
+  try {
+    const snap = await getDocs(qBase);
+    const items = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+    const cursor = snap.docs[snap.docs.length - 1] || null;
+    return { items, cursor, rawDocs: snap.docs };
+  } catch {
+    // If rules prevent reading users, return empty page
+    return { items: [], cursor: null, rawDocs: [] };
+  }
+}
+
+/* --------------------------------- Exports --------------------------------
+ * Everything is named-exported; no default export.
+ * Keep this file lean to avoid duplicate SDK bundles across pages.
+ * ------------------------------------------------------------------------- */

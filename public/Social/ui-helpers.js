@@ -1,39 +1,140 @@
-/**
- * @file /Social/ui-helpers.js
- * @description A library of functions that generate reusable UI components like icons and avatars.
- */
+// public/Social/ui-helpers.js
+// ------------------------------------------------------------
+// Vibance • Social UI helpers (tiny, dependency-free)
+// - Exports named ESM functions
+// - Also attaches to window.VB for legacy/global access
+// ------------------------------------------------------------
 
-/**
- * Creates an SVG icon based on the specified name. This is an advanced technique
- * to keep all icons in one place and avoid repeating SVG code.
- * @param {string} name - The name of the icon (e.g., 'heart', 'comment', 'dots').
- * @param {boolean} isFilled - (Optional) For icons like 'heart', determines if it should be the filled version.
- * @returns {string} The HTML string for the SVG icon.
- */
-export function createIcon(name, isFilled = false) {
-    const icons = {
-        heart: isFilled
-            ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>`
-            : `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>`,
-        comment: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>`,
-        dots: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" /></svg>`
-    };
-    return icons[name] || '';
+/* ---------------------------- Text & Dates ---------------------------- */
+export function titleCase(s = '') {
+  return s.replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase());
 }
 
-/**
- * Creates the HTML for a user avatar, using their profile picture or a placeholder.
- * @param {object} author - The author object, containing 'name' and 'photoURL'.
- * @param {string} sizeClass - (Optional) A Tailwind CSS class for the avatar size.
- * @returns {string} The HTML string for the avatar.
- */
-export function createAvatar(author, sizeClass = 'h-8 w-8') {
-    if (!author) return '';
-    const avatarSrc = author.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=2d2d2d&color=fff&size=64`;
-    return `
-        <div class="create-post-avatar ${sizeClass}">
-            <img src="${avatarSrc}" alt="${author.name}'s avatar">
-        </div>
-    `;
+export function fmtTime(tsOrDate) {
+  const d = tsOrDate?.toDate
+    ? tsOrDate.toDate()
+    : (tsOrDate instanceof Date ? tsOrDate : new Date(tsOrDate || 0));
+  if (Number.isNaN(d.getTime())) return 'Just now';
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return d.toLocaleDateString();
 }
 
+export function escapeHtml(s) {
+  return (s ?? '').toString()
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+export function escapeAttr(s) {
+  return escapeHtml(s).replace(/\n/g, ' ');
+}
+
+/* ------------------------------- Money ------------------------------- */
+export function money(n, currency = 'USD') {
+  if (typeof n !== 'number' || Number.isNaN(n)) return '—';
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n);
+  } catch {
+    return `$${n.toFixed(2)}`;
+  }
+}
+
+/* -------------------------- DOM mini-helpers ------------------------- */
+export const qs = (sel, root = document) => root.querySelector(sel);
+export const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+export function setBusy(btn, text = 'Working…', busy = true) {
+  if (!btn) return;
+  if (busy) {
+    btn.dataset.prevText = btn.textContent ?? '';
+    btn.disabled = true;
+    btn.textContent = text;
+  } else {
+    btn.disabled = false;
+    btn.textContent = btn.dataset.prevText ?? btn.textContent ?? 'Done';
+  }
+}
+
+export function debounce(fn, ms = 200) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
+}
+
+export function throttle(fn, ms = 200) {
+  let last = 0, tid = null, lastArgs;
+  return (...args) => {
+    const now = Date.now();
+    lastArgs = args;
+    const run = () => { last = now; tid = null; fn(...lastArgs); };
+    if (now - last >= ms) run();
+    else if (!tid) tid = setTimeout(run, ms - (now - last));
+  };
+}
+
+/* ------------------------------- Toast ------------------------------- */
+export function toast(msg, { id = 'toast', duration = 1600 } = {}) {
+  const el = document.getElementById(id);
+  if (!el) return console.log('[toast]', msg);
+  el.textContent = msg;
+  el.classList.remove('opacity-0', 'pointer-events-none');
+  el.classList.add('opacity-100');
+  window.clearTimeout(el._hideTid);
+  el._hideTid = window.setTimeout(() => {
+    el.classList.add('opacity-0', 'pointer-events-none');
+  }, duration);
+}
+
+/* --------------------------- Popover handling ------------------------ */
+export function openPopover(triggerEl, popoverEl) {
+  if (!popoverEl) return;
+  document.querySelectorAll('.post-menu-popover').forEach(m => {
+    if (m !== popoverEl) m.classList.add('hidden');
+  });
+  popoverEl.classList.remove('hidden');
+
+  const esc = (e) => {
+    if (e.key === 'Escape') {
+      close();
+    }
+  };
+  const outside = (e) => {
+    if (!popoverEl.contains(e.target) && e.target !== triggerEl) close();
+  };
+  function close() {
+    popoverEl.classList.add('hidden');
+    document.removeEventListener('click', outside, true);
+    document.removeEventListener('keydown', esc, true);
+  }
+
+  document.addEventListener('click', outside, true);
+  document.addEventListener('keydown', esc, true);
+  return close;
+}
+
+/* --------------------------- URL / Query util ------------------------ */
+export function qparam(name, url = window.location.href) {
+  try { return new URL(url).searchParams.get(name); }
+  catch { return null; }
+}
+
+/* --------------------------- File name helper ------------------------ */
+export function safeFileName(name = '') {
+  return name.replace(/[^\w.\-]+/g, '_').slice(0, 120) || `file_${Date.now()}`;
+}
+
+/* ------------------------------ Globals ------------------------------ */
+// Expose to window.VB for legacy access without imports
+(function attachGlobals() {
+  const api = {
+    titleCase, fmtTime, escapeHtml, escapeAttr,
+    money, qs, qsa, setBusy, debounce, throttle,
+    toast, openPopover, qparam, safeFileName,
+  };
+  window.VB = Object.freeze({ ...(window.VB || {}), ...api });
+})();

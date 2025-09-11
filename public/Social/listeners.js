@@ -1,89 +1,109 @@
-/**
- * @file /Social/listeners.js
- * @description Manages all real-time Firestore listeners for the social feed,
- * ensuring the UI is always in sync with the database.
- */
+// public/Social/listeners.js
+// ------------------------------------------------------------
+// Vibance • Global UI listeners for Community
+// - Post action popovers: open/close via delegation
+// - Close popovers on outside click or Escape
+// - Quick share: Alt/Option-click on ".post-permalink" copies URL
+// - Idempotent: safe to import multiple times
+// ------------------------------------------------------------
 
-import { onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from '../api/firebase.js';
-import { DataService } from './data-service.js';
-import { PostRenderer } from './post-renderer.js';
+import { toast, openPopover } from './ui-helpers.js';
 
-// A private map to keep track of active listeners to prevent duplicates.
-const activeListeners = new Map();
+if (!window.__VB_LISTENERS_WIRED__) {
+  window.__VB_LISTENERS_WIRED__ = true;
 
-export const ListenerManager = {
+  // Track the currently open popover close fn (from openPopover)
+  let closeCurrentPopover = null;
 
-    /**
-     * Attaches the author's profile details (name, photoURL) to a set of posts.
-     * This is a critical step to ensure posts can be rendered with the correct user info.
-     * @param {Array<object>} posts - An array of post objects from the data service.
-     * @returns {Promise<Array<object>>} A promise that resolves to the array of posts, now enriched with author details.
-     */
-    async attachAuthorDetails(posts) {
-        // Use Promise.all for efficient, parallel fetching of author profiles.
-        const postsWithAuthors = await Promise.all(posts.map(async (post) => {
-            const author = await DataService.fetchUserProfile(post.data.userId);
-            return { ...post, author };
-        }));
-        return postsWithAuthors;
-    },
+  function isInside(el, root) {
+    try { return !!(el && (el === root || root.contains(el))); }
+    catch { return false; }
+  }
 
-    /**
-     * Creates and starts a real-time listener for a single post.
-     * When the post's data changes in Firestore (e.g., a new like), this function
-     * automatically updates the specific parts of the post card in the UI.
-     * @param {string} postId - The ID of the post to listen to.
-     */
-    startPostListener(postId) {
-        // If a listener for this post already exists, do nothing.
-        if (activeListeners.has(postId)) return;
+  // Delegated clicks
+  document.addEventListener('click', (e) => {
+    const target = /** @type {HTMLElement} */ (e.target);
 
-        const postRef = doc(db, 'posts', postId);
+    // --- Handle post menu toggles ----------------------------------------
+    // Any element with class ".post-menu" should toggle its sibling popover.
+    const menuBtn = target.closest?.('.post-menu');
+    if (menuBtn) {
+      e.preventDefault();
+      const card = menuBtn.closest('article');
+      const popover = card?.querySelector('.post-menu-popover');
+      if (!popover) return;
 
-        const unsubscribe = onSnapshot(postRef, (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                const postData = { id: docSnapshot.id, data: docSnapshot.data() };
-                // Call the renderer to specifically update the dynamic parts of the post.
-                PostRenderer.updatePostInteractions(postData);
-            } else {
-                // If the post is deleted, remove it from the UI.
-                const postElement = document.getElementById(`post-${postId}`);
-                if (postElement) postElement.remove();
-                this.stopPostListener(postId); // Clean up the listener.
-            }
-        });
+      // If already open, close it; else open and register global close.
+      const isOpen = !popover.classList.contains('hidden');
+      // Close any currently open popover first
+      document.querySelectorAll('.post-menu-popover').forEach(m => m.classList.add('hidden'));
+      if (closeCurrentPopover) { try { closeCurrentPopover(); } catch {} finally { closeCurrentPopover = null; } }
 
-        // Store the unsubscribe function so we can stop the listener later.
-        activeListeners.set(postId, unsubscribe);
-    },
-
-    /**
-     * Stops a specific real-time listener to save resources.
-     * @param {string} postId - The ID of the post whose listener should be stopped.
-     */
-    stopPostListener(postId) {
-        if (activeListeners.has(postId)) {
-            const unsubscribe = activeListeners.get(postId);
-            unsubscribe(); // Detach the listener from Firestore.
-            activeListeners.delete(postId); // Remove it from our tracking map.
-        }
-    },
-
-    /**
-     * A convenience function to start listeners for an array of posts.
-     * @param {Array<object>} posts - An array of post objects.
-     */
-    startAllPostListeners(posts) {
-        posts.forEach(post => this.startPostListener(post.id));
-    },
-
-    /**
-     * Stops all active real-time listeners. This is useful for cleanup when a user logs out.
-     */
-    stopAllListeners() {
-        activeListeners.forEach(unsubscribe => unsubscribe());
-        activeListeners.clear();
+      if (!isOpen) {
+        closeCurrentPopover = openPopover(menuBtn, popover);
+      }
+      return;
     }
-};
 
+    // --- Quick share: Alt/Option-click permalink to copy -----------------
+    // Normal click navigates; Alt-click copies to clipboard.
+    const permalink = target.closest?.('.post-permalink');
+    if (permalink && (e.altKey || e.metaKey)) {
+      e.preventDefault();
+      const href = permalink.getAttribute('href') || location.href;
+      try {
+        navigator.clipboard?.writeText?.(new URL(href, location.href).href);
+        toast('Link copied');
+      } catch {
+        // Fallback: create temp input
+        const input = document.createElement('input');
+        input.value = new URL(href, location.href).href;
+        document.body.appendChild(input);
+        input.select();
+        try { document.execCommand('copy'); toast('Link copied'); } catch {}
+        input.remove();
+      }
+      return;
+    }
+
+    // --- Close any open popover when clicking outside --------------------
+    const anyOpen = document.querySelector('.post-menu-popover:not(.hidden)');
+    if (anyOpen && !isInside(target, anyOpen) && !target.closest('.post-menu')) {
+      anyOpen.classList.add('hidden');
+      if (closeCurrentPopover) { try { closeCurrentPopover(); } catch {} finally { closeCurrentPopover = null; } }
+    }
+  }, true);
+
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const anyOpen = document.querySelector('.post-menu-popover:not(.hidden)');
+    if (anyOpen) {
+      anyOpen.classList.add('hidden');
+      if (closeCurrentPopover) { try { closeCurrentPopover(); } catch {} finally { closeCurrentPopover = null; } }
+    }
+  });
+
+  // Mutation observer: if cards are injected after load, ensure no stray open menus remain
+  const mo = new MutationObserver(() => {
+    // If DOM changes while a popover is open and its anchor disappeared, close it.
+    const openPop = document.querySelector('.post-menu-popover:not(.hidden)');
+    if (openPop) {
+      const anchorStillThere = document.querySelector('.post-menu') && openPop.parentElement;
+      if (!anchorStillThere) {
+        openPop.classList.add('hidden');
+        if (closeCurrentPopover) { try { closeCurrentPopover(); } catch {} finally { closeCurrentPopover = null; } }
+      }
+    }
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+
+  // Optional: expose a manual close on window for edge cases
+  window.VB = Object.freeze({
+    ...(window.VB || {}),
+    closeAllPopovers: () => {
+      document.querySelectorAll('.post-menu-popover').forEach(m => m.classList.add('hidden'));
+      if (closeCurrentPopover) { try { closeCurrentPopover(); } catch {} finally { closeCurrentPopover = null; } }
+    }
+  });
+}
