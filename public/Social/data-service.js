@@ -17,7 +17,12 @@ import {
     updateDoc,
     deleteDoc,
     startAfter,
-    onSnapshot
+    onSnapshot,
+    where,
+    increment,
+    arrayUnion,
+    arrayRemove,
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { auth, db, storage } from '../api/firebase.js';
@@ -27,9 +32,9 @@ const POSTS_PER_PAGE = 10;
 export const DataService = {
 
     /**
-     * Fetches a paginated list of posts from Firestore.
-     * @param {DocumentSnapshot} lastVisible - The last document snapshot from the previous page, for pagination.
-     * @returns {Promise<Array<object>>} A promise that resolves to an array of post objects.
+     * Fetches a paginated list of all posts from Firestore.
+     * @param {DocumentSnapshot} lastVisible - The last document snapshot from the previous page.
+     * @returns {Promise<object>} An object containing the posts and the last visible document.
      */
     async fetchPosts(lastVisible = null) {
         try {
@@ -41,9 +46,30 @@ export const DataService = {
                 q = query(postsCollection, orderBy("createdAt", "desc"), limit(POSTS_PER_PAGE));
             }
             const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+            const posts = querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data(), doc: doc }));
+            return {
+                posts: posts,
+                lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1]
+            };
         } catch (error) {
             console.error("Error fetching posts:", error);
+            return { posts: [], lastVisible: null };
+        }
+    },
+    
+    /**
+     * Fetches all posts created by a specific user.
+     * @param {string} userId - The ID of the user whose posts to fetch.
+     * @returns {Promise<Array<object>>} A promise that resolves to an array of post objects.
+     */
+    async fetchPostsByUserId(userId) {
+        try {
+            const postsCollection = collection(db, "posts");
+            const q = query(postsCollection, where("userId", "==", userId), orderBy("createdAt", "desc"));
+            const querySnapshot = await getDocs(q);
+            return querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+        } catch (error) {
+            console.error("Error fetching posts by user ID:", error);
             return [];
         }
     },
@@ -75,14 +101,23 @@ export const DataService = {
      * @returns {Promise<object>} The user's profile data.
      */
     async fetchUserProfile(userId) {
-        if (!userId) return { name: 'Anonymous', photoURL: null };
+        if (!userId) return { name: 'Anonymous', photoURL: null, followers: [], following: [] };
         try {
             const userRef = doc(db, 'users', userId);
             const docSnap = await getDoc(userRef);
-            return docSnap.exists() ? docSnap.data() : { name: 'Anonymous', photoURL: null };
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                return {
+                    name: data.name || 'Anonymous',
+                    photoURL: data.photoURL || null,
+                    followers: data.followers || [],
+                    following: data.following || []
+                };
+            }
+            return { name: 'Anonymous', photoURL: null, followers: [], following: [] };
         } catch (error) {
             console.error("Error fetching user profile:", error);
-            return { name: 'Anonymous', photoURL: null };
+            return { name: 'Anonymous', photoURL: null, followers: [], following: [] };
         }
     },
 
@@ -136,6 +171,54 @@ export const DataService = {
         }
         const postRef = doc(db, 'posts', postId);
         await deleteDoc(postRef);
+    },
+
+    /**
+     * Toggles a user's like on a post.
+     * @param {string} postId - The ID of the post to like/unlike.
+     */
+    async toggleLike(postId) {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated.");
+
+        const postRef = doc(db, 'posts', postId);
+        const postSnap = await getDoc(postRef);
+        if (postSnap.exists()) {
+            const postData = postSnap.data();
+            const likes = postData.likes || [];
+            if (likes.includes(user.uid)) {
+                await updateDoc(postRef, { likes: arrayRemove(user.uid) });
+            } else {
+                await updateDoc(postRef, { likes: arrayUnion(user.uid) });
+            }
+        }
+    },
+
+    /**
+     * Adds or removes a follow relationship between the current user and another user.
+     * @param {string} profileUserId - The ID of the user to follow or unfollow.
+     */
+    async toggleFollow(profileUserId) {
+        const currentUserId = auth.currentUser.uid;
+        if (currentUserId === profileUserId) return; // Cannot follow oneself
+
+        const currentUserRef = doc(db, 'users', currentUserId);
+        const profileUserRef = doc(db, 'users', profileUserId);
+
+        const batch = writeBatch(db);
+        const profileDoc = await getDoc(profileUserRef);
+        const followers = profileDoc.data()?.followers || [];
+
+        if (followers.includes(currentUserId)) {
+            // Unfollow
+            batch.update(currentUserRef, { following: arrayRemove(profileUserId) });
+            batch.update(profileUserRef, { followers: arrayRemove(currentUserId) });
+        } else {
+            // Follow
+            batch.update(currentUserRef, { following: arrayUnion(profileUserId) });
+            batch.update(profileUserRef, { followers: arrayUnion(currentUserId) });
+        }
+        await batch.commit();
     },
 
     /**
