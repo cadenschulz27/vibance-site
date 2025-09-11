@@ -4,64 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile - Vibance</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="social.css">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #000; color: #f5f5f5; font-family: 'Inter', sans-serif; }
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-            padding: 2rem;
-            border-bottom: 1px solid #262626;
-        }
-        .profile-avatar {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .profile-name { font-size: 1.75rem; font-weight: 300; }
-        .profile-stats { display: flex; gap: 2.5rem; margin-top: 1rem; }
-        .stat-number { font-weight: 600; }
-        .posts-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 4px;
-        }
-        .post-thumbnail {
-            position: relative;
-            padding-bottom: 100%; /* 1:1 Aspect Ratio */
-        }
-        .post-thumbnail img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-    </style>
 </head>
-<body>
+<body class="bg-black text-white font-['Inter']">
+
     <div id="header-placeholder"></div>
 
-    <main class="max-w-4xl mx-auto">
-        <div id="profile-container">
-            <p class="text-center p-20 text-gray-500">Loading profile...</p>
+    <main class="social-container pt-8">
+        <header id="profile-header" class="profile-header">
+            <div class="avatar-container">
+                <div class="avatar-placeholder"></div>
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-name-placeholder">Loading...</h1>
+                <div id="profile-stats" class="profile-stats">
+                    <!-- User stats will be loaded here -->
+                </div>
+                <div id="profile-actions" class="profile-actions">
+                    <!-- Follow/Edit button will be loaded here -->
+                </div>
+            </div>
+        </header>
+
+        <div class="profile-tabs">
+            <button class="profile-tab active">
+                <svg aria-label="Posts" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9.005 16.545a2.997 2.997 0 0 1 2.997-2.997A2.997 2.997 0 0 1 15 16.545V22h7V9.005a2.997 2.997 0 0 1-2.997-2.997A2.997 2.997 0 0 1 16.545 3H9.005a2.997 2.997 0 0 1-2.997 2.997A2.997 2.997 0 0 1 3 9.005V16.545a2.997 2.997 0 0 1 2.997 2.997A2.997 2.997 0 0 1 9.005 22V16.545Z"></path></svg>
+                <span>POSTS</span>
+            </button>
         </div>
 
-        <div id="user-posts-grid" class="posts-grid">
-            <!-- User's posts will be loaded here -->
+        <div id="user-posts-grid" class="profile-posts-grid">
+            <!-- User's posts will be loaded here in a grid format -->
         </div>
+
     </main>
     
-    <!-- Scripts -->
+    <div id="modal-root"></div>
+
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
-    <!-- We will create user-profile.js in a later step -->
+    <script type="module" src="user-profile.js"></script>
 </body>
 </html>
+
