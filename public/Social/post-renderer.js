@@ -1,98 +1,40 @@
 // public/Social/post-renderer.js
-// ------------------------------------------------------------
-// Pure UI renderer for Vibance Community posts & comments.
-// - No Firebase imports: you pass callbacks for actions.
-// - Uses the <template id="post-card-template"> in social.html.
-// - Safe defaults to keep working even if the template is absent.
-// ------------------------------------------------------------
+// --------------------------------------------------------------------
+// Vibance Community • Post Renderer (pure UI)
+// - Creates a post card DOM node from a model
+// - No Firebase calls here: callbacks are injected by caller
+// - Used by social.js, feed-manager.js, user-profile.js, post page
+// --------------------------------------------------------------------
+
+import { fmtTime, qsa } from './ui-helpers.js';
 
 /**
- * @typedef {Object} PostModel
- * @property {string} id
- * @property {string} userId
- * @property {string} displayName
- * @property {string} photoURL
- * @property {string} description
- * @property {'public'|'followers'} visibility
- * @property {Array<string>} tags
- * @property {string|null} imageURL
- * @property {string|null} imagePath
- * @property {Array<string>} likes
- * @property {number} commentCount
- * @property {any} createdAt  // Firestore TS or ISO/date
+ * Normalize raw Firestore doc -> lightweight model used by renderer.
+ * Safe to call with either raw snapshots or already-normalized objects.
  */
+export function toPostModel(id, d = {}) {
+  const data = d || {};
+  return {
+    id,
+    userId: data.userId,
+    displayName: data.displayName || 'Member',
+    photoURL: data.photoURL || '/images/logo_white.png',
+    description: data.description || '',
+    createdAt: data.createdAt || null,
+    visibility: data.visibility === 'followers' ? 'followers' : 'public',
+    tags: Array.isArray(data.tags) ? data.tags : [],
+    imageURL: data.imageURL || null,
+    imagePath: data.imagePath || null,
+    likes: Array.isArray(data.likes) ? data.likes : [],
+    commentCount: Number(data.commentCount || 0),
+  };
+}
 
 /**
- * @typedef {Object} CommentModel
- * @property {string} userId
- * @property {string} displayName
- * @property {string} photoURL
- * @property {string} text
- * @property {any} createdAt // Firestore TS or ISO/date
+ * Render a single comment to a DOM node.
+ * @param {{displayName:string, photoURL?:string, text:string, createdAt:any}} c
  */
-
-/**
- * @typedef {Object} PostRenderOptions
- * @property {string=} currentUserId
- * @property {(post: PostModel, nextLiked: boolean) => Promise<void>|void=} onToggleLike
- * @property {(post: PostModel, newText: string) => Promise<void>|void=} onEdit
- * @property {(post: PostModel) => Promise<void>|void=} onDelete
- * @property {(post: PostModel) => void=} onOpenPermalink
- * @property {(postId: string) => Promise<CommentModel[]>|Promise<void>|void=} onOpenComments  // return list (optional)
- * @property {(postId: string, text: string) => Promise<void>|void=} onSendComment
- */
-
-/* --------------------------- Utilities --------------------------- */
-function fmtTime(tsOrDate) {
-  const d = tsOrDate?.toDate ? tsOrDate.toDate() : (tsOrDate instanceof Date ? tsOrDate : new Date(tsOrDate || 0));
-  if (Number.isNaN(d.getTime())) return 'Just now';
-  const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60) return 'Just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return d.toLocaleDateString();
-}
-
-function titleCase(s = '') {
-  return s.replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase());
-}
-
-function cloneTemplate() {
-  const t = document.getElementById('post-card-template');
-  if (t?.content) return /** @type {DocumentFragment} */ (t.content.cloneNode(true));
-  // Fallback minimal card if template missing
-  const frag = document.createDocumentFragment();
-  const art = document.createElement('article');
-  art.className = 'glass p-4 md:p-5';
-  art.innerHTML = `
-    <header class="flex items-center gap-3">
-      <img class="post-avatar h-10 w-10 rounded-full bg-neutral-900 border border-neutral-800" alt="Avatar">
-      <div>
-        <div class="post-author font-medium"></div>
-        <div class="post-meta text-xs text-neutral-500"></div>
-      </div>
-    </header>
-    <div class="post-body text-neutral-100 mt-3 whitespace-pre-wrap"></div>
-    <figure class="post-image-wrap mt-3 hidden"><img class="post-image w-full rounded-xl border border-neutral-800"></figure>
-    <footer class="mt-4 flex items-center justify-between">
-      <button class="post-like px-3 py-1.5 rounded-lg border border-neutral-800 text-sm">♥ <span class="post-like-count">0</span></button>
-      <button class="post-comment px-3 py-1.5 rounded-lg border border-neutral-800 text-sm">💬 <span class="post-comment-count">0</span></button>
-      <a class="post-permalink text-xs text-neutral-400 hover:text-white" href="#">Open</a>
-    </footer>
-    <section class="post-comments mt-4 hidden">
-      <div class="space-y-3" data-comments-list></div>
-      <div class="mt-3 flex items-start gap-2">
-        <input class="comment-input flex-1 bg-neutral-950/70 border border-neutral-800 rounded-xl px-3 py-2 text-sm" placeholder="Write a comment…">
-        <button class="comment-submit px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm">Send</button>
-      </div>
-    </section>
-  `;
-  frag.appendChild(art);
-  return frag;
-}
-
-/* --------------------------- Comments --------------------------- */
-export function renderCommentItem(c /** @type {CommentModel} */) {
+export function renderCommentItem(c) {
   const wrap = document.createElement('div');
   wrap.className = 'flex items-start gap-3';
   wrap.innerHTML = `
@@ -103,159 +45,183 @@ export function renderCommentItem(c /** @type {CommentModel} */) {
         <span class="font-medium">${c.displayName || 'Member'}</span>
         <span class="text-neutral-500 text-xs">• ${fmtTime(c.createdAt)}</span>
       </div>
-      <div class="text-sm text-neutral-200 whitespace-pre-wrap">${c.text || ''}</div>
-    </div>
-  `;
+      <div class="text-sm text-neutral-200 whitespace-pre-wrap"></div>
+    </div>`;
+  wrap.querySelector('.text-sm.text-neutral-200').textContent = c.text || '';
   return wrap;
 }
 
-/* ----------------------------- Post ----------------------------- */
-export function createPostCard(post /** @type {PostModel} */, opts /** @type {PostRenderOptions} */ = {}) {
-  const {
-    currentUserId,
-    onToggleLike,
-    onEdit,
-    onDelete,
-    onOpenPermalink,
-    onOpenComments,
-    onSendComment,
-  } = opts;
+/**
+ * Create a post card DOM node using the shared #post-card-template on the page.
+ * The caller must ensure a <template id="post-card-template"> exists in DOM.
+ *
+ * @param {ReturnType<typeof toPostModel>} post
+ * @param {{
+ *   currentUserId?: string|null,
+ *   onToggleLike?: (post, nextLiked:boolean) => Promise<void>|void,
+ *   onEdit?: (post, nextText:string) => Promise<void>|void,
+ *   onDelete?: (post) => Promise<void>|void,
+ *   onOpenPermalink?: (post) => void,
+ *   onOpenComments?: (postId:string) => Promise<Array<{displayName:string,photoURL?:string,text:string,createdAt:any}>>|Array<any>,
+ *   onSendComment?: (postId:string, text:string) => Promise<void>|void
+ * }} actions
+ */
+export function createPostCard(post, actions = {}) {
+  const tpl = document.getElementById('post-card-template');
+  if (!tpl) {
+    console.warn('[post-renderer] Missing #post-card-template');
+    return document.createElement('div');
+  }
+  const frag = tpl.content.cloneNode(true);
+  const root = frag.querySelector('article');
+  root.dataset.postId = post.id;
 
-  const frag = cloneTemplate();
-  const root = frag.querySelector('article') || frag.firstElementChild;
-
-  // Header
+  // --- Header
   const avatar = root.querySelector('.post-avatar');
   const author = root.querySelector('.post-author');
   const meta = root.querySelector('.post-meta');
   const badge = root.querySelector('.post-badge');
-  const menuBtn = root.querySelector('.post-menu');
-  const menu = root.querySelector('.post-menu-popover');
-  const editBtn = root.querySelector('.post-edit');
-  const delBtn = root.querySelector('.post-delete');
 
-  if (avatar) avatar.src = post.photoURL || '/images/logo_white.png';
-  if (author) {
-    author.textContent = post.displayName || 'Member';
-    author.href = `./user-profile.html?uid=${encodeURIComponent(post.userId)}`;
-  }
-  if (meta) meta.textContent = `${fmtTime(post.createdAt)} • ${post.visibility === 'followers' ? 'Followers' : 'Public'}`;
-
-  if (badge && post.tags?.length) {
-    badge.textContent = titleCase(post.tags[0]);
+  avatar.src = post.photoURL || '/images/logo_white.png';
+  author.textContent = post.displayName || 'Member';
+  author.href = `./user-profile.html?uid=${encodeURIComponent(post.userId)}`;
+  meta.textContent = `${fmtTime(post.createdAt)} • ${post.visibility === 'followers' ? 'Followers' : 'Public'}`;
+  if (post.tags?.length) {
+    badge.textContent = post.tags[0];
     badge.classList.remove('hidden');
   }
 
-  // Body
-  const body = root.querySelector('.post-body');
-  if (body) body.textContent = post.description || '';
+  // --- Body
+  root.querySelector('.post-body').textContent = post.description || '';
 
-  // Image
+  // --- Image (optional)
   const imgWrap = root.querySelector('.post-image-wrap');
   const img = root.querySelector('.post-image');
-  if (post.imageURL && img && imgWrap) {
-    img.src = post.imageURL;
+  if (post.imageURL) {
     imgWrap.classList.remove('hidden');
+    img.src = post.imageURL;
+    img.alt = 'Post image';
   }
 
-  // Actions
+  // --- Footer
   const likeBtn = root.querySelector('.post-like');
   const likeCountEl = root.querySelector('.post-like-count');
   const commentBtn = root.querySelector('.post-comment');
   const commentCountEl = root.querySelector('.post-comment-count');
   const permalink = root.querySelector('.post-permalink');
 
-  if (likeCountEl) likeCountEl.textContent = String(post.likes?.length || 0);
-  if (commentCountEl) commentCountEl.textContent = String(post.commentCount || 0);
+  likeCountEl.textContent = String(post.likes?.length || 0);
+  commentCountEl.textContent = String(post.commentCount || 0);
   if (permalink) {
     permalink.href = `./post.html?id=${encodeURIComponent(post.id)}`;
-    if (onOpenPermalink) {
-      permalink.addEventListener('click', (e) => { e.preventDefault(); onOpenPermalink(post); });
-    }
+    permalink.addEventListener('click', (e) => {
+      // Meta/alt click is handled elsewhere; default here is navigate or callback
+      if (actions.onOpenPermalink && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        actions.onOpenPermalink(post);
+      }
+    });
   }
 
-  const youLiked = !!post.likes?.includes(currentUserId || '');
-  if (youLiked && likeBtn) likeBtn.classList.add('border-[var(--neon)]');
+  // Initial like state
+  const youLiked = post.likes?.includes?.(actions.currentUserId);
+  if (youLiked) likeBtn.classList.add('border-[var(--neon)]');
 
-  likeBtn?.addEventListener('click', async () => {
-    if (!onToggleLike) return;
+  likeBtn.addEventListener('click', async () => {
     const next = !likeBtn.classList.contains('border-[var(--neon)]');
     // Optimistic UI
     likeBtn.classList.toggle('border-[var(--neon)]', next);
-    if (likeCountEl) {
-      const prev = Number(likeCountEl.textContent || '0');
-      likeCountEl.textContent = String(Math.max(0, prev + (next ? 1 : -1)));
-    }
+    likeCountEl.textContent = String(
+      Math.max(0, Number(likeCountEl.textContent || '0') + (next ? 1 : -1))
+    );
     try {
-      await onToggleLike(post, next);
+      await actions.onToggleLike?.(post, next);
     } catch {
-      // revert on failure
+      // Revert on failure
       likeBtn.classList.toggle('border-[var(--neon)]', !next);
-      if (likeCountEl) {
-        const prev = Number(likeCountEl.textContent || '0');
-        likeCountEl.textContent = String(Math.max(0, prev + (next ? -1 : 1)));
-      }
+      likeCountEl.textContent = String(
+        Math.max(0, Number(likeCountEl.textContent || '0') + (next ? -1 : 1))
+      );
     }
   });
 
-  // Comments
+  // --- Comments (lazy open + send)
   const commentsSection = root.querySelector('.post-comments');
   const commentsList = root.querySelector('[data-comments-list]');
   const commentInput = root.querySelector('.comment-input');
-  const commentSubmit = root.querySelector('.comment-submit');
+  const commentSend = root.querySelector('.comment-submit');
 
-  let commentsOpen = false;
-  commentBtn?.addEventListener('click', async () => {
-    commentsOpen = !commentsOpen;
-    commentsSection?.classList.toggle('hidden', !commentsOpen);
-    if (commentsOpen && commentsList && commentsList.childElementCount === 0 && onOpenComments) {
+  // In feed/profile we collapse comments by default; open, load, focus
+  commentBtn.addEventListener('click', async () => {
+    commentsSection.classList.remove('hidden');
+    // Lazy-load comments just once
+    if (!commentsSection._loaded) {
       try {
-        const res = await onOpenComments(post.id);
-        if (Array.isArray(res)) {
-          res.forEach(c => commentsList.appendChild(renderCommentItem(c)));
-        }
+        const items = await (actions.onOpenComments?.(post.id) || []);
+        items.forEach(c => commentsList.appendChild(renderCommentItem(c)));
+        commentsSection._loaded = true;
       } catch { /* ignore */ }
     }
+    commentInput?.focus();
   });
 
-  commentSubmit?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    if (!onSendComment || !commentInput) return;
-    const text = (commentInput.value || '').trim();
+  // Send comment
+  async function doSend() {
+    const text = (commentInput?.value || '').trim();
     if (!text) return;
-    commentSubmit.disabled = true;
+    commentSend.disabled = true;
+
+    // Optimistic add
+    const temp = renderCommentItem({
+      displayName: 'You',
+      photoURL: undefined,
+      text,
+      createdAt: new Date(),
+    });
+    commentsList.prepend(temp);
+    commentInput.value = '';
+    commentCountEl.textContent = String(Math.max(0, Number(commentCountEl.textContent || '0') + 1));
+
     try {
-      await onSendComment(post.id, text);
-      // optimistic add
-      commentsList?.prepend(renderCommentItem({
-        userId: currentUserId || '',
-        displayName: 'You',
-        photoURL: '/images/logo_white.png',
-        text,
-        createdAt: new Date(),
-      }));
-      commentInput.value = '';
-      if (commentCountEl) {
-        const prev = Number(commentCountEl.textContent || '0');
-        commentCountEl.textContent = String(prev + 1);
-      }
+      await actions.onSendComment?.(post.id, text);
+    } catch {
+      // On failure, remove optimistic node and revert count
+      temp.remove();
+      commentCountEl.textContent = String(Math.max(0, Number(commentCountEl.textContent || '0') - 1));
     } finally {
-      commentSubmit.disabled = false;
+      commentSend.disabled = false;
+    }
+  }
+
+  commentSend?.addEventListener('click', (e) => { e.preventDefault(); doSend(); });
+  commentInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      doSend();
     }
   });
 
-  // Menu (edit/delete) – show only for owner
-  if (currentUserId !== post.userId) {
-    editBtn?.classList.add('hidden');
-    delBtn?.classList.add('hidden');
+  // --- Owner-only menu (Edit/Delete)
+  const menuBtn = root.querySelector('.post-menu');
+  const menu = root.querySelector('.post-menu-popover');
+  const editBtn = root.querySelector('.post-edit');
+  const delBtn = root.querySelector('.post-delete');
+
+  const isOwner = actions.currentUserId && actions.currentUserId === post.userId;
+
+  if (!isOwner) {
+    // Hide owner-only controls
+    editBtn.classList.add('hidden');
+    delBtn.classList.add('hidden');
   } else {
-    menuBtn?.addEventListener('click', (e) => {
+    // Toggle menu (local — global close handled by listeners.js)
+    menuBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      const open = !menu?.classList.contains('hidden');
+      const isOpen = !menu.classList.contains('hidden');
       document.querySelectorAll('.post-menu-popover').forEach(m => m.classList.add('hidden'));
-      if (!open) menu?.classList.remove('hidden');
+      if (!isOpen) menu.classList.remove('hidden');
       const close = (ev) => {
-        if (menu && !menu.contains(ev.target) && ev.target !== menuBtn) {
+        if (!menu.contains(ev.target) && ev.target !== menuBtn) {
           menu.classList.add('hidden');
           document.removeEventListener('click', close, true);
         }
@@ -263,47 +229,45 @@ export function createPostCard(post /** @type {PostModel} */, opts /** @type {Po
       document.addEventListener('click', close, true);
     });
 
-    editBtn?.addEventListener('click', async () => {
-      if (!onEdit) return;
-      const next = prompt('Edit your post:', post.description || '');
+    // Inline edit
+    editBtn.addEventListener('click', async () => {
+      const body = root.querySelector('.post-body');
+      const current = body?.textContent || '';
+      const next = prompt('Edit your post:', current);
       if (next == null) return;
       try {
-        await onEdit(post, next);
+        await actions.onEdit?.(post, next);
         if (body) body.textContent = next;
       } finally {
-        menu?.classList.add('hidden');
+        menu.classList.add('hidden');
       }
     });
 
-    delBtn?.addEventListener('click', async () => {
-      if (!onDelete) return;
+    // Delete
+    delBtn.addEventListener('click', async () => {
       if (!confirm('Delete this post?')) return;
       try {
-        await onDelete(post);
+        await actions.onDelete?.(post);
+        // The caller often removes the card; do it here as a fallback:
         root.remove();
       } finally {
-        menu?.classList.add('hidden');
+        menu.classList.add('hidden');
       }
     });
   }
 
-  return /** @type {HTMLElement} */ (root);
+  return root;
 }
 
-/* ------------- Optional helpers to standardize models ------------- */
-export function toPostModel(id, data = {}) {
-  return /** @type {PostModel} */ ({
-    id,
-    userId: data.userId,
-    displayName: data.displayName || 'Member',
-    photoURL: data.photoURL || '/images/logo_white.png',
-    description: data.description || '',
-    createdAt: data.createdAt || null,
-    visibility: data.visibility || 'public',
-    tags: Array.isArray(data.tags) ? data.tags : [],
-    imageURL: data.imageURL || null,
-    imagePath: data.imagePath || null,
-    likes: Array.isArray(data.likes) ? data.likes : [],
-    commentCount: Number(data.commentCount || 0),
-  });
+/* ----------------------- Convenience render helpers ---------------------- */
+/**
+ * Render an array of post models into a container.
+ * @param {HTMLElement} container
+ * @param {Array<ReturnType<typeof toPostModel>>} posts
+ * @param {*} actions same callbacks as createPostCard
+ */
+export function renderPostList(container, posts, actions = {}) {
+  const nodes = posts.map(p => createPostCard(p, actions));
+  nodes.forEach(n => container.appendChild(n));
+  return nodes;
 }
