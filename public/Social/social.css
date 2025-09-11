@@ -518,9 +518,13 @@ body {
     font-size: 0.875rem;
 }
 
+.stat-item {
+    text-decoration: none;
+    color: var(--primary-text-color);
+}
+
 .stat-item strong {
     font-weight: 600;
-    color: var(--primary-text-color);
 }
 
 .profile-actions {
@@ -637,7 +641,7 @@ body {
     font-weight: 600;
 }
 
-/* --- EDIT PROFILE PAGE (NEW) --- */
+/* --- EDIT PROFILE PAGE --- */
 .edit-profile-container {
     max-width: 700px;
     margin: 2rem auto;
@@ -719,5 +723,61 @@ body {
 .save-profile-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* --- FOLLOW LIST PAGE (NEW) --- */
+.follow-list-container {
+    max-width: 450px;
+    margin: 2rem auto;
+    background-color: #121212;
+    border: 1px solid var(--card-border-color);
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.follow-list-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--card-border-color);
+}
+
+.back-link {
+    font-size: 1.5rem;
+    text-decoration: none;
+    color: var(--primary-text-color);
+    margin-right: 1rem;
+}
+
+.follow-list-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.user-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+}
+
+.user-list-item .author-details {
+    padding: 0;
+}
+
+.user-list-item .follow-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: var(--link-color);
+    color: white;
+    border: none;
+}
+
+.user-list-item .follow-btn.secondary {
+    background-color: #262626;
+    color: var(--primary-text-color);
 }
 

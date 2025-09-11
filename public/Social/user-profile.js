@@ -25,18 +25,22 @@ function renderProfileHeader(userProfile, userPosts, profileUserId) {
     headerEl.querySelector('.avatar-container').innerHTML = createAvatar(userProfile, 'w-full h-full');
     headerEl.querySelector('.profile-name-placeholder').textContent = userProfile.name || 'User Profile';
 
-    // Render stats
+    // Render stats with clickable links for followers and following
     statsEl.innerHTML = `
         <div class="stat-item"><strong>${userPosts.length}</strong> posts</div>
-        <div class="stat-item"><strong>${userProfile.followers.length}</strong> followers</div>
-        <div class="stat-item"><strong>${userProfile.following.length}</strong> following</div>
+        <a href="/Social/follow-list.html?id=${profileUserId}&type=followers" class="stat-item">
+            <strong>${userProfile.followers.length}</strong> followers
+        </a>
+        <a href="/Social/follow-list.html?id=${profileUserId}&type=following" class="stat-item">
+            <strong>${userProfile.following.length}</strong> following
+        </a>
     `;
 
     // Render action button (Follow/Unfollow or Edit Profile)
     const currentUser = auth.currentUser;
     if (currentUser) {
         if (currentUser.uid === profileUserId) {
-            actionsEl.innerHTML = `<button class="profile-action-btn edit">Edit Profile</button>`;
+            actionsEl.innerHTML = `<button class="profile-action-btn edit" id="edit-profile-btn">Edit Profile</button>`;
         } else {
             const isFollowing = userProfile.followers.includes(currentUser.uid);
             actionsEl.innerHTML = `
@@ -44,12 +48,10 @@ function renderProfileHeader(userProfile, userPosts, profileUserId) {
                     ${isFollowing ? 'Following' : 'Follow'}
                 </button>
             `;
-            // Add event listener for the follow button
             document.getElementById('follow-btn').addEventListener('click', async (e) => {
                 e.target.disabled = true;
                 await DataService.toggleFollow(profileUserId);
-                // Re-fetch data to update the button and counts
-                initUserProfilePage(); 
+                initUserProfilePage();
             });
         }
     }
@@ -117,6 +119,13 @@ async function initUserProfilePage() {
                 const postId = postItem.dataset.postId;
                 ModalManager.openCommentsModal(postId);
             }
+        });
+    }
+
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', () => {
+            window.location.href = `/Social/profile-editor.html`;
         });
     }
 }
