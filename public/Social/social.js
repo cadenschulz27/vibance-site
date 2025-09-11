@@ -30,9 +30,10 @@ async function loadPosts() {
     isLoading = true;
     if (loadMoreBtn) loadMoreBtn.textContent = 'Loading...';
 
-    const posts = await DataService.fetchPosts(lastVisiblePost);
+    const { posts, lastVisible } = await DataService.fetchPosts(lastVisiblePost);
+    
     if (posts.length > 0) {
-        lastVisiblePost = posts[posts.length - 1].doc;
+        lastVisiblePost = lastVisible;
         const postsWithAuthors = await Listeners.attachAuthorDetailsToPosts(posts);
         
         postsWithAuthors.forEach(post => {
@@ -44,7 +45,7 @@ async function loadPosts() {
         Listeners.startPostListeners(posts.map(p => p.id));
     }
 
-    if (posts.length < 10) {
+    if (posts.length < 10) { // Corresponds to POSTS_PER_PAGE in data-service
         allPostsLoaded = true;
         if (loadMoreBtn) loadMoreBtn.style.display = 'none';
     }
@@ -63,6 +64,7 @@ function setupFeedEventListeners() {
 
         const action = target.dataset.action;
         const postId = target.dataset.postId;
+        const postCard = document.getElementById(`post-${postId}`);
 
         switch (action) {
             case 'like-post':
@@ -78,15 +80,25 @@ function setupFeedEventListeners() {
                 toggleOptionsMenu(postId);
                 break;
             case 'edit-post':
-                // This will be implemented in a future step
-                alert('Edit functionality coming soon!');
+                toggleEditMode(postCard, true);
                 closeActiveOptionsMenu();
+                break;
+            case 'cancel-edit':
+                toggleEditMode(postCard, false);
+                break;
+            case 'save-edit':
+                const wrapper = postCard.querySelector('.post-description-wrapper');
+                const textarea = wrapper.querySelector('.edit-textarea');
+                await DataService.updatePost(postId, textarea.value);
+                // Update the view mode text before switching back
+                wrapper.querySelector('.view-mode span').textContent = textarea.value;
+                toggleEditMode(postCard, false);
                 break;
             case 'delete-post':
                 if (confirm('Are you sure you want to delete this post?')) {
                     const imageUrl = target.dataset.imageUrl;
                     await DataService.deletePost(postId, imageUrl);
-                    document.getElementById(`post-${postId}`).remove();
+                    postCard.remove();
                 }
                 closeActiveOptionsMenu();
                 break;
@@ -120,6 +132,13 @@ function closeActiveOptionsMenu() {
     }
 }
 
+function toggleEditMode(postCard, isEditing) {
+    const wrapper = postCard.querySelector('.post-description-wrapper');
+    if (wrapper) {
+        wrapper.classList.toggle('edit-active', isEditing);
+    }
+}
+
 /**
  * Main initialization function for the social page.
  */
@@ -135,7 +154,6 @@ async function initSocialPage() {
                 ModalManager.openCreatePostModal(userProfile);
             });
 
-            // Listen for a custom event to refresh the feed after a new post is made
             document.addEventListener('feed-needs-refresh', () => {
                 feedContainer.innerHTML = '';
                 lastVisiblePost = null;

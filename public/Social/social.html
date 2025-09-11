@@ -4,63 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Community - Vibance</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="social.css">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="social.css">
 </head>
 <body class="bg-black text-white font-['Inter']">
 
     <div id="header-placeholder"></div>
 
     <main class="social-container">
-        <div class="create-post-container">
-            <div id="create-post-avatar-placeholder" class="create-post-avatar">
-                <!-- Avatar will be loaded by JS -->
+        
+        <div id="create-post-bar" class="create-post-bar">
+            <div class="avatar-container">
+                <!-- Current user avatar is loaded here by social.js -->
             </div>
-            <div class="create-post-input" id="create-post-trigger">
-                What's on your financial mind?
+            <div class="create-post-input-placeholder">What's on your financial mind?</div>
+            <div class="create-post-action-icon">
+                <!-- Photo Icon -->
+                <svg class="w-6 h-6 text-secondary-text-color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             </div>
-            <button id="create-post-btn-icon" class="create-post-btn-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-            </button>
+        </div>
+
+        <!-- NEW: Feed Type Tabs -->
+        <div class="feed-tabs">
+            <button class="feed-tab active" data-feed-type="for-you">For You</button>
+            <button class="feed-tab" data-feed-type="following">Following</button>
         </div>
 
         <div id="feed-container">
-            <!-- Posts will be loaded here -->
+            <!-- Posts will be loaded here by social.js -->
         </div>
+
+        <button id="load-more-btn" class="hidden">Load More</button>
         
-        <div id="load-more-container" class="load-more-container">
-            <button id="load-more-btn" class="load-more-btn">Load More</button>
-        </div>
     </main>
+    
+    <div id="modal-root"></div>
 
-    <!-- FIX: Added the 'modal-backdrop' class to apply the correct pop-up styles -->
-    <div id="create-post-modal" class="modal-backdrop hidden">
-        <div class="modal-content">
-            <button id="close-modal-btn">&times;</button>
-            <h2 class="modal-title">Create a New Post</h2>
-            <form id="post-form">
-                <textarea id="post-description" placeholder="What's on your mind?" class="mb-4"></textarea>
-                <div id="image-drop-zone">
-                    <p>Drag & drop an image here, or click to select</p>
-                    <input type="file" id="image-input" class="hidden" accept="image/*">
-                </div>
-                <div id="image-preview-container" class="hidden">
-                    <img id="image-preview" src="" alt="Image preview">
-                    <button type="button" id="remove-image-btn" class="hidden">&times;</button>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <button type="submit" class="btn-post">Post to Feed</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Scripts -->
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
