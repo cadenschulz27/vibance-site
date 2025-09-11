@@ -1,53 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Community - Vibance</title>
-    
-    <link rel="stylesheet" href="social.css">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Community • Vibance</title>
+
+  <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+
+  <!-- Local styles (keeps existing theme tokens) -->
+  <link rel="stylesheet" href="./social.css"/>
+
+  <style>
+    :root {
+      --neon: #CCFF00;
+      --bg: #000000;
+      --panel: #111213;
+      --border: #222226;
+      --muted: #9CA3AF;
+    }
+    body {
+      background: var(--bg);
+      color: #FFF;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .font-headline { font-family: 'Lora', serif; }
+    .glass {
+      background: linear-gradient(180deg, rgba(24,24,27,0.7), rgba(10,10,10,0.85));
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      backdrop-filter: blur(8px);
+    }
+    .btn-neon {
+      background: var(--neon);
+      color: #000;
+      font-weight: 700;
+      transition: transform .15s ease, box-shadow .2s ease;
+    }
+    .btn-neon:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(204,255,0,.15);
+    }
+    .chip {
+      border: 1px solid var(--border);
+      background: #0b0b0c;
+    }
+    /* Scroll area helpers */
+    .scroll-snap-x { scroll-snap-type: x mandatory; }
+    .snap-start   { scroll-snap-align: start; }
+    /* Toast */
+    #toast { transition: opacity .2s ease; }
+    /* Image preview drop zone */
+    .dropzone {
+      border: 1px dashed var(--border);
+      background: #0b0b0c;
+    }
+    .dropzone.dragover {
+      border-color: var(--neon);
+      background: rgba(204,255,0,0.06);
+    }
+  </style>
 </head>
-<body class="bg-black text-white font-['Inter']">
 
-    <div id="header-placeholder"></div>
+<body class="bg-black text-white">
+  <!-- Header (injected) -->
+  <div id="site-header"></div>
 
-    <main class="social-container">
-        
-        <div id="create-post-bar" class="create-post-bar">
-            <div class="avatar-container">
-                <!-- Current user avatar is loaded here by social.js -->
+  <main class="mx-auto max-w-6xl px-4 pt-24 pb-16">
+    <!-- Page header -->
+    <header class="mb-6 md:mb-10">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Community</p>
+          <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">Share wins. Learn together.</h1>
+          <p class="text-sm md:text-base text-neutral-400 mt-2">Post updates, ask questions, and cheer on others reaching their money goals.</p>
+        </div>
+        <a href="../Social/follow-list.html" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">
+          <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"/><path d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          Follow list
+        </a>
+      </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left rail (composer + filters) -->
+      <aside class="lg:col-span-1 space-y-6">
+        <!-- Post Composer -->
+        <section class="glass p-4 md:p-5">
+          <div class="flex items-start gap-3">
+            <img id="composer-avatar" src="/images/logo_white.png" alt="You" class="h-10 w-10 rounded-full bg-neutral-900 border border-neutral-800 object-cover">
+            <div class="flex-1">
+              <textarea id="post-text" rows="3" maxlength="480"
+                        class="w-full bg-neutral-950/70 border border-neutral-800 rounded-xl px-3 py-2 text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/40"
+                        placeholder="Share a progress update, question, or tip…"></textarea>
+
+              <!-- Attachment row -->
+              <div class="mt-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <label for="post-image" class="px-3 py-1.5 rounded-lg chip hover:border-neutral-700 cursor-pointer flex items-center gap-2 text-sm">
+                    <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    Add image
+                  </label>
+                  <input id="post-image" type="file" accept="image/*" class="hidden"/>
+                  <span id="post-image-name" class="text-xs text-neutral-500"></span>
+                </div>
+                <button id="post-submit" class="btn-neon px-4 py-2 rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                  Post
+                </button>
+              </div>
+
+              <!-- Drag/drop preview -->
+              <div id="image-dropzone" class="dropzone rounded-xl mt-3 p-3 hidden">
+                <div class="flex items-center gap-3">
+                  <img id="image-preview" class="h-16 w-16 rounded-lg object-cover border border-neutral-800" alt="Preview" />
+                  <div class="text-xs text-neutral-400">
+                    <div>Image ready to upload.</div>
+                    <button id="remove-image" class="mt-1 px-2 py-1 rounded-lg border border-neutral-800 hover:bg-neutral-900">Remove</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Composer meta -->
+              <div class="mt-2 flex items-center justify-between">
+                <small id="char-count" class="text-neutral-500">0 / 480</small>
+                <label class="inline-flex items-center gap-2 text-xs text-neutral-400 cursor-pointer">
+                  <input id="post-private" type="checkbox" class="h-3.5 w-3.5 rounded border-neutral-700 bg-neutral-900">
+                  Share with followers only
+                </label>
+              </div>
             </div>
-            <div class="create-post-input-placeholder">What's on your financial mind?</div>
-            <div class="create-post-action-icon">
-                <!-- Photo Icon -->
-                <svg class="w-6 h-6 text-secondary-text-color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          </div>
+        </section>
+
+        <!-- Quick filters -->
+        <section class="glass p-4 md:p-5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold tracking-wide text-neutral-200">Feed Filters</h2>
+            <button id="clear-filters" class="text-xs text-neutral-400 hover:text-white">Reset</button>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="all">All</button>
+            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="following">Following</button>
+            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="wins">Wins</button>
+            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="advice">Advice</button>
+            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="questions">Questions</button>
+          </div>
+        </section>
+
+        <!-- Suggested people (horizontal scroll) -->
+        <section class="glass p-4 md:p-5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold tracking-wide text-neutral-200">Suggested to follow</h2>
+            <a href="../Social/follow-list.html" class="text-xs text-neutral-400 hover:text-white">View all</a>
+          </div>
+          <div id="suggested-users" class="mt-3 flex gap-3 overflow-x-auto scroll-snap-x pb-1"></div>
+        </section>
+      </aside>
+
+      <!-- Feed -->
+      <section class="lg:col-span-2 space-y-4" id="feed-section">
+        <!-- Empty state -->
+        <div id="feed-empty" class="hidden glass p-10 text-center text-neutral-400">
+          No posts yet. Be the first to share something!
+        </div>
+
+        <!-- Posts list -->
+        <div id="post-list" class="space-y-3">
+          <!-- Cards injected by JS -->
+        </div>
+
+        <!-- Load more -->
+        <div class="pt-2 text-center">
+          <button id="load-more" class="px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm hidden">Load more</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-white px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
+
+  <!-- Post Card Template (keeps markup consistent for renderer.js) -->
+  <template id="post-card-template">
+    <article class="glass p-4 md:p-5">
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <img class="post-avatar h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="Avatar">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <a class="post-author font-medium truncate hover:underline" href="#"></a>
+              <span class="post-badge text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 hidden"></span>
             </div>
+            <div class="post-meta text-xs text-neutral-500 truncate">•</div>
+          </div>
         </div>
-
-        <!-- NEW: Feed Type Tabs -->
-        <div class="feed-tabs">
-            <button class="feed-tab active" data-feed-type="for-you">For You</button>
-            <button class="feed-tab" data-feed-type="following">Following</button>
+        <div class="relative">
+          <button class="post-menu px-2 py-1 rounded-lg hover:bg-neutral-900" aria-haspopup="menu" aria-expanded="false">
+            <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+          <div class="post-menu-popover absolute right-0 mt-2 w-40 rounded-xl border border-neutral-800 bg-neutral-950 shadow-lg p-1 hidden">
+            <button class="post-edit block w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-900 text-sm">Edit</button>
+            <button class="post-delete block w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-900 text-sm text-red-400">Delete</button>
+          </div>
         </div>
+      </header>
 
-        <div id="feed-container">
-            <!-- Posts will be loaded here by social.js -->
+      <div class="post-body text-neutral-100 mt-3 whitespace-pre-wrap"></div>
+
+      <figure class="post-image-wrap mt-3 hidden">
+        <img class="post-image w-full rounded-xl border border-neutral-800 object-cover" alt="Post image"/>
+      </figure>
+
+      <footer class="mt-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button class="post-like px-3 py-1.5 rounded-lg chip hover:border-neutral-700 flex items-center gap-2 text-sm">
+            <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
+            <span class="post-like-count">0</span>
+          </button>
+          <button class="post-comment px-3 py-1.5 rounded-lg chip hover:border-neutral-700 flex items-center gap-2 text-sm">
+            <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a4 4 0 01-4 4H7l-4 4V5a4 4 0 014-4h10a4 4 0 014 4z"/></svg>
+            <span class="post-comment-count">0</span>
+          </button>
         </div>
+        <a class="post-permalink text-xs text-neutral-400 hover:text-white" href="#">Open</a>
+      </footer>
 
-        <button id="load-more-btn" class="hidden">Load More</button>
-        
-    </main>
-    
-    <div id="modal-root"></div>
+      <!-- Comments -->
+      <section class="post-comments mt-4 hidden">
+        <div class="space-y-3" data-comments-list></div>
+        <div class="mt-3 flex items-start gap-2">
+          <img class="h-8 w-8 rounded-full object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="">
+          <div class="flex-1 flex items-center gap-2">
+            <input type="text" maxlength="240" class="comment-input flex-1 bg-neutral-950/70 border border-neutral-800 rounded-xl px-3 py-2 text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/40" placeholder="Write a comment…"/>
+            <button class="comment-submit btn-neon px-3 py-2 rounded-xl text-sm">Send</button>
+          </div>
+        </div>
+      </section>
+    </article>
+  </template>
 
-    <script type="module" src="../api/firebase.js"></script>
-    <script type="module" src="../auth/auth-check.js"></script>
-    <script type="module" src="../components/header.js"></script>
-    <script type="module" src="social.js"></script>
+  <!-- Suggested user pill template -->
+  <template id="suggested-user-template">
+    <div class="snap-start min-w-[220px] glass px-3 py-3 flex items-center gap-3">
+      <img class="h-9 w-9 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="User">
+      <div class="min-w-0">
+        <div class="text-sm font-medium truncate"></div>
+        <div class="text-xs text-neutral-500 truncate"></div>
+      </div>
+      <button class="ml-auto px-3 py-1.5 rounded-lg btn-neon text-xs">Follow</button>
+    </div>
+  </template>
+
+  <!-- Scripts -->
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/auth/auth-check.js"></script>
+  <script type="module" src="/components/header.js"></script>
+
+  <!-- Your existing community scripts (expected to find the IDs above) -->
+  <script type="module" src="./ui-helpers.js"></script>
+  <script type="module" src="./post-renderer.js"></script>
+  <script type="module" src="./listeners.js"></script>
+  <script type="module" src="./post-manager.js"></script>
+  <script type="module" src="./social.js"></script>
+
+  <!-- Tiny helper for drag/drop preview (safe no-FS upload; actual upload handled by your JS) -->
+  <script>
+    (function () {
+      const fileInput = document.getElementById('post-image');
+      const nameEl = document.getElementById('post-image-name');
+      const dz = document.getElementById('image-dropzone');
+      const preview = document.getElementById('image-preview');
+      const removeBtn = document.getElementById('remove-image');
+      const text = document.getElementById('post-text');
+      const submit = document.getElementById('post-submit');
+      const charCount = document.getElementById('char-count');
+
+      function updateSubmitState() {
+        const hasText = (text.value || '').trim().length > 0;
+        const hasFile = !!fileInput.files?.[0];
+        submit.disabled = !(hasText || hasFile);
+      }
+
+      text.addEventListener('input', () => {
+        charCount.textContent = `${text.value.length} / 480`;
+        updateSubmitState();
+      });
+
+      function setPreview(file) {
+        if (!file) { dz.classList.add('hidden'); nameEl.textContent=''; preview.src=''; updateSubmitState(); return; }
+        nameEl.textContent = file.name;
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+        dz.classList.remove('hidden');
+        updateSubmitState();
+        // Revoke later
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+
+      fileInput.addEventListener('change', () => setPreview(fileInput.files?.[0]));
+      removeBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        fileInput.value = '';
+        setPreview(null);
+      });
+
+      // Optional drag & drop onto the composer
+      const composer = document.querySelector('section .dropzone')?.parentElement?.parentElement;
+      const zone = document.getElementById('image-dropzone');
+      const root = document.querySelector('main');
+      (root || document).addEventListener('dragover', (e) => {
+        if (!e.dataTransfer) return;
+        e.preventDefault();
+        if (e.dataTransfer.types?.includes('Files')) zone.classList.add('dragover');
+      });
+      (root || document).addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      (root || document).addEventListener('drop', (e) => {
+        if (!e.dataTransfer) return;
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const f = e.dataTransfer.files?.[0];
+        if (f && f.type.startsWith('image/')) {
+          fileInput.files = e.dataTransfer.files;
+          setPreview(f);
+        }
+      });
+
+      // Keep button state fresh on page load
+      updateSubmitState();
+    })();
+  </script>
 </body>
 </html>
-
