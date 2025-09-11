@@ -1,822 +1,227 @@
-/**
- * @file /Social/social.css
- * @description Advanced stylesheet for the Instagram-style social feed.
- */
+/* public/Social/social.css
+   ------------------------------------------------------------
+   Vibance Community (Social) styles
+   - Neon-on-black aesthetic with soft glass panels
+   - Chips, popovers, toast, skeletons, and micro-interactions
+   - Scoped selectors to avoid leaking across the app
+   ------------------------------------------------------------ */
 
-/* --- CORE LAYOUT & VARIABLES --- */
+/* ---- Theme tokens ---- */
 :root {
-    --feed-max-width: 640px;
-    --card-bg-color: #000;
-    --card-border-color: #262626;
-    --primary-text-color: #f5f5f5;
-    --secondary-text-color: #a8a8a8;
-    --link-color: #0095f6;
-    --neon-green: #CCFF00;
-    --danger-color: #ed4956;
+  --vb-neon: #CCFF00;
+  --vb-bg: #000000;
+  --vb-panel: #111213;
+  --vb-panel-2: #0b0b0c;
+  --vb-border: #222226;
+  --vb-border-2: #2d2f33;
+  --vb-muted: #9CA3AF;
+  --vb-shadow: 0 0 0 1px rgba(34, 34, 38, 0.9), 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
+/* ---- Page base (kept minimal—Tailwind does most) ---- */
 body {
-    background-color: #000;
+  background: var(--vb-bg);
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.social-container {
-    max-width: var(--feed-max-width);
-    margin: 2rem auto;
-    padding: 0 1rem;
+/* ---- Glass panel card ---- */
+.glass {
+  background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88));
+  border: 1px solid var(--vb-border);
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--vb-shadow);
+  transition: border-color .2s ease, transform .15s ease, box-shadow .2s ease;
+}
+.glass:hover {
+  border-color: var(--vb-border-2);
+}
+.glass:focus-within {
+  border-color: var(--vb-neon);
+  box-shadow: 0 0 0 1px rgba(204,255,0,0.3), 0 10px 30px rgba(204,255,0,0.06);
 }
 
-/* --- CREATE POST BAR --- */
-.create-post-bar {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background-color: var(--card-bg-color);
-    border: 1px solid var(--card-border-color);
-    border-radius: 0.75rem;
-    margin-bottom: 2rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+/* ---- Neon primary button ---- */
+.btn-neon {
+  background: var(--vb-neon);
+  color: #000;
+  font-weight: 700;
+  transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+}
+.btn-neon:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(204,255,0,0.18);
+}
+.btn-neon:active {
+  transform: translateY(0);
+}
+.btn-neon:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.create-post-bar:hover {
-    background-color: #121212;
+/* ---- Compact pill (filter chips & quiet buttons) ---- */
+.chip {
+  border: 1px solid var(--vb-border);
+  background: var(--vb-panel-2);
+  color: #e5e7eb;
+  transition: border-color .2s ease, background .2s ease, transform .1s ease;
+}
+.chip:hover { border-color: var(--vb-border-2); }
+.chip:active { transform: translateY(0.5px); }
+.chip[aria-pressed="true"],
+.chip.active,
+.chip.border-\[var\(--neon\)\] { /* Tailwind-compatible active marker */
+  border-color: var(--vb-neon) !important;
 }
 
-.create-post-input-placeholder {
-    color: var(--secondary-text-color);
-    flex-grow: 1;
+/* ---- Composer text area & inputs ---- */
+#post-text,
+.comment-input {
+  background: rgba(10,10,10,0.7);
+  border: 1px solid var(--vb-border);
+  border-radius: 0.75rem;
+  color: #fff;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+#post-text:focus,
+.comment-input:focus {
+  border-color: var(--vb-neon);
+  box-shadow: 0 0 0 2px rgba(204,255,0,0.15);
 }
 
-/* --- FEED TABS (NEW) --- */
-.feed-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--card-border-color);
-    margin-bottom: 2rem;
+/* ---- Composer dropzone preview ---- */
+.dropzone {
+  border: 1px dashed var(--vb-border);
+  background: #0b0b0c;
+  transition: border-color .2s ease, background .2s ease;
+}
+.dropzone.dragover {
+  border-color: var(--vb-neon);
+  background: rgba(204,255,0,0.06);
 }
 
-.feed-tab {
-    flex: 1;
-    padding: 1rem 0;
-    text-align: center;
-    background: none;
-    border: none;
-    color: var(--secondary-text-color);
-    font-weight: 600;
-    cursor: pointer;
-    position: relative;
-    transition: color 0.2s ease;
-}
-
-.feed-tab:hover {
-    color: var(--primary-text-color);
-}
-
-.feed-tab.active {
-    color: var(--primary-text-color);
-}
-
-.feed-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: var(--primary-text-color);
-}
-
-
-/* --- FEED CONTAINER --- */
-#feed-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-.post-card {
-    background-color: var(--card-bg-color);
-    border-bottom: 1px solid var(--card-border-color);
-}
-
-/* --- POST HEADER --- */
-.post-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 0.25rem;
-}
-
-.author-details {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-    color: var(--primary-text-color);
-    font-weight: 600;
-}
-
-.author-name {
-    font-size: 0.875rem;
-}
-
-/* --- POST OPTIONS MENU --- */
-.post-options {
-    position: relative;
-}
-
-.options-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem;
-    display: flex;
-    align-items: center;
-}
-
-.options-menu {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    margin-top: 0.5rem;
-    background-color: #1c1c1e;
-    border: 1px solid var(--card-border-color);
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    z-index: 10;
-    overflow: hidden;
-    width: 120px;
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    pointer-events: none;
-}
-
-.options-menu.visible {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
-.options-menu button {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 0.75rem 1rem;
-    background: none;
-    border: none;
-    color: var(--primary-text-color);
-    font-size: 0.875rem;
-    cursor: pointer;
-}
-
-.options-menu button:hover {
-    background-color: #2c2c2e;
-}
-
-.options-menu button.delete {
-    color: var(--danger-color);
-}
-
-/* --- POST BODY (IMAGE) --- */
-.post-body {
-    border: 1px solid var(--card-border-color);
-    border-radius: 0.5rem;
-    overflow: hidden;
-}
-
+/* ---- Post card specifics ---- */
 .post-image {
-    width: 100%;
-    height: auto;
-    display: block;
+  display: block;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--vb-border);
+}
+.post-like,
+.post-comment {
+  transition: border-color .2s ease, background .2s ease, transform .1s ease;
+}
+.post-like:hover,
+.post-comment:hover { border-color: var(--vb-border-2); }
+.post-like:active,
+.post-comment:active { transform: translateY(0.5px); }
+
+/* visually mark liked state (UI-only; logic handled in JS) */
+.post-like.border-\[var\(--neon\)\],
+.post-like.liked {
+  border-color: var(--vb-neon) !important;
+  background: rgba(204,255,0,0.06);
+}
+
+/* ---- Overflow/ellipsis helpers ---- */
+.post-author,
+.post-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Popover menu (post actions) ---- */
+.post-menu-popover {
+  border: 1px solid var(--vb-border);
+  background: #0a0b0c;
+  border-radius: 0.75rem;
+  box-shadow: var(--vb-shadow);
+  animation: vb-fade-in .12s ease-out;
+}
+.post-menu-popover button {
+  width: 100%;
+  text-align: left;
+}
+.post-menu-popover button:hover {
+  background: #121315;
+}
+
+/* ---- Toast ---- */
+#toast {
+  background: #0b0c0d;
+  border: 1px solid var(--vb-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--vb-shadow);
+  opacity: 0;
+  pointer-events: none;
+}
+#toast.opacity-100 {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---- Suggested users scroller ---- */
+#suggested-users {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 #18181b;
+}
+#suggested-users::-webkit-scrollbar { height: 8px; }
+#suggested-users::-webkit-scrollbar-track { background: #18181b; }
+#suggested-users::-webkit-scrollbar-thumb { background-color: #3f3f46; border-radius: 8px; }
+
+/* ---- Empty state ---- */
+#feed-empty {
+  color: #9da3ae;
+}
+
+/* ---- Skeletons (optional: add .skeleton on any block) ---- */
+@keyframes vb-shimmer {
+  0% { background-position: -480px 0; }
+  100% { background-position: 480px 0; }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #131417;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  background-size: 480px 100%;
+  animation: vb-shimmer 1.2s infinite;
+}
+
+/* ---- Animations ---- */
+@keyframes vb-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Focus rings (keyboard a11y) ---- */
+:where(button, a, input, textarea):focus-visible {
+  outline: 2px solid rgba(204,255,0,0.6);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
 }
 
-/* --- POST FOOTER & ACTIONS --- */
-.post-footer {
-    padding: 0.5rem 0.25rem;
+/* ---- Small viewports polish ---- */
+@media (max-width: 480px) {
+  .glass { border-radius: 0.875rem; }
+  .post-image { border-radius: 0.625rem; }
 }
 
-.post-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-}
-
-.action-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem;
-}
-
-.action-btn svg {
-    transition: transform 0.1s ease;
-}
-
-.action-btn:active svg {
-    transform: scale(0.8);
-}
-
-.post-likes {
-    font-weight: 600;
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-}
-
-/* --- POST DESCRIPTION & EDIT MODE --- */
-.post-description-wrapper .edit-mode {
-    display: none;
-}
-
-.post-description-wrapper.edit-active .view-mode {
-    display: none;
-}
-
-.post-description-wrapper.edit-active .edit-mode {
-    display: block;
-}
-
-.post-description {
-    font-size: 0.875rem;
-    line-height: 1.5;
-}
-
-.author-name-link {
-    font-weight: 600;
-    text-decoration: none;
-    color: var(--primary-text-color);
-    margin-right: 0.5rem;
-}
-
-.edit-textarea {
-    width: 100%;
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--primary-text-color);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    resize: none;
-    min-height: 60px;
-    margin-bottom: 0.5rem;
-}
-
-.edit-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-}
-
-.edit-actions button {
-    background: none;
-    border: none;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.edit-cancel-btn {
-    color: var(--secondary-text-color);
-}
-
-.edit-save-btn {
-    color: var(--link-color);
-}
-
-.post-timestamp {
-    font-size: 0.75rem;
-    color: var(--secondary-text-color);
-    margin-top: 0.75rem;
-    text-transform: uppercase;
-}
-
-/* --- "LOAD MORE" BUTTON --- */
-#load-more-btn {
-    display: block;
-    margin: 2rem auto;
-    padding: 0.75rem 1.5rem;
-    background-color: #1a1a1a;
-    border: 1px solid var(--card-border-color);
-    border-radius: 0.5rem;
-    color: var(--primary-text-color);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-#load-more-btn:hover {
-    background-color: #262626;
-}
-
-#load-more-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* --- MODALS (General) --- */
-.modal-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    background-color: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-}
-
-.modal-backdrop.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.modal-content {
-    background-color: #1c1c1e;
-    border-radius: 1rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-backdrop.visible .modal-content {
-    transform: scale(1);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--card-border-color);
-    font-weight: 600;
-}
-
-.share-btn {
-    background: none;
-    border: none;
-    color: var(--link-color);
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.share-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* --- CREATE POST MODAL --- */
-.create-post-modal {
-    width: 500px;
-}
-
-.create-post-modal .modal-body {
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-    gap: 1rem;
-}
-
-.create-post-modal textarea {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--primary-text-color);
-    resize: none;
-    height: 100px;
-}
-
-#image-upload-area {
-    border: 2px dashed #3a3a3c;
-    border-radius: 0.5rem;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    text-align: center;
-    color: var(--secondary-text-color);
-    cursor: pointer;
-    transition: border-color 0.2s ease;
-}
-
-#image-upload-area.dragover {
-    border-color: var(--link-color);
-}
-
-#image-preview-area {
-    position: relative;
-}
-
-#image-preview {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 0.5rem;
-}
-
-.remove-image-btn {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: rgba(0, 0, 0, 0.7);
-    border: none;
-    border-radius: 50%;
-    width: 2rem;
-    height: 2rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* --- COMMENTS MODAL --- */
-.comments-modal {
-    width: 90vw;
-    max-width: 900px;
-    flex-direction: row;
-    aspect-ratio: 16 / 10;
-}
-
-.comments-image-panel {
-    flex-basis: 60%;
-    background-color: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.comments-image-panel img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-.comments-panel {
-    flex-basis: 40%;
-    display: flex;
-    flex-direction: column;
-}
-
-.comments-header {
-    padding: 1rem;
-    border-bottom: 1px solid var(--card-border-color);
-}
-
-.comments-list {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 1rem;
-}
-
-.comment-item {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.comment-content p {
-    font-size: 0.875rem;
-    line-height: 1.5;
-}
-
-.comment-meta {
-    font-size: 0.75rem;
-    color: var(--secondary-text-color);
-    margin-top: 0.25rem;
-}
-
-.comments-actions {
-    padding: 0.5rem 1rem;
-    border-top: 1px solid var(--card-border-color);
-}
-
-.comments-add-comment {
-    border-top: 1px solid var(--card-border-color);
-    padding: 1rem;
-}
-
-.comments-add-comment form {
-    display: flex;
-}
-
-.comments-add-comment input {
-    flex-grow: 1;
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--primary-text-color);
-}
-
-.comments-add-comment button {
-    background: none;
-    border: none;
-    color: var(--link-color);
-    font-weight: 600;
-    cursor: pointer;
-}
-
-/* --- USER PROFILE PAGE --- */
-.profile-header {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    margin-bottom: 2rem;
-    padding: 0 1rem 2rem 1rem;
-    border-bottom: 1px solid var(--card-border-color);
-}
-
-.profile-header .avatar-container {
-    width: 150px;
-    height: 150px;
-    flex-shrink: 0;
-}
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.profile-name-placeholder, .profile-name {
-    font-size: 1.75rem;
-    font-weight: 300;
-    color: var(--primary-text-color);
-}
-
-.profile-stats {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    font-size: 0.875rem;
-}
-
-.stat-item {
-    text-decoration: none;
-    color: var(--primary-text-color);
-}
-
-.stat-item strong {
-    font-weight: 600;
-}
-
-.profile-actions {
-    margin-top: 0.5rem;
-}
-
-.profile-action-btn {
-    width: 100%;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.profile-action-btn.primary {
-    background-color: var(--link-color);
-    color: white;
-    border: 1px solid transparent;
-}
-.profile-action-btn.primary:hover {
-    background-color: #0077cc;
-}
-
-.profile-action-btn.secondary {
-    background-color: #262626;
-    color: var(--primary-text-color);
-    border: 1px solid #363636;
-}
-.profile-action-btn.secondary:hover {
-    background-color: #363636;
-}
-
-.profile-action-btn.edit {
-    background-color: #262626;
-    color: var(--primary-text-color);
-    border: 1px solid #363636;
-}
-.profile-action-btn.edit:hover {
-    background-color: #363636;
-}
-
-
-.profile-tabs {
-    display: flex;
-    justify-content: center;
-    border-bottom: 1px solid var(--card-border-color);
-    margin-bottom: 1.5rem;
-}
-
-.profile-tab {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    border-top: 1px solid transparent;
-    margin-top: -1px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--secondary-text-color);
-    background: none;
-    border-bottom: none;
-    cursor: pointer;
-}
-
-.profile-tab.active {
-    border-top-color: var(--primary-text-color);
-    color: var(--primary-text-color);
-}
-
-.profile-posts-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-}
-
-.profile-post-item {
-    position: relative;
-    aspect-ratio: 1 / 1;
-    cursor: pointer;
-}
-
-.profile-post-item img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.profile-post-overlay {
-    position: absolute;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-    color: white;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.profile-post-item:hover .profile-post-overlay {
-    opacity: 1;
-}
-
-.overlay-stat {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    font-weight: 600;
-}
-
-/* --- EDIT PROFILE PAGE --- */
-.edit-profile-container {
-    max-width: 700px;
-    margin: 2rem auto;
-    background-color: #121212;
-    border: 1px solid var(--card-border-color);
-    border-radius: 0.5rem;
-}
-
-.edit-profile-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--card-border-color);
-}
-
-.edit-profile-form-wrapper {
-    padding: 1.5rem;
-}
-
-.avatar-change-section {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.avatar-change-section .avatar-container {
-    width: 60px;
-    height: 60px;
-    flex-shrink: 0;
-}
-
-.change-photo-btn {
-    color: var(--link-color);
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-}
-
-.form-field {
-    margin-bottom: 1.5rem;
-}
-
-.form-field label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.form-field input {
-    width: 100%;
-    background-color: #262626;
-    border: 1px solid #363636;
-    border-radius: 0.25rem;
-    padding: 0.5rem 0.75rem;
-    color: var(--primary-text-color);
-}
-
-.form-field input:focus {
-    outline: none;
-    border-color: var(--link-color);
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.save-profile-btn {
-    background-color: var(--link-color);
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    padding: 0.5rem 1.5rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.save-profile-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* --- FOLLOW LIST PAGE --- */
-.follow-list-container {
-    max-width: 450px;
-    margin: 2rem auto;
-    background-color: #121212;
-    border: 1px solid var(--card-border-color);
-    border-radius: 1rem;
-    overflow: hidden;
-}
-
-.follow-list-header {
-    display: flex;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid var(--card-border-color);
-}
-
-.back-link {
-    font-size: 1.5rem;
-    text-decoration: none;
-    color: var(--primary-text-color);
-    margin-right: 1rem;
-}
-
-.follow-list-title {
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.user-list-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-}
-
-.user-list-item .author-details {
-    padding: 0;
-}
-
-.user-list-item .follow-btn {
-    padding: 0.4rem 1rem;
-    font-size: 0.8rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    background-color: var(--link-color);
-    color: white;
-    border: none;
-}
-
-.user-list-item .follow-btn.secondary {
-    background-color: #262626;
-    color: var(--primary-text-color);
-}
+/* ---- High-DPI polish for icons (crisper strokes) ---- */
+svg { shape-rendering: geometricPrecision; text-rendering: optimizeLegibility; }
 
+/* ---- Utility hook to visually hide (matches Tailwind .hidden) ---- */
+.hidden { display: none !important; }
