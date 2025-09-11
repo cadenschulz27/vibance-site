@@ -16,21 +16,27 @@ let lastVisiblePost = null;
 let isLoading = false;
 let allPostsLoaded = false;
 let activeOptionsMenu = null;
+let activeFeedType = 'for-you'; // 'for-you' or 'following'
 
 // --- DOM ELEMENTS ---
 const feedContainer = document.getElementById('feed-container');
 const createPostBar = document.getElementById('create-post-bar');
 const loadMoreBtn = document.getElementById('load-more-btn');
+const feedTabsContainer = document.querySelector('.feed-tabs');
 
 /**
- * Main function to load posts and append them to the feed.
+ * Main function to load posts based on the active feed type.
  */
 async function loadPosts() {
     if (isLoading || allPostsLoaded) return;
     isLoading = true;
     if (loadMoreBtn) loadMoreBtn.textContent = 'Loading...';
 
-    const { posts, lastVisible } = await DataService.fetchPosts(lastVisiblePost);
+    const fetchFunction = activeFeedType === 'following'
+        ? DataService.fetchFollowingPosts
+        : DataService.fetchPosts;
+
+    const { posts, lastVisible } = await fetchFunction(lastVisiblePost);
     
     if (posts.length > 0) {
         lastVisiblePost = lastVisible;
@@ -45,13 +51,47 @@ async function loadPosts() {
         Listeners.startPostListeners(posts.map(p => p.id));
     }
 
-    if (posts.length < 10) { // Corresponds to POSTS_PER_PAGE in data-service
+    if (posts.length < 10) {
         allPostsLoaded = true;
         if (loadMoreBtn) loadMoreBtn.style.display = 'none';
     }
 
     isLoading = false;
     if (loadMoreBtn) loadMoreBtn.textContent = 'Load More';
+}
+
+/**
+ * Resets the feed and loads posts for the newly selected tab.
+ * @param {string} newFeedType - The type of feed to load ('for-you' or 'following').
+ */
+function switchFeed(newFeedType) {
+    if (newFeedType === activeFeedType) return;
+
+    activeFeedType = newFeedType;
+    feedContainer.innerHTML = '';
+    lastVisiblePost = null;
+    allPostsLoaded = false;
+    if (loadMoreBtn) loadMoreBtn.style.display = 'block';
+
+    // Update tab UI
+    document.querySelectorAll('.feed-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.feedType === newFeedType);
+    });
+
+    loadPosts();
+}
+
+/**
+ * Sets up the event listener for the feed tabs.
+ */
+function setupTabEventListeners() {
+    feedTabsContainer.addEventListener('click', (e) => {
+        const target = e.target.closest('.feed-tab');
+        if (target) {
+            const feedType = target.dataset.feedType;
+            switchFeed(feedType);
+        }
+    });
 }
 
 /**
@@ -74,7 +114,7 @@ function setupFeedEventListeners() {
                 ModalManager.openCommentsModal(postId);
                 break;
             case 'view-image':
-                ModalManager.openCommentsModal(postId); // Opens the same detailed view
+                ModalManager.openCommentsModal(postId);
                 break;
             case 'toggle-options':
                 toggleOptionsMenu(postId);
@@ -90,7 +130,6 @@ function setupFeedEventListeners() {
                 const wrapper = postCard.querySelector('.post-description-wrapper');
                 const textarea = wrapper.querySelector('.edit-textarea');
                 await DataService.updatePost(postId, textarea.value);
-                // Update the view mode text before switching back
                 wrapper.querySelector('.view-mode span').textContent = textarea.value;
                 toggleEditMode(postCard, false);
                 break;
@@ -105,7 +144,6 @@ function setupFeedEventListeners() {
         }
     });
 
-    // Close options menu if clicking elsewhere
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.post-options')) {
             closeActiveOptionsMenu();
@@ -155,15 +193,12 @@ async function initSocialPage() {
             });
 
             document.addEventListener('feed-needs-refresh', () => {
-                feedContainer.innerHTML = '';
-                lastVisiblePost = null;
-                allPostsLoaded = false;
-                if (loadMoreBtn) loadMoreBtn.style.display = 'block';
-                loadPosts();
+                switchFeed('for-you'); // Refresh to the main feed
             });
 
+            setupTabEventListeners();
             setupFeedEventListeners();
-            loadPosts();
+            loadPosts(); // Initial load
             if (loadMoreBtn) loadMoreBtn.addEventListener('click', loadPosts);
         }
     });

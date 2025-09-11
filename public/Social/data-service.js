@@ -32,7 +32,7 @@ const POSTS_PER_PAGE = 10;
 export const DataService = {
 
     /**
-     * Fetches a paginated list of all posts from Firestore.
+     * Fetches a paginated list of all posts from Firestore for the "For You" feed.
      * @param {DocumentSnapshot} lastVisible - The last document snapshot from the previous page.
      * @returns {Promise<object>} An object containing the posts and the last visible document.
      */
@@ -53,6 +53,43 @@ export const DataService = {
             };
         } catch (error) {
             console.error("Error fetching posts:", error);
+            return { posts: [], lastVisible: null };
+        }
+    },
+
+    /**
+     * Fetches a paginated list of posts from users the current user is following.
+     * @param {DocumentSnapshot} lastVisible - The last document snapshot from the previous page.
+     * @returns {Promise<object>} An object containing the posts and the last visible document.
+     */
+    async fetchFollowingPosts(lastVisible = null) {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return { posts: [], lastVisible: null };
+
+        try {
+            const userProfile = await this.fetchUserProfile(currentUser.uid);
+            const followingList = userProfile.following || [];
+
+            if (followingList.length === 0) {
+                return { posts: [], lastVisible: null }; // User isn't following anyone
+            }
+
+            const postsCollection = collection(db, "posts");
+            let q;
+            if (lastVisible) {
+                q = query(postsCollection, where("userId", "in", followingList), orderBy("createdAt", "desc"), startAfter(lastVisible), limit(POSTS_PER_PAGE));
+            } else {
+                q = query(postsCollection, where("userId", "in", followingList), orderBy("createdAt", "desc"), limit(POSTS_PER_PAGE));
+            }
+
+            const querySnapshot = await getDocs(q);
+            const posts = querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data(), doc: doc }));
+            return {
+                posts: posts,
+                lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1]
+            };
+        } catch (error) {
+            console.error("Error fetching following posts:", error);
             return { posts: [], lastVisible: null };
         }
     },
@@ -118,6 +155,33 @@ export const DataService = {
         } catch (error) {
             console.error("Error fetching user profile:", error);
             return { name: 'Anonymous', photoURL: null, followers: [], following: [] };
+        }
+    },
+
+    /**
+     * Fetches a list of users to suggest to the current user.
+     * @returns {Promise<Array<object>>} A list of user profiles to suggest.
+     */
+    async fetchUserSuggestions() {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return [];
+
+        try {
+            const usersCollection = collection(db, 'users');
+            const q = query(usersCollection, limit(10));
+            const snapshot = await getDocs(q);
+
+            const currentUserProfile = await this.fetchUserProfile(currentUser.uid);
+            const followingList = currentUserProfile.following || [];
+
+            const suggestions = snapshot.docs
+                .map(doc => ({ id: doc.id, data: doc.data() }))
+                .filter(user => user.id !== currentUser.uid && !followingList.includes(user.id));
+
+            return suggestions.slice(0, 5); // Return up to 5 suggestions
+        } catch (error) {
+            console.error("Error fetching user suggestions:", error);
+            return [];
         }
     },
 
@@ -200,7 +264,7 @@ export const DataService = {
      */
     async toggleFollow(profileUserId) {
         const currentUserId = auth.currentUser.uid;
-        if (currentUserId === profileUserId) return; // Cannot follow oneself
+        if (currentUserId === profileUserId) return;
 
         const currentUserRef = doc(db, 'users', currentUserId);
         const profileUserRef = doc(db, 'users', profileUserId);
