@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Community • Vibance</title>
 
@@ -9,68 +9,31 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
 
-  <!-- Local styles (keeps existing theme tokens) -->
+  <!-- Social theme -->
   <link rel="stylesheet" href="./social.css"/>
 
   <style>
-    :root {
-      --neon: #CCFF00;
-      --bg: #000000;
-      --panel: #111213;
-      --border: #222226;
-      --muted: #9CA3AF;
-    }
+    :root { --neon:#CCFF00; }
     body {
-      background: var(--bg);
-      color: #FFF;
+      background: #000;
+      color: #fff;
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
     .font-headline { font-family: 'Lora', serif; }
     .glass {
-      background: linear-gradient(180deg, rgba(24,24,27,0.7), rgba(10,10,10,0.85));
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      backdrop-filter: blur(8px);
+      background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88));
+      border: 1px solid #222226; border-radius: 1rem; backdrop-filter: blur(8px);
     }
-    .btn-neon {
-      background: var(--neon);
-      color: #000;
-      font-weight: 700;
-      transition: transform .15s ease, box-shadow .2s ease;
-    }
-    .btn-neon:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(204,255,0,.15);
-    }
-    .chip {
-      border: 1px solid var(--border);
-      background: #0b0b0c;
-    }
-    /* Scroll area helpers */
-    .scroll-snap-x { scroll-snap-type: x mandatory; }
-    .snap-start   { scroll-snap-align: start; }
-    /* Toast */
     #toast { transition: opacity .2s ease; }
-    /* Image preview drop zone */
-    .dropzone {
-      border: 1px dashed var(--border);
-      background: #0b0b0c;
-    }
-    .dropzone.dragover {
-      border-color: var(--neon);
-      background: rgba(204,255,0,0.06);
-    }
   </style>
 </head>
-
 <body class="bg-black text-white">
-  <!-- Header (injected) -->
+  <!-- Header mount -->
   <div id="site-header"></div>
 
   <main class="mx-auto max-w-6xl px-4 pt-24 pb-16">
@@ -79,116 +42,107 @@
       <div class="flex items-end justify-between gap-4">
         <div>
           <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Community</p>
-          <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">Share wins. Learn together.</h1>
-          <p class="text-sm md:text-base text-neutral-400 mt-2">Post updates, ask questions, and cheer on others reaching their money goals.</p>
+          <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">What’s new</h1>
+          <p class="text-sm md:text-base text-neutral-400 mt-2">Share progress, swap tips, and cheer each other on.</p>
         </div>
-        <a href="../Social/follow-list.html" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">
-          <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"/><path d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-          Follow list
-        </a>
+        <div class="flex items-center gap-2">
+          <a href="./follow-list.html" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Find people</a>
+          <a href="./user-profile.html" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Your profile</a>
+        </div>
       </div>
     </header>
 
-    <!-- Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left rail (composer + filters) -->
-      <aside class="lg:col-span-1 space-y-6">
-        <!-- Post Composer -->
-        <section class="glass p-4 md:p-5">
-          <div class="flex items-start gap-3">
-            <img id="composer-avatar" src="/images/logo_white.png" alt="You" class="h-10 w-10 rounded-full bg-neutral-900 border border-neutral-800 object-cover">
-            <div class="flex-1">
-              <textarea id="post-text" rows="3" maxlength="480"
-                        class="w-full bg-neutral-950/70 border border-neutral-800 rounded-xl px-3 py-2 text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/40"
-                        placeholder="Share a progress update, question, or tip…"></textarea>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <!-- Left column: Composer + Feed (spans 2 on large) -->
+      <section class="lg:col-span-2 space-y-4">
+        <!-- Composer -->
+        <article class="glass p-4 md:p-5">
+          <form id="composer" class="space-y-4" autocomplete="off">
+            <div class="flex items-start gap-3">
+              <img id="you-avatar" class="h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="Your avatar">
+              <div class="flex-1 min-w-0">
+                <textarea id="post-text" rows="3" maxlength="800" placeholder="Share a win, a question, or a tip…"
+                          class="w-full px-3 py-2 text-sm resize-y" required></textarea>
 
-              <!-- Attachment row -->
-              <div class="mt-3 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                  <label for="post-image" class="px-3 py-1.5 rounded-lg chip hover:border-neutral-700 cursor-pointer flex items-center gap-2 text-sm">
-                    <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                    Add image
-                  </label>
-                  <input id="post-image" type="file" accept="image/*" class="hidden"/>
-                  <span id="post-image-name" class="text-xs text-neutral-500"></span>
-                </div>
-                <button id="post-submit" class="btn-neon px-4 py-2 rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                  Post
-                </button>
-              </div>
-
-              <!-- Drag/drop preview -->
-              <div id="image-dropzone" class="dropzone rounded-xl mt-3 p-3 hidden">
-                <div class="flex items-center gap-3">
-                  <img id="image-preview" class="h-16 w-16 rounded-lg object-cover border border-neutral-800" alt="Preview" />
-                  <div class="text-xs text-neutral-400">
-                    <div>Image ready to upload.</div>
-                    <button id="remove-image" class="mt-1 px-2 py-1 rounded-lg border border-neutral-800 hover:bg-neutral-900">Remove</button>
+                <!-- Image preview (hidden until a file is picked) -->
+                <div id="image-preview" class="mt-3 hidden">
+                  <img id="image-preview-img" class="post-image" alt="Selected image preview"/>
+                  <div class="mt-2 flex items-center gap-2">
+                    <button id="remove-image" type="button" class="px-3 py-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-900 text-xs">Remove image</button>
+                    <span id="image-filename" class="text-xs text-neutral-400 truncate"></span>
                   </div>
                 </div>
               </div>
-
-              <!-- Composer meta -->
-              <div class="mt-2 flex items-center justify-between">
-                <small id="char-count" class="text-neutral-500">0 / 480</small>
-                <label class="inline-flex items-center gap-2 text-xs text-neutral-400 cursor-pointer">
-                  <input id="post-private" type="checkbox" class="h-3.5 w-3.5 rounded border-neutral-700 bg-neutral-900">
-                  Share with followers only
-                </label>
-              </div>
             </div>
-          </div>
-        </section>
 
-        <!-- Quick filters -->
-        <section class="glass p-4 md:p-5">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold tracking-wide text-neutral-200">Feed Filters</h2>
-            <button id="clear-filters" class="text-xs text-neutral-400 hover:text-white">Reset</button>
-          </div>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="all">All</button>
-            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="following">Following</button>
-            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="wins">Wins</button>
-            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="advice">Advice</button>
-            <button class="chip px-3 py-1.5 rounded-full text-sm hover:border-neutral-700" data-filter="questions">Questions</button>
-          </div>
-        </section>
+            <div class="flex flex-wrap items-center gap-3">
+              <!-- Hidden file input -->
+              <input id="post-file" type="file" accept="image/*" class="hidden"/>
 
-        <!-- Suggested people (horizontal scroll) -->
-        <section class="glass p-4 md:p-5">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold tracking-wide text-neutral-200">Suggested to follow</h2>
-            <a href="../Social/follow-list.html" class="text-xs text-neutral-400 hover:text-white">View all</a>
-          </div>
-          <div id="suggested-users" class="mt-3 flex gap-3 overflow-x-auto scroll-snap-x pb-1"></div>
-        </section>
-      </aside>
+              <button id="btn-attach" type="button" class="chip px-3 py-2 rounded-xl text-sm flex items-center gap-2">
+                <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21.44 11.05 12 20.5a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66L8.5 18.5a2 2 0 1 1-2.83-2.83L14.17 7.17"/></svg>
+                Add image
+              </button>
 
-      <!-- Feed -->
-      <section class="lg:col-span-2 space-y-4" id="feed-section">
-        <!-- Empty state -->
-        <div id="feed-empty" class="hidden glass p-10 text-center text-neutral-400">
-          No posts yet. Be the first to share something!
+              <div class="flex items-center gap-2">
+                <label for="visibility" class="text-sm text-neutral-400">Visibility</label>
+                <select id="visibility" class="chip px-3 py-2 rounded-xl text-sm">
+                  <option value="public">Public</option>
+                  <option value="followers">Followers</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <label for="tags" class="text-sm text-neutral-400">Tags</label>
+                <input id="tags" type="text" maxlength="60" placeholder="budgeting, debt, investing"
+                       class="chip px-3 py-2 rounded-xl text-sm bg-transparent placeholder-neutral-500"
+                       aria-describedby="tags-help"/>
+                <span id="tags-help" class="text-xs text-neutral-500">comma-separated</span>
+              </div>
+
+              <button id="btn-post" type="submit" class="ml-auto btn-neon px-4 py-2 rounded-xl text-sm">Post</button>
+            </div>
+          </form>
+        </article>
+
+        <!-- Feed -->
+        <div id="feed-empty" class="hidden glass p-10 text-center">Your feed is quiet. Follow a few people or make the first move!</div>
+        <div id="feed-list" class="space-y-3">
+          <!-- Cards injected by social.js using #post-card-template -->
         </div>
-
-        <!-- Posts list -->
-        <div id="post-list" class="space-y-3">
-          <!-- Cards injected by JS -->
-        </div>
-
-        <!-- Load more -->
         <div class="pt-2 text-center">
-          <button id="load-more" class="px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm hidden">Load more</button>
+          <button id="load-more" class="hidden px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Load more</button>
         </div>
       </section>
+
+      <!-- Right column: Suggestions -->
+      <aside class="space-y-4">
+        <section class="glass p-4 md:p-5">
+          <div class="flex items-center justify-between">
+            <h2 class="font-medium">Suggested for you</h2>
+            <a href="./follow-list.html" class="text-xs text-neutral-400 hover:text-white">See all</a>
+          </div>
+          <div id="suggested-users" class="mt-4 grid grid-cols-1 gap-3 max-h-[520px] overflow-auto pr-1">
+            <!-- User suggestion cards injected by social.js -->
+          </div>
+        </section>
+
+        <section class="glass p-4 md:p-5">
+          <h2 class="font-medium">Community tips</h2>
+          <ul class="mt-3 text-sm text-neutral-300 list-disc pl-5 space-y-2">
+            <li>Keep it helpful. Explain what worked, and why.</li>
+            <li>Mask personal info on screenshots.</li>
+            <li>Follow folks who focus on your goals.</li>
+          </ul>
+        </section>
+      </aside>
     </div>
   </main>
 
   <!-- Toast -->
   <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-white px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
 
-  <!-- Post Card Template (keeps markup consistent for renderer.js) -->
+  <!-- Post Card Template (shared by profile & post pages) -->
   <template id="post-card-template">
     <article class="glass p-4 md:p-5">
       <header class="flex items-center justify-between">
@@ -230,10 +184,10 @@
             <span class="post-comment-count">0</span>
           </button>
         </div>
-        <a class="post-permalink text-xs text-neutral-400 hover:text-white" href="#">Open</a>
+        <a class="post-permalink text-xs text-neutral-400 hover:text-white" href="./post.html">Open</a>
       </footer>
 
-      <!-- Comments -->
+      <!-- Comments (collapsed by default in feed) -->
       <section class="post-comments mt-4 hidden">
         <div class="space-y-3" data-comments-list></div>
         <div class="mt-3 flex items-start gap-2">
@@ -247,95 +201,36 @@
     </article>
   </template>
 
-  <!-- Suggested user pill template -->
-  <template id="suggested-user-template">
-    <div class="snap-start min-w-[220px] glass px-3 py-3 flex items-center gap-3">
-      <img class="h-9 w-9 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="User">
+  <!-- Suggestion Card Template -->
+  <template id="suggestion-card-template">
+    <article class="glass p-3 flex items-center gap-3">
+      <a class="block shrink-0" href="#">
+        <img class="sug-avatar h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="Avatar">
+      </a>
       <div class="min-w-0">
-        <div class="text-sm font-medium truncate"></div>
-        <div class="text-xs text-neutral-500 truncate"></div>
+        <a class="sug-name font-medium truncate hover:underline" href="#"></a>
+        <div class="sug-sub text-xs text-neutral-500 truncate"></div>
       </div>
-      <button class="ml-auto px-3 py-1.5 rounded-lg btn-neon text-xs">Follow</button>
-    </div>
+      <div class="ml-auto shrink-0">
+        <button class="sug-follow btn-neon px-3 py-1.5 rounded-xl text-xs">Follow</button>
+        <button class="sug-unfollow px-3 py-1.5 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-xs hidden">Unfollow</button>
+      </div>
+    </article>
   </template>
 
-  <!-- Scripts -->
+  <!-- Core app scripts -->
   <script type="module" src="/api/firebase.js"></script>
   <script type="module" src="/auth/auth-check.js"></script>
   <script type="module" src="/components/header.js"></script>
 
-  <!-- Your existing community scripts (expected to find the IDs above) -->
+  <!-- Social modules -->
   <script type="module" src="./ui-helpers.js"></script>
-  <script type="module" src="./post-renderer.js"></script>
   <script type="module" src="./listeners.js"></script>
-  <script type="module" src="./post-manager.js"></script>
+  <script type="module" src="./modal-manager.js"></script>
+  <script type="module" src="./data-service.js"></script>
+  <script type="module" src="./post-renderer.js"></script>
+
+  <!-- Page controller (next file to refactor) -->
   <script type="module" src="./social.js"></script>
-
-  <!-- Tiny helper for drag/drop preview (safe no-FS upload; actual upload handled by your JS) -->
-  <script>
-    (function () {
-      const fileInput = document.getElementById('post-image');
-      const nameEl = document.getElementById('post-image-name');
-      const dz = document.getElementById('image-dropzone');
-      const preview = document.getElementById('image-preview');
-      const removeBtn = document.getElementById('remove-image');
-      const text = document.getElementById('post-text');
-      const submit = document.getElementById('post-submit');
-      const charCount = document.getElementById('char-count');
-
-      function updateSubmitState() {
-        const hasText = (text.value || '').trim().length > 0;
-        const hasFile = !!fileInput.files?.[0];
-        submit.disabled = !(hasText || hasFile);
-      }
-
-      text.addEventListener('input', () => {
-        charCount.textContent = `${text.value.length} / 480`;
-        updateSubmitState();
-      });
-
-      function setPreview(file) {
-        if (!file) { dz.classList.add('hidden'); nameEl.textContent=''; preview.src=''; updateSubmitState(); return; }
-        nameEl.textContent = file.name;
-        const url = URL.createObjectURL(file);
-        preview.src = url;
-        dz.classList.remove('hidden');
-        updateSubmitState();
-        // Revoke later
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-      }
-
-      fileInput.addEventListener('change', () => setPreview(fileInput.files?.[0]));
-      removeBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-        fileInput.value = '';
-        setPreview(null);
-      });
-
-      // Optional drag & drop onto the composer
-      const composer = document.querySelector('section .dropzone')?.parentElement?.parentElement;
-      const zone = document.getElementById('image-dropzone');
-      const root = document.querySelector('main');
-      (root || document).addEventListener('dragover', (e) => {
-        if (!e.dataTransfer) return;
-        e.preventDefault();
-        if (e.dataTransfer.types?.includes('Files')) zone.classList.add('dragover');
-      });
-      (root || document).addEventListener('dragleave', () => zone.classList.remove('dragover'));
-      (root || document).addEventListener('drop', (e) => {
-        if (!e.dataTransfer) return;
-        e.preventDefault();
-        zone.classList.remove('dragover');
-        const f = e.dataTransfer.files?.[0];
-        if (f && f.type.startsWith('image/')) {
-          fileInput.files = e.dataTransfer.files;
-          setPreview(f);
-        }
-      });
-
-      // Keep button state fresh on page load
-      updateSubmitState();
-    })();
-  </script>
 </body>
 </html>

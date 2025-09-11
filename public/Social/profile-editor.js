@@ -1,129 +1,122 @@
-/**
- * @file /Social/profile-editor.js
- * @description Controller for the profile editor page. It handles loading user data,
- * updating the profile name and avatar, and saving changes to Firebase.
- */
+// public/Social/profile-editor.js
+// ------------------------------------------------------------
+// Vibance • Profile Editor controller (external module version)
+// - Writes ONLY allowed root fields on /users/{uid} per rules:
+//     name, firstName, lastName, photoURL, updatedAt
+// - Stores bio in /users/{uid}/settings/profile
+// - Works with the updated profile-editor.html IDs
+// ------------------------------------------------------------
 
-import { auth, db, storage } from '../api/firebase.js';
-import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { createAvatar } from './ui-helpers.js';
+import { auth, db } from '../api/firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-// --- STATE MANAGEMENT ---
-let selectedAvatarFile = null;
+// ----------------------------- DOM -----------------------------
+const els = {
+  form: document.getElementById('profile-form'),
+  name: document.getElementById('name'),
+  first: document.getElementById('firstName'),
+  last: document.getElementById('lastName'),
+  photo: document.getElementById('photoURL'),
+  bio: document.getElementById('bio'),
+  bioCount: document.getElementById('bio-count'),
+  preview: document.getElementById('avatar-preview'),
+  toast: document.getElementById('toast'),
+  save: document.getElementById('btn-save'),
+};
 
-// --- DOM ELEMENTS ---
-const avatarContainer = document.getElementById('current-avatar-container');
-const userNameEl = document.getElementById('current-user-name');
-const avatarFileInput = document.getElementById('avatar-file-input');
-const nameInput = document.getElementById('name-input');
-const editForm = document.getElementById('profile-edit-form');
-const saveBtn = document.querySelector('.save-profile-btn');
-
-/**
- * Loads the current user's profile data into the form fields.
- * @param {object} user - The authenticated Firebase user object.
- * @param {object} userProfile - The user's profile data from Firestore.
- */
-function loadProfileData(user, userProfile) {
-    if (avatarContainer) {
-        avatarContainer.innerHTML = createAvatar(userProfile, 'w-full h-full');
-    }
-    if (userNameEl) {
-        userNameEl.textContent = userProfile.name || 'Current User';
-    }
-    if (nameInput) {
-        nameInput.value = userProfile.name || '';
-    }
+// ----------------------------- Utils -----------------------------
+function toast(msg) {
+  if (!els.toast) return console.log('[toast]', msg);
+  els.toast.textContent = msg;
+  els.toast.classList.remove('opacity-0','pointer-events-none');
+  els.toast.classList.add('opacity-100');
+  setTimeout(() => {
+    els.toast.classList.add('opacity-0','pointer-events-none');
+  }, 1500);
 }
+function enable(el, yes=true){ if (!el) return; el.disabled=!yes; el.classList.toggle('opacity-50', !yes); }
 
-/**
- * Handles the selection of a new avatar file and displays a preview.
- * @param {File} file - The selected image file.
- */
-function handleAvatarFileSelect(file) {
-    if (file && file.type.startsWith('image/')) {
-        selectedAvatarFile = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const tempAvatarUrl = e.target.result;
-            avatarContainer.innerHTML = `<img src="${tempAvatarUrl}" alt="New avatar preview" class="avatar-image">`;
-        };
-        reader.readAsDataURL(file);
-    }
-}
+// ----------------------------- Wiring -----------------------------
+function wire() {
+  els.photo?.addEventListener('input', () => {
+    const url = (els.photo.value || '').trim();
+    if (els.preview) els.preview.src = url || '/images/logo_white.png';
+  });
+  els.bio?.addEventListener('input', () => {
+    if (els.bioCount) els.bioCount.textContent = String(els.bio.value.length);
+  });
 
-/**
- * Handles the form submission to save profile changes.
- * @param {Event} e - The form submission event.
- * @param {object} user - The authenticated Firebase user object.
- */
-async function handleProfileSave(e, user) {
+  els.form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
+    const user = auth.currentUser;
+    if (!user) return;
 
-    try {
-        const userRef = doc(db, 'users', user.uid);
-        const newName = nameInput.value.trim();
-        let newAvatarUrl = user.photoURL;
+    const payload = {
+      name: (els.name?.value || '').trim(),
+      firstName: (els.first?.value || '').trim(),
+      lastName: (els.last?.value || '').trim(),
+      photoURL: (els.photo?.value || '').trim(),
+      updatedAt: serverTimestamp(),
+    };
 
-        // Step 1: Upload new avatar if one was selected
-        if (selectedAvatarFile) {
-            const filePath = `avatars/${user.uid}/${selectedAvatarFile.name}`;
-            const storageRef = ref(storage, filePath);
-            const snapshot = await uploadBytes(storageRef, selectedAvatarFile);
-            newAvatarUrl = await getDownloadURL(snapshot.ref);
-        }
-
-        // Step 2: Update the user's profile in Firebase Authentication
-        await updateProfile(auth.currentUser, {
-            displayName: newName,
-            photoURL: newAvatarUrl
-        });
-
-        // Step 3: Update the user's profile in the Firestore 'users' collection
-        await updateDoc(userRef, {
-            name: newName,
-            photoURL: newAvatarUrl,
-            updatedAt: serverTimestamp()
-        });
-        
-        // Step 4: Redirect back to the user's profile page
-        alert('Profile saved successfully!');
-        window.location.href = `/Social/user-profile.html?id=${user.uid}`;
-
-    } catch (error) {
-        console.error("Error saving profile:", error);
-        alert("There was an error saving your profile. Please try again.");
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save';
-    }
-}
-
-/**
- * Main initialization function for the profile editor page.
- */
-async function initProfileEditor() {
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            try {
-                const userRef = doc(db, 'users', user.uid);
-                const docSnap = await getDoc(userRef);
-                const userProfile = docSnap.exists() ? docSnap.data() : { name: user.displayName, photoURL: user.photoURL };
-
-                loadProfileData(user, userProfile);
-                
-                avatarFileInput.addEventListener('change', (e) => handleAvatarFileSelect(e.target.files[0]));
-                editForm.addEventListener('submit', (e) => handleProfileSave(e, user));
-
-            } catch (error) {
-                console.error("Error loading profile data:", error);
-                document.querySelector('.edit-profile-form-wrapper').innerHTML = '<p class="text-danger-color">Could not load profile data.</p>';
-            }
-        }
+    // Strip empty strings to avoid overwriting with ''
+    Object.keys(payload).forEach(k => {
+      if (payload[k] === '') delete payload[k];
     });
+
+    enable(els.save, false);
+    try {
+      // Root user doc: only allowed fields per rules
+      await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
+
+      // Bio saved privately in settings
+      const bio = (els.bio?.value || '').trim();
+      await setDoc(
+        doc(db, 'users', user.uid, 'settings', 'profile'),
+        { bio, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+
+      toast('Saved ✓');
+      setTimeout(() => {
+        location.href = './user-profile.html?uid=' + encodeURIComponent(user.uid);
+      }, 600);
+    } catch (e) {
+      console.error(e);
+      toast('Save failed');
+    } finally {
+      enable(els.save, true);
+    }
+  });
 }
 
-document.addEventListener('DOMContentLoaded', initProfileEditor);
+// ----------------------------- Initial Load -----------------------------
+function loadInitial() {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return; // auth-check handles redirect if needed
+    try {
+      // Owner read allowed by rules
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      if (els.name) els.name.value = data.name || user.displayName || '';
+      if (els.first) els.first.value = data.firstName || '';
+      if (els.last) els.last.value = data.lastName || '';
+      if (els.photo) els.photo.value = data.photoURL || user.photoURL || '';
+      if (els.preview) els.preview.src = (els.photo?.value || '') || '/images/logo_white.png';
+
+      // Load bio from settings subcollection
+      try {
+        const bioSnap = await getDoc(doc(db, 'users', user.uid, 'settings', 'profile'));
+        const bio = bioSnap.exists() ? (bioSnap.data().bio || '') : '';
+        if (els.bio) els.bio.value = bio;
+        if (els.bioCount) els.bioCount.textContent = String(bio.length);
+      } catch { /* ignore */ }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+}
+
+// ----------------------------- Boot -----------------------------
+document.addEventListener('DOMContentLoaded', () => { wire(); loadInitial(); });
