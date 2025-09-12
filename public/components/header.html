@@ -1,52 +1,97 @@
-<style>
-    /* Style for the navigation links */
-    .nav-link {
-        padding: 8px 16px;
-        border-radius: 9999px; /* pill shape */
-        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-        font-weight: 500;
-        color: #9CA3AF; /* gray-400 */
-    }
+<!-- public/components/header.html -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-neutral-900/70 bg-black/70 backdrop-blur supports-[backdrop-filter]:bg-black/50">
+  <div class="mx-auto max-w-7xl px-4">
+    <div class="h-16 flex items-center justify-between gap-3">
+      <!-- Left: Brand -->
+      <a href="/dashboard/dashboard.html" class="flex items-center gap-3 shrink-0">
+        <img src="/images/logo_white.png" alt="Vibance" class="h-6 w-6 rounded"/>
+        <span class="text-white font-semibold tracking-tight">Vibance</span>
+      </a>
 
-    /* Style for the link of the currently active page */
-    .nav-link.active {
-        background-color: #374151; /* gray-700 */
-        color: #FFFFFF;
-    }
+      <!-- Center: Primary Nav (Blog & Accounts removed) -->
+      <nav id="desktop-nav" class="hidden md:flex items-center gap-1 text-sm">
+        <a id="nav-dashboard" href="/dashboard/dashboard.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Dashboard</a>
+        <a id="nav-expenses"  href="/Expenses/expenses.html"  class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expenses</a>
+        <a id="nav-budgeting" href="/Budgeting/budgeting.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Budgeting</a>
+        <a id="nav-community" href="/Social/social.html"     class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Social</a>
+      </nav>
 
-    /* Hover effect for non-active links */
-    .nav-link:not(.active):hover {
-        background-color: #1F2937; /* gray-800 */
-        color: #D1D5DB; /* gray-300 */
-    }
-</style>
-<header class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-gray-800">
-    <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-        <div class="flex items-center space-x-8">
-            <a href="../dashboard/dashboard.html" class="flex items-center space-x-3">
-                <img src="../images/logo_white.png" alt="Vibance Logo" class="h-8 w-8">
-                <span class="text-xl font-bold">Vibance</span>
-            </a>
-            <!-- FIX: Added navigation links -->
-            <nav class="hidden md:flex items-center space-x-2">
-                <a id="nav-dashboard" href="../dashboard/dashboard.html" class="nav-link">Dashboard</a>
-                <a id="nav-expenses" href="../Expenses/expenses.html" class="nav-link">Expenses</a>
-                <a id="nav-budgeting" href="../Budgeting/budgeting.html" class="nav-link">Budgeting</a>
-                <a id="nav-social" href="../Social/social.html" class="nav-link">Social</a>
-            </nav>
+      <!-- Right: Auth / Avatar -->
+      <div class="flex items-center gap-2">
+        <!-- Shown when signed out -->
+        <div id="auth-actions" class="hidden md:flex items-center gap-2">
+          <a href="/login.html" class="px-3 py-2 rounded-lg border border-neutral-800 text-sm text-white hover:bg-neutral-900">Log in</a>
+          <a href="/signup.html" class="px-3 py-2 rounded-lg text-sm font-medium text-black bg-[var(--neon,#CCFF00)] hover:opacity-90">Sign up</a>
         </div>
-        <div class="flex items-center space-x-4">
-            <span id="user-welcome" class="text-sm text-gray-300 hidden md:block">Welcome!</span>
-            <div class="relative">
-                <button id="profile-button" class="block">
-                    <img src="https://placehold.co/40x40/374151/FFFFFF?text=P" alt="User Profile" class="h-8 w-8 rounded-full bg-gray-700">
-                </button>
-                <div id="logout-menu" class="hidden absolute right-0 mt-2 w-48 bg-[#1C1C1E] rounded-md shadow-lg py-1 z-50">
-                    <a href="../pages/profile.html" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Profile</a>
-                    <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Log Out</a>
-                </div>
-            </div>
+
+        <!-- Shown when signed in -->
+        <div id="user-menu" class="hidden relative">
+          <button id="user-menu-button" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-900" aria-haspopup="menu" aria-expanded="false">
+            <img id="user-avatar" class="h-8 w-8 rounded-full object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="Your avatar"/>
+            <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div id="user-pop" class="absolute right-0 mt-2 w-44 rounded-xl border border-neutral-800 bg-neutral-950 shadow-lg p-1 hidden">
+            <!-- header.js will populate this (My Profile / Account Linkage / Settings / Help & Support in later steps) -->
+          </div>
         </div>
+
+        <!-- Mobile menu button -->
+        <button id="btn-mobile" class="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg hover:bg-neutral-900" aria-label="Open menu">
+          <svg class="h-5 w-5 text-neutral-300" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
     </div>
+  </div>
+
+  <!-- Mobile panel (Blog & Accounts removed) -->
+  <div id="mobile-panel" class="md:hidden hidden border-t border-neutral-900/70 bg-black/85 backdrop-blur">
+    <nav class="px-4 py-3 flex flex-col gap-1 text-sm">
+      <a href="/dashboard/dashboard.html" class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Dashboard</a>
+      <a href="/Expenses/expenses.html"  class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expenses</a>
+      <a href="/Budgeting/budgeting.html" class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Budgeting</a>
+      <a href="/Social/social.html"       class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Social</a>
+
+      <!-- Signed-out -->
+      <div id="m-auth-actions" class="mt-2 hidden">
+        <a href="/login.html" class="block px-3 py-2 rounded-lg border border-neutral-800 text-white hover:bg-neutral-900">Log in</a>
+        <a href="/signup.html" class="block mt-2 px-3 py-2 rounded-lg font-medium text-black bg-[var(--neon,#CCFF00)] hover:opacity-90 text-center">Sign up</a>
+      </div>
+
+      <!-- Signed-in -->
+      <div id="m-user-actions" class="mt-2 hidden">
+        <a href="/Social/user-profile.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Your profile</a>
+        <a href="/dashboard/dashboard.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Dashboard</a>
+        <a href="/pages/support.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Help &amp; Support</a>
+        <button id="m-btn-signout" class="w-full text-left mt-1 px-3 py-2 rounded-lg text-red-300 hover:bg-neutral-900">Sign out</button>
+      </div>
+    </nav>
+  </div>
 </header>
+
+<style>
+  :root { --neon: #CCFF00; }
+
+  /* Base hover stays subtle on inactive items */
+  .nav-link,
+  .mnav-link {
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+
+  /* ACTIVE TAB: neon background, dark text, no gray border box */
+  .nav-link.active,
+  .mnav-link.active {
+    background: var(--neon);
+    color: #0a0a0a;        /* readable on neon */
+    border: none;          /* remove gray box look */
+  }
+
+  /* Keep it neon on hover/focus when active */
+  .nav-link.active:hover,
+  .nav-link.active:focus,
+  .mnav-link.active:hover,
+  .mnav-link.active:focus {
+    background: var(--neon);
+    color: #0a0a0a;
+  }
+</style>
 

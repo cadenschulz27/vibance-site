@@ -1,149 +1,89 @@
-/**
- * @file /Social/post-manager.js
- * @description Manages the creation and submission of new posts. This includes
- * handling image uploads to Firebase Storage and saving post data to Firestore.
- */
+// public/Social/post-manager.js
+// -------------------------------------------------------------------
+// Vibance Community • Post Manager (compat wrapper)
+// - Provides a stable API for creating, reading, updating, deleting
+//   posts & comments, and toggling likes.
+// - Internally delegates to ./data-service.js so all rules/paths are
+//   enforced in one place.
+// - Exposes ESM exports AND attaches a legacy global window.VBPost.
+// -------------------------------------------------------------------
 
-import { auth, db, storage } from '../api/firebase.js';
-import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
+import * as DS from './data-service.js';
 
-// A private variable to hold the file selected by the user.
-let selectedFile = null;
+/* ------------------------------ Types ------------------------------
+ * Post input shape used by create():
+ *   { description: string, visibility?: 'public'|'followers', tags?: string[], file?: File|null }
+ * ------------------------------------------------------------------*/
 
-export const PostManager = {
+/* ---------------------------- Post CRUD --------------------------- */
+export async function create(postInput) {
+  // postInput: { description, visibility?, tags?, file? }
+  return DS.createPost(postInput);
+}
 
-    /**
-     * Initializes the manager by setting up listeners for the image input.
-     */
-    init() {
-        const imageInput = document.getElementById('image-input');
-        const imageDropZone = document.getElementById('image-drop-zone');
-        const removeImageBtn = document.getElementById('remove-image-btn');
+export async function get(postId) {
+  return DS.getPost(postId);
+}
 
-        // Trigger file input when the drop zone is clicked
-        imageDropZone?.addEventListener('click', () => imageInput?.click());
-        
-        // Handle file selection from the input
-        imageInput?.addEventListener('change', (e) => this.handleFileSelect(e.target.files[0]));
+export async function updateDescription(postId, nextText) {
+  return DS.updatePostDescription(postId, nextText);
+}
 
-        // Handle drag and drop
-        imageDropZone?.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            imageDropZone.classList.add('dragover');
-        });
-        imageDropZone?.addEventListener('dragleave', () => imageDropZone.classList.remove('dragover'));
-        imageDropZone?.addEventListener('drop', (e) => {
-            e.preventDefault();
-            imageDropZone.classList.remove('dragover');
-            this.handleFileSelect(e.dataTransfer.files[0]);
-        });
-        
-        // Handle image removal
-        removeImageBtn?.addEventListener('click', () => this.clearSelectedFile());
-    },
+export async function remove(postOrId) {
+  const post = typeof postOrId === 'string' ? await DS.getPost(postOrId) : postOrId;
+  if (!post) return;
+  return DS.deletePost(post);
+}
 
-    /**
-     * Handles the selection of a file, validates it, and displays a preview.
-     * @param {File} file - The file selected by the user.
-     */
-    handleFileSelect(file) {
-        if (!file || !file.type.startsWith('image/')) {
-            alert('Please select a valid image file.');
-            return;
-        }
-        selectedFile = file;
+/* --------------------------- Likes & Counts ----------------------- */
+export async function toggleLike(postId, like) {
+  return DS.toggleLike(postId, like);
+}
 
-        // Display the image preview
-        const previewContainer = document.getElementById('image-preview-container');
-        const previewImg = document.getElementById('image-preview');
-        const removeBtn = document.getElementById('remove-image-btn');
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (previewImg) previewImg.src = e.target.result;
-            if (previewContainer) previewContainer.classList.remove('hidden');
-            if (removeBtn) removeBtn.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    },
+/* ------------------------------ Comments -------------------------- */
+export async function listComments(postId, opts = {}) {
+  return DS.fetchComments(postId, opts);
+}
 
-    /**
-     * Clears the currently selected file and hides the preview.
-     */
-    clearSelectedFile() {
-        selectedFile = null;
-        const imageInput = document.getElementById('image-input');
-        if (imageInput) imageInput.value = ''; // Clear the file input
+export async function addComment(postId, text) {
+  return DS.addComment(postId, text);
+}
 
-        const previewContainer = document.getElementById('image-preview-container');
-        const removeBtn = document.getElementById('remove-image-btn');
-        if (previewContainer) previewContainer.classList.add('hidden');
-        if (removeBtn) removeBtn.classList.add('hidden');
-    },
+/* ---------------------------- Pagination -------------------------- */
+export async function listFeedPage({ after = null, pageSize = 12 } = {}) {
+  return DS.fetchPostsPage({ after, pageSize });
+}
 
-    /**
-     * The main function to handle the post creation process.
-     * @param {Event} e - The form submission event.
-     * @param {Function} onComplete - A callback function to run after submission is complete.
-     */
-    async handlePostCreation(e, onComplete) {
-        const user = auth.currentUser;
-        if (!user) return alert('You must be logged in to post.');
+export async function listUserPostsPage(userId, { after = null, pageSize = 10 } = {}) {
+  return DS.fetchUserPostsPage(userId, { after, pageSize });
+}
 
-        const form = e.target;
-        const description = form.querySelector('#post-description').value;
-        const submitBtn = form.querySelector('button[type="submit"]');
+/* ----------------------------- Following -------------------------- */
+export async function follow(userId) {
+  const next = await DS.updateFollowing(userId, { follow: true });
+  return next;
+}
 
-        if (!description && !selectedFile) {
-            alert('Please add a description or an image to your post.');
-            return;
-        }
+export async function unfollow(userId) {
+  const next = await DS.updateFollowing(userId, { follow: false });
+  return next;
+}
 
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Posting...';
-
-        try {
-            let imageUrl = '';
-            if (selectedFile) {
-                // Step 1: Upload image if one exists
-                submitBtn.textContent = 'Uploading Image...';
-                const filePath = `posts/${user.uid}/${Date.now()}_${selectedFile.name}`;
-                const storageRef = ref(storage, filePath);
-                const uploadTask = await uploadBytesResumable(storageRef, selectedFile);
-                imageUrl = await getDownloadURL(uploadTask.ref);
-            }
-
-            // Step 2: Get user's name from their profile
-            const userDocRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userDocRef);
-            const userName = userDoc.exists() ? userDoc.data().name : "Anonymous";
-
-            // Step 3: Save post data to Firestore
-            submitBtn.textContent = 'Saving Post...';
-            const postsCollection = collection(db, "posts");
-            await addDoc(postsCollection, {
-                userId: user.uid,
-                userName: userName,
-                description: description,
-                imageUrl: imageUrl,
-                createdAt: serverTimestamp(),
-                likes: [],
-                commentCount: 0
-            });
-
-            // Step 4: Finalize
-            this.clearSelectedFile();
-            form.reset();
-            onComplete(); // This will typically close the modal
-
-        } catch (error) {
-            console.error("Error creating post:", error);
-            alert("There was an error creating your post. Please try again.");
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Post to Feed';
-        }
-    }
-};
-
+/* -------------------------- Legacy Global API --------------------- */
+(function attachLegacyGlobal() {
+  const api = {
+    create,
+    get,
+    updateDescription,
+    remove,
+    toggleLike,
+    listComments,
+    addComment,
+    listFeedPage,
+    listUserPostsPage,
+    follow,
+    unfollow,
+  };
+  // Provide under window.VBPost for older scripts
+  window.VBPost = Object.freeze({ ...(window.VBPost || {}), ...api });
+})();

@@ -6,8 +6,8 @@
 
 // --- MODULE IMPORTS ---
 import { auth, db } from '../api/firebase.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { VibeScoreCalculations } from './calculations.js';
 import { VibeScoreInsights } from './insights.js';
 import { VibeScoreUI } from './ui.js';
@@ -82,27 +82,33 @@ const calculationMap = {
 function initVibeScore() {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userDocRef);
-            const userData = userDoc.exists() ? userDoc.data() : {};
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+                const userData = userDoc.exists() ? userDoc.data() : {};
 
-            // Process the raw user data into a structured format for the UI
-            const dynamicFinancialData = Object.keys(calculationMap).map(name => {
-                const map = calculationMap[name];
-                const data = userData[map.dataKey] || {};
-                const hasData = Object.keys(data).length > 0;
-                const score = hasData ? map.calc(data) : 0;
-                const insight = hasData ? map.gen(data, score) : "No data found. Click this bubble to go to your profile and add your information.";
-                return { name, score, insight, hasData };
-            });
+                // Process the raw user data into a structured format for the UI
+                const dynamicFinancialData = Object.keys(calculationMap).map(name => {
+                    const map = calculationMap[name];
+                    const data = userData[map.dataKey] || {};
+                    const hasData = Object.keys(data).length > 0;
+                    const score = hasData ? map.calc(data) : 0;
+                    const insight = hasData ? map.gen(data, score) : "No data found. Click to go to your profile and add your information.";
+                    return { name, score, insight, hasData };
+                });
 
-            // Calculate the overall VibeScore
-            const itemsWithData = dynamicFinancialData.filter(item => item.hasData);
-            const totalScore = itemsWithData.reduce((acc, item) => acc + item.score, 0);
-            const userVibeScore = itemsWithData.length > 0 ? Math.round(totalScore / itemsWithData.length) : 0;
-            
-            // Initialize the UI with the processed data
-            VibeScoreUI.init(userVibeScore, dynamicFinancialData);
+                // Calculate the overall VibeScore
+                const itemsWithData = dynamicFinancialData.filter(item => item.hasData);
+                const totalScore = itemsWithData.reduce((acc, item) => acc + item.score, 0);
+                const userVibeScore = itemsWithData.length > 0 ? Math.round(totalScore / itemsWithData.length) : 0;
+                
+                // Initialize the UI with the processed data
+                VibeScoreUI.init(userVibeScore, dynamicFinancialData);
+
+            } catch (error) {
+                console.error("Error initializing VibeScore:", error);
+                // You can add UI logic here to show an error state if needed
+            }
         }
     });
 }
@@ -112,4 +118,3 @@ function initVibeScore() {
 
 // Start the initialization process once the DOM is fully loaded.
 document.addEventListener('DOMContentLoaded', initVibeScore);
-
