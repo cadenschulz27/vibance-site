@@ -7,6 +7,7 @@
 // - Issue #3: Add Help & Support to dropdown
 // - Issue #4: Active tab styled with neon green (CSS is in header.html)
 // - Issue #5: Logo always routes to Dashboard
+// - Issue #6: Cache-bust header.html so Social (and all tabs) show same header
 // ------------------------------------------------------------------
 
 import { auth, db } from '/api/firebase.js';
@@ -16,6 +17,9 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase
 const PATH = location.pathname || '/index.html';
 const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+// bump this whenever you change header.html to force reload everywhere
+const HEADER_VERSION = 'v6';
 
 /* -------------------------- Embedded fallback --------------------------- */
 const FALLBACK_HTML = `
@@ -81,14 +85,18 @@ async function ensureHeaderMarkup() {
   }
   if (mount.querySelector('[data-header-root]')) return mount;
 
+  // cache-busted fetch to prevent stale header on Social
+  const url = `/components/header.html?v=${encodeURIComponent(HEADER_VERSION)}`;
+
   try {
-    const res = await fetch('/components/header.html', { cache: 'no-cache' });
+    const res = await fetch(url, { cache: 'reload' });
     if (!res.ok) throw new Error(`fetch ${res.status}`);
     const html = await res.text();
     mount.innerHTML = html.includes('data-header-root')
       ? html
       : html.replace('<header', '<header data-header-root');
-  } catch {
+  } catch (e) {
+    console.warn('[header] using fallback header (fetch failed)', e);
     mount.innerHTML = FALLBACK_HTML;
   }
   return mount;
