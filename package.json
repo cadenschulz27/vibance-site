@@ -2,8 +2,6 @@
   "name": "vibance-site",
   "version": "1.0.0",
   "dependencies": {
-    "node-fetch": "^2.7.0",
-    "plaid": "^9.0.0",
-    "firebase-admin": "^10.0.0"
+    "node-fetch": "^2.7.0"
   }
 }

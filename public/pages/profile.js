@@ -1,425 +1,180 @@
-// public/pages/profile.js
-// ----------------------------------------------------
-// Profile controller
-//  - Display & update profile (displayName, avatar)
-//  - Email verification (resend)
-//  - Notification preferences (save/load)
-//  - Export data as JSON
-//  - Delete account (with reauth) + Firestore cleanup
-//
-// Requirements:
-//   - ../api/firebase.js exports { auth, db, storage }
-//   - DOM elements (adjust IDs if needed):
-//       #avatar-img                 <img>
-//       #avatar-input               <input type="file">
-//       #display-name               <input type="text">
-//       #email                      <span>
-//       #email-verified             <span> (or badge)
-//       #resend-verification        <button>
-//       #save-profile               <button>
-//
-//       #pref-weekly                <input type="checkbox">
-//       #pref-product               <input type="checkbox">
-//       #pref-news                  <input type="checkbox">
-//       #save-prefs                 <button>
-//
-//       #export-data                <button>
-//       #delete-account             <button>
-//
-//       #toast                      <div> (optional toast)
-// ----------------------------------------------------
+// FILE: public/pages/profile.js
+import { auth, db } from '../api/firebase.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-import { auth, db, storage } from '../api/firebase.js';
-import {
-  onAuthStateChanged,
-  updateProfile,
-  sendEmailVerification,
-  reauthenticateWithCredential,
-  EmailAuthProvider,
-  deleteUser,
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+const profileForm = document.getElementById('profile-form');
+const saveButton = document.getElementById('save-button');
 
-import {
-  doc, getDoc, setDoc, collection, getDocs, deleteDoc,
-  serverTimestamp, writeBatch
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-import {
-  ref as sRef, uploadBytes, getDownloadURL, deleteObject
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
-
-// -------------------- DOM --------------------
-const els = {
-  avatarImg: document.getElementById('avatar-img'),
-  avatarInput: document.getElementById('avatar-input'),
-  displayName: document.getElementById('display-name'),
-  email: document.getElementById('email'),
-  emailVerified: document.getElementById('email-verified'),
-  resendVerification: document.getElementById('resend-verification'),
-  saveProfile: document.getElementById('save-profile'),
-
-  prefWeekly: document.getElementById('pref-weekly'),
-  prefProduct: document.getElementById('pref-product'),
-  prefNews: document.getElementById('pref-news'),
-  savePrefs: document.getElementById('save-prefs'),
-
-  exportData: document.getElementById('export-data'),
-  deleteAccount: document.getElementById('delete-account'),
-
-  toast: document.getElementById('toast'),
+// Get all form elements
+const elements = {
+    // Income
+    primaryIncome: document.getElementById('primaryIncome'),
+    additionalIncome: document.getElementById('additionalIncome'),
+    incomeStability: document.getElementById('incomeStability'),
+    incomeGrowth: document.getElementById('incomeGrowth'),
+    // Savings & Emergency Fund
+    monthlySavingsRate: document.getElementById('monthlySavingsRate'),
+    totalLiquidSavings: document.getElementById('totalLiquidSavings'),
+    emergencyFundGoal: document.getElementById('emergencyFundGoal'),
+    emergencyFundCurrent: document.getElementById('emergencyFundCurrent'),
+    // Budgeting & Cash Flow
+    avgMonthlyIncome: document.getElementById('avgMonthlyIncome'),
+    avgMonthlySpending: document.getElementById('avgMonthlySpending'),
+    avgMonthlySurplus: document.getElementById('avgMonthlySurplus'),
+    budgetAdherence: document.getElementById('budgetAdherence'),
+    // Credit & Debt
+    creditScore: document.getElementById('creditScore'),
+    creditUtilization: document.getElementById('creditUtilization'),
+    paymentHistory: document.getElementById('paymentHistory'),
+    totalDebt: document.getElementById('totalDebt'),
+    dtiRatio: document.getElementById('dtiRatio'),
+    hasHighInterestDebt: document.getElementById('hasHighInterestDebt'),
+    // Investing & Retirement
+    totalInvested: document.getElementById('totalInvested'),
+    investingContribution: document.getElementById('investingContribution'),
+    portfolioDiversity: document.getElementById('portfolioDiversity'),
+    retirementValue: document.getElementById('retirementValue'),
+    retirementContribution: document.getElementById('retirementContribution'),
+    onTrackRetirement: document.getElementById('onTrackRetirement'),
+    // Net Worth
+    totalAssets: document.getElementById('totalAssets'),
+    totalLiabilities: document.getElementById('totalLiabilities'),
 };
 
-// -------------------- Utils --------------------
-function toast(msg) {
-  if (!els.toast) { console.log('[toast]', msg); return; }
-  els.toast.textContent = msg;
-  els.toast.classList.remove('opacity-0','pointer-events-none');
-  els.toast.classList.add('opacity-100');
-  setTimeout(() => {
-    els.toast.classList.remove('opacity-100');
-    els.toast.classList.add('opacity-0','pointer-events-none');
-  }, 1800);
+// Function to populate the form with data from Firestore
+function populateForm(userData) {
+    const data = userData || {};
+    // Each section corresponds to a map in the Firestore document
+    const income = data.income || {};
+    elements.primaryIncome.value = income.primaryIncome || '';
+    elements.additionalIncome.value = income.additionalIncome || '';
+    elements.incomeStability.value = income.stability || 'medium';
+    elements.incomeGrowth.value = income.growthPotential || 'medium';
+
+    const savings = data.savings || {};
+    elements.monthlySavingsRate.value = savings.monthlySavingsRate || '';
+    elements.totalLiquidSavings.value = savings.totalLiquidSavings || '';
+
+    const emergencyFund = data.emergencyFund || {};
+    elements.emergencyFundGoal.value = emergencyFund.goalMonths || '';
+    elements.emergencyFundCurrent.value = emergencyFund.currentMonths || '';
+
+    const budgeting = data.budgeting || {};
+    elements.avgMonthlyIncome.value = budgeting.averageMonthlyIncome || '';
+    elements.avgMonthlySpending.value = budgeting.averageMonthlySpending || '';
+    elements.budgetAdherence.value = budgeting.budgetAdherence || 'flexible';
+
+    const cashFlow = data.cashFlow || {};
+    elements.avgMonthlySurplus.value = cashFlow.averageMonthlySurplus || '';
+    
+    const credit = data.credit || {};
+    elements.creditScore.value = credit.scoreValue || '';
+    elements.creditUtilization.value = credit.creditUtilization || '';
+    elements.paymentHistory.value = credit.paymentHistory || 'good';
+
+    const debt = data.debt || {};
+    elements.totalDebt.value = debt.totalDebt || '';
+    elements.dtiRatio.value = debt.debtToIncomeRatio || '';
+    elements.hasHighInterestDebt.checked = debt.hasHighInterestDebt || false;
+
+    const investing = data.investing || {};
+    elements.totalInvested.value = investing.totalInvested || '';
+    elements.investingContribution.value = investing.monthlyContribution || '';
+    elements.portfolioDiversity.value = investing.portfolioDiversity || 'medium';
+
+    const retirement = data.retirement || {};
+    elements.retirementValue.value = retirement.retirementAccountValue || '';
+    elements.retirementContribution.value = retirement.monthlyContributionPercent || '';
+    elements.onTrackRetirement.checked = retirement.onTrackForGoal || false;
+
+    const netWorth = data.netWorth || {};
+    elements.totalAssets.value = netWorth.totalAssets || '';
+    elements.totalLiabilities.value = netWorth.totalLiabilities || '';
 }
 
-function setBusy(btn, text, busy = true) {
-  if (!btn) return;
-  if (busy) {
-    btn.dataset.prevText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = text || 'Working…';
-  } else {
-    btn.disabled = false;
-    btn.textContent = btn.dataset.prevText || 'Done';
-  }
-}
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            populateForm(userDoc.data());
+        }
+    }
+});
 
-function downloadFile(filename, text, type='application/json') {
-  const blob = new Blob([text], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+profileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+    if (!user) return alert("You must be logged in to save.");
 
-// -------------------- Firestore helpers --------------------
-function userDocRef(uid) { return doc(db, 'users', uid); }
-function prefsDocRef(uid) { return doc(db, 'users', uid, 'settings', 'preferences'); }
+    const originalButtonText = saveButton.textContent;
+    saveButton.textContent = "Saving...";
+    saveButton.disabled = true;
 
-async function loadUserDoc(uid) {
-  const snap = await getDoc(userDocRef(uid));
-  return snap.exists() ? snap.data() : null;
-}
-
-async function saveUserDoc(uid, patch) {
-  await setDoc(userDocRef(uid), { ...patch, updatedAt: serverTimestamp() }, { merge: true });
-}
-
-async function loadPrefs(uid) {
-  const snap = await getDoc(prefsDocRef(uid));
-  if (!snap.exists()) return { weeklyDigest: false, productUpdates: true, news: true };
-  const d = snap.data() || {};
-  return {
-    weeklyDigest: !!d.weeklyDigest,
-    productUpdates: !!d.productUpdates,
-    news: !!d.news,
-  };
-}
-
-async function savePrefs(uid, prefs) {
-  await setDoc(prefsDocRef(uid), { ...prefs, updatedAt: serverTimestamp() }, { merge: true });
-}
-
-// -------------------- Avatar upload --------------------
-async function uploadAvatar(uid, file) {
-  if (!file) throw new Error('No file selected');
-  const path = `users/${uid}/profile/avatar.jpg`;
-  const r = sRef(storage, path);
-  await uploadBytes(r, file, { contentType: file.type || 'image/jpeg' });
-  const url = await getDownloadURL(r);
-  return { url, path };
-}
-
-async function removeAvatarIfExists(uid) {
-  try {
-    const r = sRef(storage, `users/${uid}/profile/avatar.jpg`);
-    await deleteObject(r);
-  } catch (e) {
-    // ignore if not found
-  }
-}
-
-// -------------------- Export (lightweight) --------------------
-// NOTE: We intentionally do NOT export all transaction docs (can be huge).
-// We include: user profile doc, preferences, budgets (names+amounts),
-// and a metadata list of Plaid items (id, institution, last_synced).
-async function exportUserData(uid) {
-  const userSnap = await getDoc(userDocRef(uid));
-  const profile = userSnap.exists() ? userSnap.data() : {};
-
-  const prefs = await loadPrefs(uid);
-
-  // Budgets
-  const budgetsCol = collection(db, 'users', uid, 'budgets');
-  const budgetsSnap = await getDocs(budgetsCol);
-  const budgets = {};
-  for (const docSnap of budgetsSnap.docs) {
-    const ym = docSnap.id;
-    const catsCol = collection(db, 'users', uid, 'budgets', ym, 'categories');
-    const catsSnap = await getDocs(catsCol);
-    budgets[ym] = catsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  }
-
-  // Plaid item metadata (no transactions)
-  const itemsCol = collection(db, 'users', uid, 'plaid_items');
-  const itemsSnap = await getDocs(itemsCol);
-  const items = itemsSnap.docs.map(d => {
-    const x = d.data() || {};
-    return {
-      item_id: d.id,
-      institution_name: x.institution_name || x.institution || 'Unknown',
-      institution_id: x.institution_id || null,
-      last_synced: x.last_synced || null,
+    // Construct the data object from form values
+    const dataToSave = {
+        income: {
+            primaryIncome: Number(elements.primaryIncome.value) || 0,
+            additionalIncome: Number(elements.additionalIncome.value) || 0,
+            stability: elements.incomeStability.value,
+            growthPotential: elements.incomeGrowth.value
+        },
+        savings: {
+            monthlySavingsRate: Number(elements.monthlySavingsRate.value) || 0,
+            totalLiquidSavings: Number(elements.totalLiquidSavings.value) || 0,
+        },
+        emergencyFund: {
+            goalMonths: Number(elements.emergencyFundGoal.value) || 0,
+            currentMonths: Number(elements.emergencyFundCurrent.value) || 0,
+        },
+        budgeting: {
+            averageMonthlyIncome: Number(elements.avgMonthlyIncome.value) || 0,
+            averageMonthlySpending: Number(elements.avgMonthlySpending.value) || 0,
+            budgetAdherence: elements.budgetAdherence.value,
+        },
+        cashFlow: {
+            averageMonthlySurplus: Number(elements.avgMonthlySurplus.value) || 0,
+        },
+        credit: {
+            scoreValue: Number(elements.creditScore.value) || 0,
+            creditUtilization: Number(elements.creditUtilization.value) || 0,
+            paymentHistory: elements.paymentHistory.value,
+        },
+        debt: {
+            totalDebt: Number(elements.totalDebt.value) || 0,
+            debtToIncomeRatio: Number(elements.dtiRatio.value) || 0,
+            hasHighInterestDebt: elements.hasHighInterestDebt.checked,
+        },
+        investing: {
+            totalInvested: Number(elements.totalInvested.value) || 0,
+            monthlyContribution: Number(elements.investingContribution.value) || 0,
+            portfolioDiversity: elements.portfolioDiversity.value,
+        },
+        retirement: {
+            retirementAccountValue: Number(elements.retirementValue.value) || 0,
+            monthlyContributionPercent: Number(elements.retirementContribution.value) || 0,
+            onTrackForGoal: elements.onTrackRetirement.checked,
+        },
+        netWorth: {
+            totalAssets: Number(elements.totalAssets.value) || 0,
+            totalLiabilities: Number(elements.totalLiabilities.value) || 0,
+        },
     };
-  });
 
-  return { profile, preferences: prefs, budgets, plaid_items: items, exportedAt: new Date().toISOString() };
-}
-
-// -------------------- Delete account (danger) --------------------
-async function batchDeleteCollection(colRef, pageSize = 250) {
-  // Deletes a top-level collection (no subcollections) in batches.
-  // For nested cleanup, call this per subcollection path.
-  while (true) {
-    const snap = await getDocs(colRef);
-    if (snap.empty) break;
-    const batch = writeBatch(db);
-    let count = 0;
-    for (const d of snap.docs) {
-      batch.delete(d.ref);
-      count++;
-      if (count >= pageSize) break;
-    }
-    await batch.commit();
-    if (count < pageSize) break; // last page
-  }
-}
-
-async function deleteAllUserData(uid) {
-  // 1) Delete budgets and their 'categories'
-  const budgetsCol = collection(db, 'users', uid, 'budgets');
-  const budgetsSnap = await getDocs(budgetsCol);
-  for (const b of budgetsSnap.docs) {
-    const catsCol = collection(db, 'users', uid, 'budgets', b.id, 'categories');
-    await batchDeleteCollection(catsCol);
-    await deleteDoc(b.ref);
-  }
-
-  // 2) Delete plaid transactions subcollections per item, then the items
-  const itemsCol = collection(db, 'users', uid, 'plaid_items');
-  const itemsSnap = await getDocs(itemsCol);
-  for (const it of itemsSnap.docs) {
-    const txCol = collection(db, 'users', uid, 'plaid_items', it.id, 'transactions');
-    await batchDeleteCollection(txCol);
-    await deleteDoc(it.ref);
-  }
-
-  // 3) Delete settings collection
-  const settingsCol = collection(db, 'users', uid, 'settings');
-  await batchDeleteCollection(settingsCol);
-
-  // 4) Delete root user doc
-  await deleteDoc(userDocRef(uid));
-
-  // 5) Delete avatar in storage (ignore errors)
-  await removeAvatarIfExists(uid);
-}
-
-async function reauthPrompt(user) {
-  // Email/password reauth prompt
-  const email = user.email;
-  const pwd = prompt(`For security, re-enter your password for ${email} to continue:`);
-  if (!pwd) throw new Error('Reauthentication cancelled');
-  const cred = EmailAuthProvider.credential(email, pwd);
-  await reauthenticateWithCredential(user, cred);
-}
-
-// -------------------- Load & Save profile --------------------
-async function renderProfile(user) {
-  // Basics
-  if (els.email) els.email.textContent = user.email || '';
-  if (els.displayName) els.displayName.value = user.displayName || '';
-  if (els.avatarImg) els.avatarImg.src = user.photoURL || '/images/logo_white.png';
-
-  // Verified badge
-  if (els.emailVerified) {
-    els.emailVerified.textContent = user.emailVerified ? 'Verified' : 'Not verified';
-    els.emailVerified.className = user.emailVerified
-      ? 'text-emerald-400 text-sm'
-      : 'text-amber-400 text-sm';
-  }
-
-  // Pull extended profile doc (optional fields)
-  const docData = await loadUserDoc(user.uid);
-  if (docData?.displayName && els.displayName && !user.displayName) {
-    els.displayName.value = docData.displayName;
-  }
-  if (docData?.photoURL && els.avatarImg && !user.photoURL) {
-    els.avatarImg.src = docData.photoURL;
-  }
-}
-
-async function handleSaveProfile(user) {
-  const name = (els.displayName?.value || '').trim();
-  const file = els.avatarInput?.files?.[0] || null;
-
-  setBusy(els.saveProfile, 'Saving…', true);
-  try {
-    let photoURL = user.photoURL;
-
-    if (file) {
-      const { url } = await uploadAvatar(user.uid, file);
-      photoURL = url;
-    }
-
-    // Update Auth profile
-    await updateProfile(user, {
-      displayName: name || user.displayName || '',
-      photoURL: photoURL || user.photoURL || null,
-    });
-
-    // Mirror to Firestore user doc
-    await saveUserDoc(user.uid, {
-      displayName: user.displayName || name || '',
-      photoURL: user.photoURL || photoURL || null,
-    });
-
-    // Update UI
-    if (els.avatarImg && photoURL) els.avatarImg.src = photoURL;
-    toast('Profile saved');
-  } catch (e) {
-    console.error(e);
-    toast(e?.message || 'Failed to save profile');
-  } finally {
-    setBusy(els.saveProfile, '', false);
-    if (els.avatarInput) els.avatarInput.value = '';
-  }
-}
-
-// -------------------- Preferences --------------------
-async function renderPrefs(uid) {
-  const p = await loadPrefs(uid);
-  if (els.prefWeekly) els.prefWeekly.checked = !!p.weeklyDigest;
-  if (els.prefProduct) els.prefProduct.checked = !!p.productUpdates;
-  if (els.prefNews) els.prefNews.checked = !!p.news;
-}
-
-async function handleSavePrefs(uid) {
-  const prefs = {
-    weeklyDigest: !!els.prefWeekly?.checked,
-    productUpdates: !!els.prefProduct?.checked,
-    news: !!els.prefNews?.checked,
-  };
-  setBusy(els.savePrefs, 'Saving…', true);
-  try {
-    await savePrefs(uid, prefs);
-    toast('Preferences saved');
-  } catch (e) {
-    console.error(e);
-    toast('Failed to save preferences');
-  } finally {
-    setBusy(els.savePrefs, '', false);
-  }
-}
-
-// -------------------- Email verification --------------------
-async function handleResendVerification(user) {
-  if (user.emailVerified) { toast('Email already verified'); return; }
-  setBusy(els.resendVerification, 'Sending…', true);
-  try {
-    await sendEmailVerification(user);
-    toast('Verification email sent');
-  } catch (e) {
-    console.error(e);
-    toast('Failed to send verification');
-  } finally {
-    setBusy(els.resendVerification, '', false);
-  }
-}
-
-// -------------------- Export data --------------------
-async function handleExport(uid) {
-  setBusy(els.exportData, 'Preparing…', true);
-  try {
-    const data = await exportUserData(uid);
-    const pretty = JSON.stringify(data, null, 2);
-    const date = new Date().toISOString().slice(0,10);
-    downloadFile(`vibance_export_${date}.json`, pretty, 'application/json');
-    toast('Export ready');
-  } catch (e) {
-    console.error(e);
-    toast('Export failed');
-  } finally {
-    setBusy(els.exportData, '', false);
-  }
-}
-
-// -------------------- Delete account flow --------------------
-async function handleDeleteAccount(user) {
-  if (!confirm('This will permanently delete your account and data. Continue?')) return;
-
-  setBusy(els.deleteAccount, 'Deleting…', true);
-  try {
-    await reauthPrompt(user);
-
-    // Best-effort delete Firestore data & Storage avatar
-    await deleteAllUserData(user.uid);
-
-    // Finally delete Auth user
-    await deleteUser(user);
-
-    // Redirect to home (or login)
-    toast('Account deleted');
-    setTimeout(() => { window.location.href = '/'; }, 600);
-  } catch (e) {
-    console.error(e);
-    toast(e?.message || 'Delete failed');
-  } finally {
-    setBusy(els.deleteAccount, '', false);
-  }
-}
-
-// -------------------- Wiring --------------------
-function wire(user) {
-  els.saveProfile?.addEventListener('click', () => handleSaveProfile(user));
-  els.resendVerification?.addEventListener('click', () => handleResendVerification(user));
-  els.savePrefs?.addEventListener('click', () => handleSavePrefs(user.uid));
-  els.exportData?.addEventListener('click', () => handleExport(user.uid));
-  els.deleteAccount?.addEventListener('click', () => handleDeleteAccount(user));
-
-  // Live avatar preview
-  els.avatarInput?.addEventListener('change', () => {
-    const file = els.avatarInput.files?.[0];
-    if (!file || !els.avatarImg) return;
-    const url = URL.createObjectURL(file);
-    els.avatarImg.src = url;
-    // Revoke later
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-  });
-}
-
-// -------------------- Init --------------------
-function init() {
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) return; // auth-check.js likely redirects
     try {
-      await renderProfile(user);
-      await renderPrefs(user.uid);
-      wire(user);
-    } catch (e) {
-      console.error('Profile init failed', e);
-      toast('Failed to load profile');
-    }
-  });
-}
+        const userDocRef = doc(db, "users", user.uid);
+        await setDoc(userDocRef, dataToSave, { merge: true });
 
-document.addEventListener('DOMContentLoaded', init);
+        saveButton.textContent = "Saved!";
+        setTimeout(() => {
+            saveButton.textContent = originalButtonText;
+            saveButton.disabled = false;
+        }, 2000);
+    } catch (error) {
+        console.error("Error saving profile:", error);
+        alert("Error saving profile. Please try again.");
+        saveButton.textContent = originalButtonText;
+        saveButton.disabled = false;
+    }
+});

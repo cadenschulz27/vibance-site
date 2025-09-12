@@ -4,7 +4,7 @@ const fetch = require('node-fetch');
 
 exports.handler = async function (event, context) {
   const apiKey = process.env.NEWS_API_KEY;
-  const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&category=business&pageSize=40&apiKey=${apiKey}`;
+  const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&category=business&pageSize=10&apiKey=${apiKey}`;
 
   // *** NEW: A list of sources to exclude ***
   const paywalledSources = [
