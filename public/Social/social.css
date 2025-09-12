@@ -222,6 +222,3 @@ body {
 
 /* ---- High-DPI polish for icons (crisper strokes) ---- */
 svg { shape-rendering: geometricPrecision; text-rendering: optimizeLegibility; }
-
-/* ---- Utility hook to visually hide (matches Tailwind .hidden) ---- */
-.hidden { display: none !important; }
