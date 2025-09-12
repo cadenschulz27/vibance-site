@@ -1,16 +1,16 @@
 // public/components/header.js
 // ------------------------------------------------------------------
 // Vibance Header Controller
-// - Loads header.html (fallback embedded if fetch fails)
-// - Issue #1: Blog & Accounts removed from nav
+// - Loads header.html next to this file (cache-busted, subpath-safe)
+// - Works on all tabs (including /Social/*) with identical header
+// - Issue #1: Blog removed from nav
 // - Issue #2: Remove Log in / Sign up when logged in
 // - Issue #3: Add Help & Support to dropdown
-// - Issue #4: Active tab styled with neon green (CSS is in header.html)
+// - Issue #4: Active tab styled neon (CSS is in header.html)
 // - Issue #5: Logo always routes to Dashboard
-// - Issue #6: Cache-bust header.html so Social (and all tabs) show same header
+// - Issue #6: Social tab uses the same header (relative fetch & resilient firebase import)
 // ------------------------------------------------------------------
 
-import { auth, db } from '/api/firebase.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -18,8 +18,8 @@ const PATH = location.pathname || '/index.html';
 const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-// bump this whenever you change header.html to force reload everywhere
-const HEADER_VERSION = 'v6';
+// bump to force header.html reload after changes
+const HEADER_VERSION = 'v7';
 
 /* -------------------------- Embedded fallback --------------------------- */
 const FALLBACK_HTML = `
@@ -75,7 +75,7 @@ const FALLBACK_HTML = `
 </header>
 `;
 
-/* -------------------------- Ensure header markup ------------------------- */
+/* ----------------------- Ensure header markup (relative) ---------------------- */
 async function ensureHeaderMarkup() {
   let mount = $('#site-header');
   if (!mount) {
@@ -85,11 +85,11 @@ async function ensureHeaderMarkup() {
   }
   if (mount.querySelector('[data-header-root]')) return mount;
 
-  // cache-busted fetch to prevent stale header on Social
-  const url = `/components/header.html?v=${encodeURIComponent(HEADER_VERSION)}`;
+  // Fetch header.html relative to THIS script file (works under subpaths)
+  const headerURL = new URL(`./header.html?v=${encodeURIComponent(HEADER_VERSION)}`, import.meta.url).toString();
 
   try {
-    const res = await fetch(url, { cache: 'reload' });
+    const res = await fetch(headerURL, { cache: 'reload' });
     if (!res.ok) throw new Error(`fetch ${res.status}`);
     const html = await res.text();
     mount.innerHTML = html.includes('data-header-root')
@@ -102,7 +102,25 @@ async function ensureHeaderMarkup() {
   return mount;
 }
 
-/* ------------------------------- helpers ------------------------------- */
+/* ----------------------------- Firebase loader ----------------------------- */
+/** Robustly import your firebase module relative to this file */
+async function loadFirebase() {
+  const candidates = [
+    new URL('../api/firebase.js', import.meta.url).toString(),   // usual path
+    '/api/firebase.js',                                          // absolute root (legacy)
+  ];
+  for (const url of candidates) {
+    try {
+      const mod = await import(url);
+      if (mod?.auth && mod?.db) return { auth: mod.auth, db: mod.db };
+    } catch (e) {
+      console.warn('[header] firebase import failed at', url, e);
+    }
+  }
+  return { auth: null, db: null };
+}
+
+/* --------------------------------- helpers -------------------------------- */
 function show(el, yes) { if (el) el.classList.toggle('hidden', !yes); }
 function toggle(el)    { if (el) el.classList.toggle('hidden'); }
 function active(el)    { if (el) el.classList.add('active'); }
@@ -149,6 +167,9 @@ function applySignedOutUI(root) {
   show($('#m-user-actions', root), false);
   $$('.nav-link', root).forEach(a => show(a, false));
   show($('#btn-mobile', root), false);
+  if (!isIndex) {
+    // keep minimal header on non-index while signed out (tabs hidden by design)
+  }
 }
 
 /* ---------------------------- Signed-in UI ----------------------------- */
@@ -220,8 +241,11 @@ function wireMobileMenu(root) {
 }
 
 /* ------------------------------ Sign out ------------------------------ */
-function wireSignOut(root) {
-  const go = async () => { try { await signOut(auth); location.href = '/index.html'; } catch (e) { console.error('signOut failed', e); } };
+function wireSignOut(root, auth) {
+  const go = async () => {
+    try { if (auth) await signOut(auth); } catch (e) { console.error('signOut failed', e); }
+    location.href = '/index.html';
+  };
   $('#m-btn-signout', root)?.addEventListener('click', go);
 }
 
@@ -230,12 +254,7 @@ async function init() {
   const mount = await ensureHeaderMarkup();
   if (!mount) return;
 
-  setActiveNav(mount);
-  wireAvatarMenu(mount);
-  wireMobileMenu(mount);
-  wireSignOut(mount);
-
-  // Always force brand/logo to go to dashboard (Issue #5)
+  // Ensure brand/logo always routes to dashboard
   const brand = mount.querySelector('a[href="/index.html"], a[href="/"], a[href="/dashboard/dashboard.html"]');
   if (brand) {
     brand.setAttribute('href', '/dashboard/dashboard.html');
@@ -245,6 +264,20 @@ async function init() {
     });
   }
 
+  setActiveNav(mount);
+  wireAvatarMenu(mount);
+  wireMobileMenu(mount);
+
+  // Load firebase (robust relative import so /Social pages work the same)
+  const { auth, db } = await loadFirebase();
+  wireSignOut(mount, auth);
+
+  if (!auth || !db) {
+    // If Firebase isn't available, render signed-out header (still functional)
+    applySignedOutUI(mount);
+    return;
+  }
+
   onAuthStateChanged(auth, async (user) => {
     if (!user) { applySignedOutUI(mount); return; }
 
@@ -252,7 +285,9 @@ async function init() {
     try {
       const snap = await getDoc(doc(db, 'users', user.uid));
       profile = snap.exists() ? (snap.data() || {}) : {};
-    } catch {}
+    } catch (e) {
+      console.warn('[header] failed to read profile', e);
+    }
 
     const firstName = firstNameFrom(profile, user.displayName, user.email);
     const photoURL  = profile.photoURL || user.photoURL || '/images/logo_white.png';
