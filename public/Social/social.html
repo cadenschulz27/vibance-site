@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Community • Vibance</title>
+  <title>Social • Vibance</title>
 
   <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -33,7 +33,7 @@
   </style>
 </head>
 <body class="bg-black text-white">
-  <!-- Header mount -->
+  <!-- Global header mount (shared across the app) -->
   <div id="site-header"></div>
 
   <main class="mx-auto max-w-6xl px-4 pt-24 pb-16">
@@ -41,7 +41,7 @@
     <header class="mb-6 md:mb-10">
       <div class="flex items-end justify-between gap-4">
         <div>
-          <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Community</p>
+          <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Social</p>
           <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">What’s new</h1>
           <p class="text-sm md:text-base text-neutral-400 mt-2">Share progress, swap tips, and cheer each other on.</p>
         </div>
@@ -201,26 +201,11 @@
     </article>
   </template>
 
-  <!-- Suggestion Card Template -->
-  <template id="suggestion-card-template">
-    <article class="glass p-3 flex items-center gap-3">
-      <a class="block shrink-0" href="#">
-        <img class="sug-avatar h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="Avatar">
-      </a>
-      <div class="min-w-0">
-        <a class="sug-name font-medium truncate hover:underline" href="#"></a>
-        <div class="sug-sub text-xs text-neutral-500 truncate"></div>
-      </div>
-      <div class="ml-auto shrink-0">
-        <button class="sug-follow btn-neon px-3 py-1.5 rounded-xl text-xs">Follow</button>
-        <button class="sug-unfollow px-3 py-1.5 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-xs hidden">Unfollow</button>
-      </div>
-    </article>
-  </template>
-
-  <!-- Core app scripts -->
+  <!-- Core app scripts (absolute paths so header is shared everywhere) -->
   <script type="module" src="/api/firebase.js"></script>
   <script type="module" src="/auth/auth-check.js"></script>
+
+  <!-- Shared global header (ensures same header as other tabs) -->
   <script type="module" src="/components/header.js"></script>
 
   <!-- Social modules -->
@@ -230,7 +215,7 @@
   <script type="module" src="./data-service.js"></script>
   <script type="module" src="./post-renderer.js"></script>
 
-  <!-- Page controller (next file to refactor) -->
+  <!-- Page controller -->
   <script type="module" src="./social.js"></script>
 </body>
 </html>

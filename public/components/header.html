@@ -3,19 +3,17 @@
   <div class="mx-auto max-w-7xl px-4">
     <div class="h-16 flex items-center justify-between gap-3">
       <!-- Left: Brand -->
-      <a href="/index.html" class="flex items-center gap-3 shrink-0">
+      <a href="/dashboard/dashboard.html" class="flex items-center gap-3 shrink-0">
         <img src="/images/logo_white.png" alt="Vibance" class="h-6 w-6 rounded"/>
         <span class="text-white font-semibold tracking-tight">Vibance</span>
       </a>
 
-      <!-- Center: Primary Nav -->
+      <!-- Center: Primary Nav (Blog & Accounts removed) -->
       <nav class="hidden md:flex items-center gap-1 text-sm">
         <a id="nav-dashboard" href="/dashboard/dashboard.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Dashboard</a>
+        <a id="nav-expenses"  href="/Expenses/expenses.html"  class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expenses</a>
         <a id="nav-budgeting" href="/Budgeting/budgeting.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Budgeting</a>
-        <a id="nav-expenses" href="/Expenses/expenses.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expenses</a>
-        <a id="nav-accounts" href="/Accounts/accounts.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Accounts</a>
-        <a id="nav-community" href="/Social/social.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Community</a>
-        <a id="nav-blog" href="/pages/blog.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Blog</a>
+        <a id="nav-community" href="/Social/social.html"     class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Social</a>
       </nav>
 
       <!-- Right: Auth / Avatar -->
@@ -33,11 +31,7 @@
             <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
           </button>
           <div id="user-pop" class="absolute right-0 mt-2 w-44 rounded-xl border border-neutral-800 bg-neutral-950 shadow-lg p-1 hidden">
-            <a href="/Social/user-profile.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900">Your profile</a>
-            <a href="/Social/social.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900">Community</a>
-            <a href="/dashboard/dashboard.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900">Dashboard</a>
-            <hr class="my-1 border-neutral-800"/>
-            <button id="btn-signout" class="w-full text-left px-3 py-2 rounded-lg text-sm text-red-300 hover:bg-neutral-900">Sign out</button>
+            <!-- header.js will populate this (My Profile / Account Linkage / Settings / Help & Support in later steps) -->
           </div>
         </div>
 
@@ -49,15 +43,13 @@
     </div>
   </div>
 
-  <!-- Mobile panel -->
+  <!-- Mobile panel (Blog & Accounts removed) -->
   <div id="mobile-panel" class="md:hidden hidden border-t border-neutral-900/70 bg-black/85 backdrop-blur">
     <nav class="px-4 py-3 flex flex-col gap-1 text-sm">
       <a href="/dashboard/dashboard.html" class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Dashboard</a>
+      <a href="/Expenses/expenses.html"  class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expenses</a>
       <a href="/Budgeting/budgeting.html" class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Budgeting</a>
-      <a href="/Expenses/expenses.html" class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expenses</a>
-      <a href="/Accounts/accounts.html" class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Accounts</a>
-      <a href="/Social/social.html" class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Community</a>
-      <a href="/pages/blog.html" class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Blog</a>
+      <a href="/Social/social.html"       class="mnav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Social</a>
 
       <!-- Signed-out -->
       <div id="m-auth-actions" class="mt-2 hidden">
@@ -69,6 +61,7 @@
       <div id="m-user-actions" class="mt-2 hidden">
         <a href="/Social/user-profile.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Your profile</a>
         <a href="/dashboard/dashboard.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Dashboard</a>
+        <a href="/pages/support.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Help &amp; Support</a>
         <button id="m-btn-signout" class="w-full text-left mt-1 px-3 py-2 rounded-lg text-red-300 hover:bg-neutral-900">Sign out</button>
       </div>
     </nav>
@@ -77,7 +70,28 @@
 
 <style>
   :root { --neon: #CCFF00; }
-  .nav-link.active, .mnav-link.active {
-    background: #0a0a0a; color: #fff; border: 1px solid #222226;
+
+  /* Base hover stays subtle on inactive items */
+  .nav-link,
+  .mnav-link {
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+
+  /* ACTIVE TAB: neon background, dark text, no gray border box */
+  .nav-link.active,
+  .mnav-link.active {
+    background: var(--neon);
+    color: #0a0a0a;        /* readable on neon */
+    border: none;          /* remove gray box look */
+  }
+
+  /* Keep it neon on hover/focus when active */
+  .nav-link.active:hover,
+  .nav-link.active:focus,
+  .mnav-link.active:hover,
+  .mnav-link.active:focus {
+    background: var(--neon);
+    color: #0a0a0a;
   }
 </style>
+
