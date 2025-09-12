@@ -165,7 +165,7 @@ function applySignedOutUI(root) {
   show($('#m-auth-actions', root), true);
   show($('#user-menu', root), false);
   show($('#m-user-actions', root), false);
-  $$('.nav-link', root).forEach(a => show(a, false));
+  show($('#desktop-nav', root), false);
   show($('#btn-mobile', root), false);
   if (!isIndex) {
     // keep minimal header on non-index while signed out (tabs hidden by design)
@@ -174,7 +174,7 @@ function applySignedOutUI(root) {
 
 /* ---------------------------- Signed-in UI ----------------------------- */
 function applySignedInUI(root, { firstName, photoURL }) {
-  $$('.nav-link', root).forEach(a => show(a, true));
+  show($('#desktop-nav', root), true);
   show($('#btn-mobile', root), true);
   show($('#user-menu', root), true);
   show($('#m-user-actions', root), true);
