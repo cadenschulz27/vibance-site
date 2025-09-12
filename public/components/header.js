@@ -184,13 +184,18 @@ function applySignedInUI(root, { firstName, photoURL }) {
   removeNode($('#m-auth-actions', root));
 
   // Welcome text
+  // Welcome text
   const cluster = $('#user-menu', root)?.parentElement;
   if (cluster && !$('#welcome-text', cluster)) {
-    const welcome = document.createElement('span');
-    welcome.id = 'welcome-text';
-    welcome.className = 'hidden md:inline text-sm text-neutral-300 mr-1';
-    welcome.textContent = `Welcome, ${firstName}`;
-    cluster.insertBefore(welcome, $('#user-menu', root));
+      const welcome = document.createElement('span');
+      welcome.id = 'welcome-text';
+      welcome.className = 'hidden md:inline text-sm text-neutral-300 mr-1';
+
+      // Conditionally add "Welcome," only on the dashboard page
+      const isDashboard = PATH.includes('/dashboard/dashboard.html');
+      welcome.textContent = isDashboard ? `Welcome, ${firstName}` : firstName;
+
+      cluster.insertBefore(welcome, $('#user-menu', root));
   }
 
   const avatar = $('#user-avatar', root);
