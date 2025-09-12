@@ -14,7 +14,7 @@
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const PATH = location.pathname || '/index.html';
+const PATH = (location.pathname || '/index.html').toLowerCase();
 const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
@@ -185,14 +185,15 @@ function applySignedInUI(root, { firstName, photoURL }) {
 
   // Welcome text
   // Welcome text
+  // Welcome text
   const cluster = $('#user-menu', root)?.parentElement;
   if (cluster && !$('#welcome-text', cluster)) {
       const welcome = document.createElement('span');
       welcome.id = 'welcome-text';
       welcome.className = 'hidden md:inline text-sm text-neutral-300 mr-1';
 
-      // Conditionally add "Welcome," only on the dashboard page
-      const isDashboard = PATH.includes('/dashboard/dashboard.html');
+      // Check if the current path is the dashboard page
+      const isDashboard = PATH.endsWith('/dashboard/dashboard.html');
       welcome.textContent = isDashboard ? `Welcome, ${firstName}` : firstName;
 
       cluster.insertBefore(welcome, $('#user-menu', root));
