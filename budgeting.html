@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgeting - Vibance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="budgeting.css">
+</head>
+<body class="bg-black text-white font-['Inter']">
+
+    <div id="header-placeholder"></div>
+
+    <main class="container mx-auto px-6 py-24">
+        <!-- Page Header & Tab Navigation -->
+        <div class="page-header">
+            <h1 class="font-['Lora'] text-4xl font-bold">Your Financial Plan</h1>
+            <div class="tabs">
+                <button id="budget-tab" class="tab-btn active">Budget</button>
+                <button id="calendar-tab" class="tab-btn">Cash-Flow Calendar</button>
+            </div>
+        </div>
+
+        <!-- Budget View -->
+        <div id="budget-view" class="tab-content active">
+            <!-- Summary Boxes -->
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <span class="summary-label">Planned</span>
+                    <span class="summary-value">$5,000.00</span>
+                </div>
+                <div class="summary-box">
+                    <span class="summary-label">Spent</span>
+                    <span class="summary-value">$2,750.00</span>
+                </div>
+                <div class="summary-box">
+                    <span class="summary-label">Available</span>
+                    <span class="summary-value">$2,250.00</span>
+                </div>
+                <div class="summary-box allocate-box">
+                    <span class="summary-label">To Allocate</span>
+                    <span class="summary-value">$0.00</span>
+                </div>
+            </div>
+
+            <!-- Budget Categories -->
+            <div class="budget-categories">
+                <!-- Bills -->
+                <div class="category-card">
+                    <h3 class="category-header">Bills</h3>
+                    <div class="expense-row header">
+                        <span>Expense Name</span>
+                        <span>Planned</span>
+                        <span>Available</span>
+                    </div>
+                    <div class="expense-row">
+                        <span class="expense-name">Rent/Mortgage</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 100%;"></div>
+                            <span class="progress-label">$1500 / $1500</span>
+                        </div>
+                        <span class="expense-available">$0.00</span>
+                    </div>
+                    <div class="expense-row">
+                        <span class="expense-name">Utilities</span>
+                         <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 75%;"></div>
+                            <span class="progress-label">$150 / $200</span>
+                        </div>
+                        <span class="expense-available">$50.00</span>
+                    </div>
+                </div>
+
+                <!-- Essentials -->
+                <div class="category-card">
+                    <h3 class="category-header">Essentials</h3>
+                     <div class="expense-row header">
+                        <span>Expense Name</span>
+                        <span>Planned</span>
+                        <span>Available</span>
+                    </div>
+                    <div class="expense-row">
+                        <span class="expense-name">Groceries</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 60%;"></div>
+                            <span class="progress-label">$300 / $500</span>
+                        </div>
+                        <span class="expense-available">$200.00</span>
+                    </div>
+                </div>
+
+                <!-- Lifestyle -->
+                <div class="category-card">
+                    <h3 class="category-header">Lifestyle</h3>
+                     <div class="expense-row header">
+                        <span>Expense Name</span>
+                        <span>Planned</span>
+                        <span>Available</span>
+                    </div>
+                     <div class="expense-row">
+                        <span class="expense-name">Restaurants</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 90%;"></div>
+                             <span class="progress-label">$270 / $300</span>
+                        </div>
+                        <span class="expense-available">$30.00</span>
+                    </div>
+                </div>
+
+                 <!-- Savings/Goals -->
+                <div class="category-card">
+                    <h3 class="category-header">Savings/Goals</h3>
+                     <div class="expense-row header">
+                        <span>Expense Name</span>
+                        <span>Planned</span>
+                        <span>Available</span>
+                    </div>
+                    <div class="expense-row">
+                        <span class="expense-name">Emergency Fund</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 100%;"></div>
+                            <span class="progress-label">$500 / $500</span>
+                        </div>
+                        <span class="expense-available">$0.00</span>
+                    </div>
+                </div>
+                 <!-- Debt -->
+                <div class="category-card">
+                    <h3 class="category-header">Debt</h3>
+                     <div class="expense-row header">
+                        <span>Expense Name</span>
+                        <span>Planned</span>
+                        <span>Available</span>
+                    </div>
+                    <div class="expense-row">
+                        <span class="expense-name">Student Loan</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 100%;"></div>
+                             <span class="progress-label">$300 / $300</span>
+                        </div>
+                        <span class="expense-available">$0.00</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Cash-Flow Calendar View -->
+        <div id="calendar-view" class="tab-content">
+            <div class="calendar-header">
+                <button id="prev-month">&lt;</button>
+                <h2 id="month-year"></h2>
+                <button id="next-month">&gt;</button>
+            </div>
+            <div id="calendar-grid" class="calendar-grid">
+                <!-- Calendar will be generated by JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+    <script type="module" src="budget-logic.js"></script>
+
+</body>
+</html>
