@@ -1,307 +1,211 @@
 // public/components/header.js
-// ------------------------------------------------------------
-// Header Controller
-//  - Injects /components/header.html into the page
-//  - Auth-aware: shows Login/Signup or greeting + dropdown
-//  - Time-of-day greeting: "Good morning/Welcome/Good evening, {firstName}"
-//  - Mobile menu toggle
-//  - Dropdown menu open/close + outside click + Esc
-//  - Logo routes to dashboard when authenticated
-//
-// Requirements:
-//  - ../api/firebase.js must export { auth, db }
-//  - /components/header.html must contain data-header hooks below.
-// ------------------------------------------------------------
+// ------------------------------------------------------------------
+// Loads /components/header.html into #site-header, then hydrates:
+// - Signed out (index): logo + Log in/Sign up only
+// - Signed in: tabs (Dashboard, Expenses, Budgeting, Social),
+//   "Welcome, {FirstName}", avatar with dropdown menu:
+//     My Profile, Account Linkage, Settings
+// ------------------------------------------------------------------
 
-import { auth, db } from '../api/firebase.js';
-import {
-  onAuthStateChanged,
-  signOut,
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
-import {
-  doc, getDoc, collection, getDocs, query, where, limit
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+import { auth, db } from '/api/firebase.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-// ----------------------------- DOM helpers -----------------------------
-const els = {
-  mount: () => document.getElementById('site-header') || document.querySelector('header'),
-  // Injected elements (resolved after HTML loads):
-  authCtas: () => document.querySelector('[data-header="auth-ctas"]'),
-  userMenuWrap: () => document.querySelector('[data-header="user-menu"]'),
-  userMenuBtn: () => document.querySelector('[data-header="user-menu-button"]'),
-  userDropdown: () => document.querySelector('[data-header="user-dropdown"]'),
-  greeting: () => document.querySelector('[data-header="greeting"]'),
-  logoutBtn: () => document.querySelector('[data-header="logout"]'),
-  mobileToggle: () => document.querySelector('[data-header="mobile-toggle"]'),
-  mobileNav: () => document.querySelector('[data-header="mobile-nav"]'),
-  desktopNav: () => document.querySelector('[data-header="desktop-nav"]'),
-  notifBadge: () => document.querySelector('[data-header="notif-badge"]'),
-  brandLink: () => document.querySelector('header a[href="/"]'),
-};
+const PATH = location.pathname || '/index.html';
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-const DASHBOARD_PATH = '/dashboard/dashboard.html';
+/* ------------------------------- Load Markup ------------------------------ */
+async function ensureHeaderMarkup() {
+  const mount = $('#site-header');
+  if (!mount) return null;
 
-// ----------------------------- Load & Inject -----------------------------
-async function loadHeaderHtml() {
+  // If already has our structure, skip fetch.
+  if (mount.querySelector('[data-header-root]')) return mount;
+
   const res = await fetch('/components/header.html', { cache: 'no-cache' });
-  if (!res.ok) throw new Error(`Failed to load header.html (${res.status})`);
-  return await res.text();
+  const html = await res.text();
+  // Mark root for fast existence check on subsequent calls
+  mount.innerHTML = html.replace('<header', '<header data-header-root');
+
+  return mount;
 }
 
-function injectHeader(html) {
-  let mount = els.mount();
-  if (!mount) {
-    mount = document.createElement('div');
-    mount.id = 'site-header';
-    document.body.prepend(mount);
-  }
-  mount.innerHTML = html;
+/* ------------------------------- Helpers --------------------------------- */
+function show(el, yes) { if (el) el.classList.toggle('hidden', !yes); }
+function toggle(el)    { if (el) el.classList.toggle('hidden'); }
+function active(el)    { if (el) el.classList.add('active'); }
+function clearActive(root) {
+  $$('.nav-link', root).forEach(a => a.classList.remove('active'));
+  $$('.mnav-link', root).forEach(a => a.classList.remove('active'));
+}
+function outside(el, target) { return !(el && (el === target || el.contains(target))); }
+function firstNameFrom(profile, displayName, email) {
+  const fromProfile = (profile?.firstName || profile?.name || '').trim();
+  if (fromProfile) return fromProfile.split(/\s+/)[0];
+  if (displayName) return String(displayName).split(/\s+/)[0];
+  if (email) return String(email).split('@')[0];
+  return 'Friend';
 }
 
-// ----------------------------- Active Link Highlight -----------------------------
-function normalizePath(path) {
-  try {
-    const u = new URL(path, window.location.origin);
-    return u.pathname.replace(/\/+$/, '');
-  } catch {
-    return path.replace(/[#?].*$/, '').replace(/\/+$/, '');
-  }
-}
-
-function highlightActiveLinks() {
-  const current = normalizePath(window.location.pathname || '/');
-  const nav = document.querySelectorAll('[data-header="desktop-nav"] a, [data-header="mobile-nav"] a');
-  nav.forEach(a => {
-    const href = a.getAttribute('href') || '';
-    const normalized = normalizePath(href);
-    const isActive =
-      normalized === current ||
-      (normalized !== '/' && current.startsWith(normalized));
-    a.classList.toggle('text-emerald-400', !!isActive);
-    a.classList.toggle('font-semibold', !!isActive);
+/* ------------------------------- Wiring ---------------------------------- */
+function wireBasics(root) {
+  // Rename “Community” → “Social”
+  const navCommunity = $('#nav-community', root);
+  if (navCommunity) navCommunity.textContent = 'Social';
+  $$('.mnav-link', root).forEach(a => {
+    if (a.getAttribute('href')?.includes('/Social/social.html')) a.textContent = 'Social';
   });
 }
 
-// ----------------------------- Notifications (optional) -----------------------------
-async function fetchUnreadCount(uid) {
-  // Optional: users/{uid}/notifications where {read: false}
-  try {
-    const col = collection(db, 'users', uid, 'notifications');
-    const qUnread = query(col, where('read', '==', false), limit(10));
-    const snap = await getDocs(qUnread);
-    return snap.size || 0;
-  } catch {
-    return 0;
+function setActiveNav(root) {
+  clearActive(root);
+  const p = PATH.toLowerCase();
+  const map = [
+    { test: /\/dashboard\//, id: '#nav-dashboard' },
+    { test: /\/expenses\//,  id: '#nav-expenses'  },
+    { test: /\/budgeting\//, id: '#nav-budgeting' },
+    { test: /\/accounts\//,  id: '#nav-accounts'  },
+    { test: /\/social\//,    id: '#nav-community' },
+    { test: /\/pages\/blog\.html$/, id: '#nav-blog' },
+  ];
+  const hit = map.find(x => x.test.test(p));
+  if (!hit) return;
+
+  const el = $(hit.id, root);
+  if (el) {
+    active(el);
+    const href = el.getAttribute('href');
+    const m = $$('.mnav-link', root).find(a => a.getAttribute('href') === href);
+    if (m) active(m);
   }
 }
 
-function renderNotifBadge(count) {
-  const badge = els.notifBadge();
-  if (!badge) return;
-  if (!count) {
-    badge.classList.add('hidden');
-  } else {
-    badge.textContent = count > 9 ? '9+' : String(count);
-    badge.classList.remove('hidden');
+function insertWelcome(root, firstName) {
+  const cluster = $('#user-menu', root)?.parentElement;
+  if (!cluster) return;
+  let welcome = $('#welcome-text', cluster);
+  if (!welcome) {
+    welcome = document.createElement('span');
+    welcome.id = 'welcome-text';
+    welcome.className = 'hidden md:inline text-sm text-neutral-300 mr-1';
+    cluster.insertBefore(welcome, $('#user-menu', root));
   }
+  welcome.textContent = `Welcome, ${firstName}`;
+  welcome.classList.remove('hidden');
 }
 
-// ----------------------------- Greeting -----------------------------
-function titleCase(s) {
-  return s.replace(/\w\S*/g, (t) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
+function applySignedOutUI(root) {
+  const isIndex = PATH === '/' || PATH.endsWith('/index.html');
+
+  // Show auth buttons
+  show($('#auth-actions', root), true);
+  show($('#m-auth-actions', root), true);
+
+  // Hide user menu
+  show($('#user-menu', root), false);
+  show($('#m-user-actions', root), false);
+
+  // Hide tabs + mobile button when signed out (per requirement)
+  $$('.nav-link', root).forEach(a => show(a, false));
+  show($('#btn-mobile', root), false);
+
+  // On index: this matches “logo left, auth right”
+  // (markup already has brand on left; nothing else to do)
 }
 
-function guessFirstName(user, profileData = {}) {
-  // Priority: explicit firstName -> displayName -> email local-part
-  const fromProfile = profileData.firstName || profileData.givenName;
-  if (fromProfile) return String(fromProfile);
+function applySignedInUI(root, { firstName, photoURL }) {
+  // Tabs visible
+  $$('.nav-link', root).forEach(a => show(a, true));
+  show($('#btn-mobile', root), true);
 
-  const dn = user?.displayName || profileData.displayName;
-  if (dn) return dn.split(/\s+/)[0];
+  // Right side: show user, hide sign-in
+  show($('#auth-actions', root), false);
+  show($('#m-auth-actions', root), false);
+  show($('#user-menu', root), true);
+  show($('#m-user-actions', root), true);
 
-  const email = user?.email || '';
-  if (email.includes('@')) {
-    const local = email.split('@')[0].replace(/[._-]+/g, ' ');
-    return titleCase(local.split(' ')[0] || 'there');
-  }
-  return 'there';
+  insertWelcome(root, firstName);
+  const avatar = $('#user-avatar', root);
+  if (avatar) avatar.src = photoURL || '/images/logo_white.png';
+
+  setActiveNav(root);
 }
 
-/**
- * Morning: 05:00–11:59 → "Good morning"
- * Evening: 17:00–04:59 → "Good evening"
- * Otherwise: 12:00–16:59 → "Welcome"
- */
-function greetingForHour(h) {
-  if (h >= 5 && h < 12) return 'Good morning';
-  if (h >= 17 || h < 5) return 'Good evening';
-  return 'Welcome';
+function wireAvatarMenu(root) {
+  const btn = $('#user-menu-button', root);
+  const pop = $('#user-pop', root);
+  if (!btn || !pop) return;
+
+  // Ensure dropdown items match spec
+  pop.innerHTML = `
+    <a href="/Social/user-profile.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900">My Profile</a>
+    <a href="/Accounts/accounts.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900">Account Linkage</a>
+    <a href="/pages/profile.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900">Settings</a>
+  `;
+
+  let open = false;
+  const openMenu  = () => { pop.classList.remove('hidden'); btn.setAttribute('aria-expanded','true'); open = true; };
+  const closeMenu = () => { pop.classList.add('hidden');    btn.setAttribute('aria-expanded','false'); open = false; };
+
+  btn.addEventListener('click', (e) => { e.preventDefault(); open ? closeMenu() : openMenu(); });
+  document.addEventListener('click', (e) => {
+    if (!open) return;
+    const t = e.target;
+    if (outside(pop, t) && outside(btn, t)) closeMenu();
+  }, true);
+  document.addEventListener('keydown', (e) => { if (open && e.key === 'Escape') closeMenu(); });
 }
 
-function setGreetingText(text) {
-  const g = els.greeting();
-  if (g) g.textContent = text;
+function wireMobileMenu(root) {
+  const btn = $('#btn-mobile', root);
+  const panel = $('#mobile-panel', root);
+  if (!btn || !panel) return;
+
+  btn.addEventListener('click', (e) => { e.preventDefault(); toggle(panel); });
+  panel.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLAnchorElement) panel.classList.add('hidden');
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') panel.classList.add('hidden'); });
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!panel.contains(t) && t !== btn && !btn.contains(t)) panel.classList.add('hidden');
+  }, true);
 }
 
-// ----------------------------- Auth Rendering -----------------------------
-function setAuthCtasVisible(showCtas) {
-  const ctas = els.authCtas();
-  const wrap = els.userMenuWrap();
-  if (ctas) ctas.classList.toggle('hidden', !showCtas);
-  if (wrap) wrap.classList.toggle('hidden', !!showCtas);
+function wireSignOut(root) {
+  const go = async () => { try { await signOut(auth); location.href = '/index.html'; } catch (e) { console.error('signOut failed', e); } };
+  $('#btn-signout', root)?.addEventListener('click', go);
+  $('#m-btn-signout', root)?.addEventListener('click', go);
 }
 
-function setHomeLinkForUser(isAuthed) {
-  const brand = els.brandLink();
-  if (!brand) return;
+/* --------------------------------- Boot ---------------------------------- */
+async function init() {
+  const mount = await ensureHeaderMarkup();
+  if (!mount) return; // Nothing to wire
 
-  // Replace node to drop previous listeners
-  const newBrand = brand.cloneNode(true);
-  brand.parentNode.replaceChild(newBrand, brand);
+  wireBasics(mount);
+  setActiveNav(mount);
+  wireAvatarMenu(mount);
+  wireMobileMenu(mount);
+  wireSignOut(mount);
 
-  if (isAuthed) {
-    newBrand.setAttribute('href', DASHBOARD_PATH);
-    newBrand.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.location.href = DASHBOARD_PATH;
-    });
-  } else {
-    newBrand.setAttribute('href', '/');
-  }
-}
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { applySignedOutUI(mount); return; }
 
-function wireDropdown() {
-  const btn = els.userMenuBtn();
-  const menu = els.userDropdown();
-  const wrap = els.userMenuWrap();
-  if (!btn || !menu || !wrap) return;
+    // Owner read is allowed by your rules
+    let profile = {};
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      profile = snap.exists() ? (snap.data() || {}) : {};
+    } catch {}
 
-  function open() {
-    menu.classList.remove('hidden');
-    btn.setAttribute('aria-expanded', 'true');
-    document.addEventListener('click', onDocClick, { capture: true });
-    document.addEventListener('keydown', onKey);
-  }
-  function close() {
-    menu.classList.add('hidden');
-    btn.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', onDocClick, { capture: true });
-    document.removeEventListener('keydown', onKey);
-  }
-  function toggle() {
-    if (menu.classList.contains('hidden')) open();
-    else close();
-  }
-  function onDocClick(e) {
-    if (!wrap.contains(e.target)) close();
-  }
-  function onKey(e) {
-    if (e.key === 'Escape') close();
-  }
+    const firstName = firstNameFrom(profile, user.displayName, user.email);
+    const photoURL  = profile.photoURL || user.photoURL || '/images/logo_white.png';
 
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    toggle();
+    applySignedInUI(mount, { firstName, photoURL });
   });
 }
 
-async function loadUserProfileDoc(uid) {
-  try {
-    const snap = await getDoc(doc(db, 'users', uid));
-    return snap.exists() ? (snap.data() || {}) : {};
-  } catch {
-    return {};
-  }
-}
-
-async function renderAuthedHeader(user) {
-  setAuthCtasVisible(false);
-  setHomeLinkForUser(true);
-
-  const profile = await loadUserProfileDoc(user.uid);
-  const firstName = guessFirstName(user, profile);
-  const h = new Date().getHours();
-  const greet = `${greetingForHour(h)}, ${firstName}`;
-  setGreetingText(greet);
-
-  // Notifications badge (optional)
-  const unread = await fetchUnreadCount(user.uid);
-  renderNotifBadge(unread);
-
-  // Dropdown wiring
-  wireDropdown();
-
-  // Logout
-  const logout = els.logoutBtn();
-  if (logout) {
-    logout.addEventListener('click', async (e) => {
-      e.preventDefault();
-      try {
-        await signOut(auth);
-        setHomeLinkForUser(false);
-        window.location.href = '/login.html';
-      } catch (err) {
-        console.error('Sign out failed', err);
-        alert('Failed to sign out. Please try again.');
-      }
-    });
-  }
-}
-
-function renderAnonHeader() {
-  setAuthCtasVisible(true);
-  setHomeLinkForUser(false);
-  renderNotifBadge(0);
-  setGreetingText('Welcome');
-}
-
-// ----------------------------- Mobile Menu -----------------------------
-function wireMobileMenu() {
-  const btn = els.mobileToggle();
-  const menu = els.mobileNav();
-  if (!btn || !menu) return;
-
-  btn.addEventListener('click', () => {
-    const isOpen = !menu.classList.contains('hidden');
-    menu.classList.toggle('hidden', isOpen);
-    btn.setAttribute('aria-expanded', String(!isOpen));
-  });
-
-  menu.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => {
-      menu.classList.add('hidden');
-      btn.setAttribute('aria-expanded', 'false');
-    });
-  });
-}
-
-// ----------------------------- Boot -----------------------------
-async function boot() {
-  try {
-    const html = await loadHeaderHtml();
-    injectHeader(html);
-
-    wireMobileMenu();
-    highlightActiveLinks();
-
-    onAuthStateChanged(auth, async (user) => {
-      try {
-        if (user) await renderAuthedHeader(user);
-        else renderAnonHeader();
-      } catch (e) {
-        console.error('Header auth render failed', e);
-      } finally {
-        highlightActiveLinks();
-      }
-    });
-  } catch (e) {
-    console.error('Header init failed', e);
-  }
-}
-
-// Run once DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', boot);
-} else {
-  boot();
-}
+document.addEventListener('DOMContentLoaded', init);
