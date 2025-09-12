@@ -8,164 +8,75 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="budgeting.css">
+    <style>
+        body { background-color: #000; color: #FFF; font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Lora', serif; }
+        .card { background: linear-gradient(180deg, rgba(24,24,27,0.9), rgba(10,10,10,0.9)); border: 1px solid #1f2937; border-radius: 1rem; }
+        .input-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
+        .input-field:focus { border-color: #CCFF00; outline: none; }
+        .btn-neon { background-color: #CCFF00; color: #000; font-weight: 700; transition: opacity 0.2s ease; }
+        .btn-neon:hover { opacity: 0.9; }
+        #toast { transition: opacity 200ms ease; }
+    </style>
 </head>
-<body class="bg-black text-white font-['Inter']">
+<body class="bg-black">
 
     <div id="header-placeholder"></div>
 
-    <main class="container mx-auto px-6 py-24">
-        <!-- Page Header & Tab Navigation -->
-        <div class="page-header">
-            <h1 class="font-['Lora'] text-4xl font-bold">Your Financial Plan</h1>
-            <div class="tabs">
-                <button id="budget-tab" class="tab-btn active">Budget</button>
-                <button id="calendar-tab" class="tab-btn">Cash-Flow Calendar</button>
+    <main class="container mx-auto px-4 py-6 md:py-10 max-w-4xl">
+        <header class="mb-6 md:mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h1 class="font-headline text-2xl md:text-3xl font-semibold tracking-tight">Monthly Budget</h1>
+                <p class="text-neutral-400 mt-1">Create and track your spending categories for any month.</p>
             </div>
-        </div>
-
-        <!-- Budget View -->
-        <div id="budget-view" class="tab-content active">
-            <!-- Summary Boxes -->
-            <div class="summary-grid">
-                <div class="summary-box">
-                    <span class="summary-label">Planned</span>
-                    <span class="summary-value">$5,000.00</span>
-                </div>
-                <div class="summary-box">
-                    <span class="summary-label">Spent</span>
-                    <span class="summary-value">$2,750.00</span>
-                </div>
-                <div class="summary-box">
-                    <span class="summary-label">Available</span>
-                    <span class="summary-value">$2,250.00</span>
-                </div>
-                <div class="summary-box allocate-box">
-                    <span class="summary-label">To Allocate</span>
-                    <span class="summary-value">$0.00</span>
-                </div>
+            <div class="flex items-center gap-2">
+                <label for="month-select" class="text-sm text-neutral-400">Month:</label>
+                <select id="month-select" class="rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/50"></select>
             </div>
+        </header>
 
-            <!-- Budget Categories -->
-            <div class="budget-categories">
-                <!-- Bills -->
-                <div class="category-card">
-                    <h3 class="category-header">Bills</h3>
-                    <div class="expense-row header">
-                        <span>Expense Name</span>
-                        <span>Planned</span>
-                        <span>Available</span>
-                    </div>
-                    <div class="expense-row">
-                        <span class="expense-name">Rent/Mortgage</span>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: 100%;"></div>
-                            <span class="progress-label">$1500 / $1500</span>
-                        </div>
-                        <span class="expense-available">$0.00</span>
-                    </div>
-                    <div class="expense-row">
-                        <span class="expense-name">Utilities</span>
-                         <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: 75%;"></div>
-                            <span class="progress-label">$150 / $200</span>
-                        </div>
-                        <span class="expense-available">$50.00</span>
-                    </div>
-                </div>
-
-                <!-- Essentials -->
-                <div class="category-card">
-                    <h3 class="category-header">Essentials</h3>
-                     <div class="expense-row header">
-                        <span>Expense Name</span>
-                        <span>Planned</span>
-                        <span>Available</span>
-                    </div>
-                    <div class="expense-row">
-                        <span class="expense-name">Groceries</span>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: 60%;"></div>
-                            <span class="progress-label">$300 / $500</span>
-                        </div>
-                        <span class="expense-available">$200.00</span>
-                    </div>
-                </div>
-
-                <!-- Lifestyle -->
-                <div class="category-card">
-                    <h3 class="category-header">Lifestyle</h3>
-                     <div class="expense-row header">
-                        <span>Expense Name</span>
-                        <span>Planned</span>
-                        <span>Available</span>
-                    </div>
-                     <div class="expense-row">
-                        <span class="expense-name">Restaurants</span>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: 90%;"></div>
-                             <span class="progress-label">$270 / $300</span>
-                        </div>
-                        <span class="expense-available">$30.00</span>
-                    </div>
-                </div>
-
-                 <!-- Savings/Goals -->
-                <div class="category-card">
-                    <h3 class="category-header">Savings/Goals</h3>
-                     <div class="expense-row header">
-                        <span>Expense Name</span>
-                        <span>Planned</span>
-                        <span>Available</span>
-                    </div>
-                    <div class="expense-row">
-                        <span class="expense-name">Emergency Fund</span>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: 100%;"></div>
-                            <span class="progress-label">$500 / $500</span>
-                        </div>
-                        <span class="expense-available">$0.00</span>
-                    </div>
-                </div>
-                 <!-- Debt -->
-                <div class="category-card">
-                    <h3 class="category-header">Debt</h3>
-                     <div class="expense-row header">
-                        <span>Expense Name</span>
-                        <span>Planned</span>
-                        <span>Available</span>
-                    </div>
-                    <div class="expense-row">
-                        <span class="expense-name">Student Loan</span>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: 100%;"></div>
-                             <span class="progress-label">$300 / $300</span>
-                        </div>
-                        <span class="expense-available">$0.00</span>
-                    </div>
-                </div>
-
+        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="card p-4">
+                <div class="text-xs uppercase tracking-wider text-neutral-400">Total Budgeted</div>
+                <div id="totals-budgeted" class="mt-1 text-xl md:text-2xl font-semibold">—</div>
             </div>
-        </div>
+            <div class="card p-4">
+                <div class="text-xs uppercase tracking-wider text-neutral-400">Total Spent</div>
+                <div id="totals-spent" class="mt-1 text-xl md:text-2xl font-semibold text-red-400">—</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs uppercase tracking-wider text-neutral-400">Remaining</div>
+                <div id="totals-remaining" class="mt-1 text-xl md:text-2xl font-semibold">—</div>
+            </div>
+        </section>
 
-        <!-- Cash-Flow Calendar View -->
-        <div id="calendar-view" class="tab-content">
-            <div class="calendar-header">
-                <button id="prev-month">&lt;</button>
-                <h2 id="month-year"></h2>
-                <button id="next-month">&gt;</button>
+        <section class="card p-4 md:p-5 mb-6">
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="add-name" class="text-xs text-neutral-400">New Category Name</label>
+                    <input id="add-name" type="text" placeholder="e.g., Groceries" class="w-full mt-1 p-2 rounded input-field">
+                </div>
+                <div class="w-40">
+                    <label for="add-amount" class="text-xs text-neutral-400">Budgeted Amount ($)</label>
+                    <input id="add-amount" type="number" step="0.01" placeholder="300" class="w-full mt-1 p-2 rounded input-field">
+                </div>
+                <button id="add-btn" class="btn-neon px-4 py-2 rounded-lg text-sm">Add Category</button>
+                <button id="export-csv" class="ml-auto px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-sm">Export CSV</button>
             </div>
-            <div id="calendar-grid" class="calendar-grid">
-                <!-- Calendar will be generated by JS -->
-            </div>
+        </section>
+
+        <section id="cat-list" class="space-y-3"></section>
+        
+        <div id="empty-state" class="hidden card p-8 mt-4 text-center text-neutral-400">
+            No budget categories for this month. Add one above to get started!
         </div>
     </main>
 
-    <!-- Scripts -->
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-neutral-900 border border-neutral-800 text-white px-4 py-2 opacity-0 pointer-events-none"></div>
+
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
-    <script type="module" src="budget-logic.js"></script>
-
+    <script type="module" src="budgeting.js"></script>
 </body>
 </html>
