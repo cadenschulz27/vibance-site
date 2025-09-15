@@ -14,92 +14,51 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      color-scheme: dark;
-      --neon-green: #CCFF00;
-      --bg-color: #000;
-      --card-bg: #121212;
-      --card-border: #3A3A3C;
-      --text-main: #fff;
-      --text-muted: #e5e7eb;
-    }
+    :root { color-scheme: dark; }
     html, body {
-      background: var(--bg-color);
-      color: var(--text-main);
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      background: #0a0a0a;
+      color: #e5e7eb;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
     }
     .container { max-width: 1120px; }
 
     /* thin scrollbars */
-    * { scrollbar-width: thin; scrollbar-color: var(--card-border) var(--bg-color); }
+    * { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
     *::-webkit-scrollbar { height: 8px; width: 8px; }
-    *::-webkit-scrollbar-track { background: var(--bg-color); }
-    *::-webkit-scrollbar-thumb { background-color: var(--card-border); border-radius: 8px; }
+    *::-webkit-scrollbar-track { background: #18181b; }
+    *::-webkit-scrollbar-thumb { background-color: #3f3f46; border-radius: 8px; }
 
-    /* Card style matches dashboard/news */
+    /* Subtle glass card */
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
+      background: linear-gradient(180deg, rgba(24,24,27,0.9), rgba(10,10,10,0.9));
+      border: 1px solid #1f2937; /* neutral-800/900 */
       border-radius: 1rem;
-      box-shadow: 0 2px 16px rgba(204,255,0,0.04);
       backdrop-filter: blur(6px);
-      color: var(--text-main);
-    }
-
-    /* Neon accent for buttons */
-    .btn-neon {
-      background: var(--neon-green);
-      color: #000;
-      font-weight: 600;
-      border-radius: 0.5rem;
-      box-shadow: 0 0 8px var(--neon-green);
-      transition: box-shadow 0.2s;
-    }
-    .btn-neon:hover {
-      box-shadow: 0 0 16px var(--neon-green);
-      filter: brightness(1.1);
-    }
-
-    /* Section headers */
-    .section-header {
-      font-family: 'Lora', serif;
-      font-size: 2.2rem;
-      font-weight: 600;
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--card-border);
-      color: var(--neon-green);
-      text-align: left;
     }
 
     /* Sticky toolbar under the header */
     .toolbar-sticky {
       position: sticky;
-      top: 64px;
+      top: 64px; /* header height ~ h-16 */
       z-index: 30;
       backdrop-filter: blur(6px);
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--card-border);
     }
 
     /* Stat tiles glow ring */
     .ring-soft {
-      box-shadow: 0 0 0 1px rgba(204,255,0,0.15), 0 10px 30px rgba(204,255,0,0.08);
+      box-shadow: 0 0 0 1px rgba(16,185,129,0.15), 0 10px 30px rgba(16,185,129,0.08);
     }
 
     /* Table head: no sticky (prevents overlap) */
     .table-head {
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--card-border);
-      position: static;
+      background: rgba(10,10,10,0.9);
+      border-bottom: 1px solid #1f2937;
+      position: static; /* important: not sticky */
       z-index: 20;
-      color: var(--neon-green);
     }
 
     /* Hover row */
-    .row-hov:hover { background: #18181b; }
+    .row-hov:hover { background: #0f1012; }
 
     /* Toast transitions */
     #toast { transition: opacity 200ms ease; }
