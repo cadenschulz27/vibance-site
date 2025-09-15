@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Literacy • Vibance</title>
+
+  <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root { --neon:#CCFF00; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .font-headline { font-family: 'Lora', serif; }
+    .glass { background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88)); border: 1px solid #222226; border-radius: 1rem; backdrop-filter: blur(8px); }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <!-- Global header mount (shared across the app) -->
+  <div id="site-header"></div>
+
+  <main class="mx-auto max-w-6xl px-4 pt-24 pb-16">
+    <!-- Page header -->
+    <header class="mb-6 md:mb-10">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Literacy</p>
+          <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">Financial Literacy</h1>
+          <p class="text-sm md:text-base text-neutral-400 mt-2">Learn the basics, build habits, and make smarter money moves.</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <article class="glass p-4 md:p-5 lg:col-span-2">
+        <h2 class="font-medium text-lg">Getting started</h2>
+        <p class="text-neutral-300 mt-2">We’ll add lessons, guides, and practical exercises here. For now, this is a placeholder section.</p>
+      </article>
+      <aside class="space-y-4">
+        <article class="glass p-4 md:p-5">
+          <h2 class="font-medium text-lg">Popular topics</h2>
+          <ul class="mt-3 text-sm text-neutral-300 list-disc pl-5 space-y-2">
+            <li>Budgeting fundamentals</li>
+            <li>Emergency funds</li>
+            <li>Debt payoff strategies</li>
+            <li>Investing basics</li>
+          </ul>
+        </article>
+      </aside>
+    </section>
+  </main>
+
+  <!-- Core app scripts (absolute paths so header is shared everywhere) -->
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/auth/auth-check.js"></script>
+  <script type="module" src="/components/header.js"></script>
+</body>
+</html>
+

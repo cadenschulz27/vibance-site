@@ -31,6 +31,7 @@ function setActiveNav(root) {
     [/\/expenses\//,  '#nav-expenses'],
     [/\/budgeting\//, '#nav-budgeting'],
     [/\/social\//,    '#nav-community'],
+    [/\/literacy\//,  '#nav-literacy'],
     [/\/admin\//,     '#nav-admin'],
   ];
   $$('.nav-link', root).forEach(a => a.classList.remove('active'));
