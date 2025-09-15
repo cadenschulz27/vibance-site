@@ -106,10 +106,7 @@ function fmtMemberSince(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
-function fmtBirthday(s) {
-  if (!s) return '—';
-  try { return new Date(s).toLocaleDateString(); } catch { return s; }
-}
+function fmtBirthday(s) { return s ? String(s) : '—'; }
 
 function applyHeaderFromProfile(profile, fallback) {
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim();

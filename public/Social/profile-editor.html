@@ -66,14 +66,16 @@
     <!-- Form card -->
     <section class="glass p-5 md:p-6">
       <form id="profile-form" class="space-y-5">
-        <!-- Avatar Preview + URL -->
+        <!-- Avatar Preview + Upload (drag & drop) -->
         <div class="flex items-start gap-4">
           <img id="avatar-preview" class="h-20 w-20 rounded-2xl object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="Avatar preview">
           <div class="flex-1">
-            <label for="photoURL" class="block mb-2">Avatar image URL</label>
-            <input id="photoURL" name="photoURL" type="url" placeholder="https://…"
-                   class="w-full px-3 py-2" autocomplete="off"/>
-            <p class="text-xs text-neutral-500 mt-2">Tip: Use a square image (≥ 256×256). Storage uploads aren’t enabled for avatars; paste a URL instead.</p>
+            <label class="block mb-2">Profile picture</label>
+            <div id="avatar-drop" class="w-full px-3 py-6 rounded-2xl border-2 border-dashed border-neutral-700 bg-neutral-950 text-neutral-400 text-sm text-center cursor-pointer">
+              Drag & drop an image here, or click to upload
+            </div>
+            <input id="avatar-file" type="file" accept="image/*" class="hidden"/>
+            <p class="text-xs text-neutral-500 mt-2">JPG/PNG up to 5MB. Stored securely.</p>
           </div>
         </div>
 
@@ -85,7 +87,7 @@
             <input id="username" name="username" type="text" maxlength="20" placeholder="yourname"
                    class="w-full px-3 py-2" autocomplete="off"/>
           </div>
-          <p id="username-note" class="text-xs mt-2 text-neutral-400">Usernames can be changed at most once every 30 days.</p>
+          <p id="username-note" class="text-xs mt-2 text-neutral-400">Pick a unique username.</p>
         </div>
 
         <!-- Display name -->
@@ -110,8 +112,9 @@
         <!-- Birthday -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label for="birthday" class="block mb-2">Birthday</label>
-            <input id="birthday" name="birthday" type="date" class="w-full px-3 py-2"/>
+            <label for="birthday" class="block mb-2">Birthday <span class="text-neutral-500">(mm/dd/yyyy)</span></label>
+            <input id="birthday" name="birthday" type="text" inputmode="numeric" placeholder="mm/dd/yyyy"
+                   class="w-full px-3 py-2 rounded-2xl border border-neutral-800 bg-white text-black"/>
           </div>
           <div>
             <label class="block mb-2">Member since</label>
@@ -148,9 +151,10 @@
 
   <!-- Page controller -->
   <script type="module">
-    import { auth, db } from '/api/firebase.js';
+    import { auth, db, storage } from '/api/firebase.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
     import { doc, getDoc, getDocs, setDoc, serverTimestamp, runTransaction, collection, query, where, orderBy, limit, startAfter, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { ref as sRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
     const els = {
       form: document.getElementById('profile-form'),
@@ -159,7 +163,8 @@
       name: document.getElementById('name'),
       first: document.getElementById('firstName'),
       last: document.getElementById('lastName'),
-      photo: document.getElementById('photoURL'),
+      drop: document.getElementById('avatar-drop'),
+      file: document.getElementById('avatar-file'),
       birthday: document.getElementById('birthday'),
       memberSince: document.getElementById('member-since'),
       bio: document.getElementById('bio'),
@@ -180,7 +185,6 @@
     function enable(el, yes=true){ el.disabled=!yes; el.classList.toggle('opacity-50', !yes); }
 
     const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
-    const DAY_MS = 86400 * 1000;
 
     function sinceText(ts) {
       if (!ts) return '—';
@@ -189,11 +193,46 @@
       return d.toLocaleDateString(undefined, { year:'numeric', month:'short' });
     }
 
+    function formatBirthdayInput(raw) {
+      const d = String(raw || '').replace(/\D+/g,'').slice(0,8);
+      const mm = d.slice(0,2);
+      const dd = d.slice(2,4);
+      const yyyy = d.slice(4,8);
+      let out = '';
+      if (mm) out += mm;
+      if (dd) out += (out ? '/' : '') + dd;
+      if (yyyy) out += (out ? '/' : '') + yyyy;
+      return out;
+    }
+
+    function normalizeBirthday(str) {
+      const v = formatBirthdayInput(str);
+      const [m, d, y] = v.split('/').map(x => Number(x));
+      if (!m || !d || !y) return v;
+      const mm = String(Math.min(Math.max(m,1),12)).padStart(2,'0');
+      const ddMax = new Date(y, m, 0).getDate();
+      const dd = String(Math.min(Math.max(d,1), ddMax)).padStart(2,'0');
+      const yyyy = String(y).padStart(4,'0');
+      return `${mm}/${dd}/${yyyy}`;
+    }
+
     function wire() {
-      els.photo.addEventListener('input', () => {
-        const url = els.photo.value.trim();
-        els.preview.src = url || '/images/logo_white.png';
+      // Avatar picker (click + drag-drop)
+      const pick = () => els.file?.click();
+      els.drop?.addEventListener('click', pick);
+      els.drop?.addEventListener('dragover', (e) => { e.preventDefault(); els.drop.classList.add('border-[var(--neon)]'); });
+      els.drop?.addEventListener('dragleave', () => els.drop.classList.remove('border-[var(--neon)]'));
+      els.drop?.addEventListener('drop', (e) => {
+        e.preventDefault(); els.drop.classList.remove('border-[var(--neon)]');
+        const f = e.dataTransfer?.files?.[0]; if (f) { els.file.files = e.dataTransfer.files; previewAvatar(f); }
       });
+      els.file?.addEventListener('change', () => { const f = els.file.files?.[0]; if (f) previewAvatar(f); });
+
+      function previewAvatar(file) {
+        const url = URL.createObjectURL(file);
+        els.preview.src = url || '/images/logo_white.png';
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
       els.bio.addEventListener('input', () => {
         els.bioCount.textContent = String(els.bio.value.length);
       });
@@ -201,12 +240,21 @@
       // Username validation feedback
       els.username?.addEventListener('input', () => {
         const v = (els.username.value || '').trim().toLowerCase();
-        if (!v) { els.usernameNote.textContent = 'Usernames can be changed at most once every 30 days.'; return; }
+        if (!v) { els.usernameNote.textContent = 'Pick a unique username.'; return; }
         if (!USERNAME_RE.test(v)) {
           els.usernameNote.textContent = 'Invalid: use 3–20 chars (a–z, 0–9, _).';
         } else {
           els.usernameNote.textContent = 'Looks good ✓';
         }
+      });
+
+      // Birthday white input auto-format
+      els.birthday?.addEventListener('input', () => {
+        const before = els.birthday.value;
+        els.birthday.value = formatBirthdayInput(before);
+      });
+      els.birthday?.addEventListener('blur', () => {
+        els.birthday.value = normalizeBirthday(els.birthday.value);
       });
 
       els.form.addEventListener('submit', async (e) => {
@@ -218,7 +266,6 @@
           name: (els.name.value || '').trim(),
           firstName: (els.first.value || '').trim(),
           lastName: (els.last.value || '').trim(),
-          photoURL: (els.photo.value || '').trim(),
           birthday: (els.birthday.value || '').trim() || null,
           updatedAt: serverTimestamp(),
         };
@@ -230,11 +277,10 @@
 
         enable(els.save, false);
         try {
-          // Handle username change if requested
+          // Handle username change (no cooldown; ensure not taken)
           const newUsername = (els.username.value || '').trim().toLowerCase();
           const userRef = doc(db, 'users', user.uid);
           let oldUsername = null;
-          let allowChange = true;
 
           if (newUsername) {
             const snap = await getDoc(userRef);
@@ -242,33 +288,32 @@
             oldUsername = (data.username || '').trim().toLowerCase();
 
             if (newUsername !== oldUsername) {
-              // Cooldown check: lastUsernameChangeAt or createdAt (fallback to auth metadata)
-              const lastTs = data.lastUsernameChangeAt || data.createdAt || (user.metadata?.creationTime ? new Date(user.metadata.creationTime) : null);
-              const last = lastTs?.toDate ? lastTs.toDate() : (lastTs instanceof Date ? lastTs : null);
-              const now = new Date();
-              if (last && (now.getTime() - last.getTime()) < 30 * DAY_MS) {
-                const daysLeft = Math.ceil((30 * DAY_MS - (now.getTime() - last.getTime())) / DAY_MS);
-                els.usernameNote.textContent = `You can change your username in ${daysLeft} day(s).`;
-                allowChange = false;
+              if (!USERNAME_RE.test(newUsername)) {
+                throw new Error('Username must be 3–20 chars, lowercase letters, numbers, or underscore.');
               }
-
-              if (allowChange) {
-                if (!USERNAME_RE.test(newUsername)) {
-                  throw new Error('Username must be 3–20 chars, lowercase letters, numbers, or underscore.');
-                }
-                // Transaction: reserve new, release old, update user
-                await runTransaction(db, async (tx) => {
-                  const newRef = doc(db, 'usernames', newUsername);
-                  const prevRef = oldUsername ? doc(db, 'usernames', oldUsername) : null;
-                  const exists = await tx.get(newRef);
-                  if (exists.exists()) throw new Error('That username is already taken.');
-                  tx.set(newRef, { uid: user.uid, reservedAt: serverTimestamp() });
-                  if (prevRef) tx.delete(prevRef);
-                  tx.set(userRef, { username: newUsername, lastUsernameChangeAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
-                });
-                toast('Username updated ✓');
-              }
+              // Transaction: reserve new, release old, update user
+              await runTransaction(db, async (tx) => {
+                const newRef = doc(db, 'usernames', newUsername);
+                const prevRef = oldUsername ? doc(db, 'usernames', oldUsername) : null;
+                const exists = await tx.get(newRef);
+                if (exists.exists()) throw new Error('That username is already taken.');
+                tx.set(newRef, { uid: user.uid, reservedAt: serverTimestamp() });
+                if (prevRef) tx.delete(prevRef);
+                tx.set(userRef, { username: newUsername, updatedAt: serverTimestamp() }, { merge: true });
+              });
+              toast('Username updated ✓');
             }
+          }
+
+          // Upload avatar if a file is provided
+          if (els.file?.files?.[0]) {
+            const f = els.file.files[0];
+            const safe = (f.name || 'avatar').replace(/[^\w.\-]+/g,'_').slice(0,80);
+            const path = `avatars/${user.uid}/${Date.now()}_${safe}`;
+            const r = sRef(storage, path);
+            await uploadBytes(r, f, { contentType: f.type || 'image/jpeg' });
+            const url = await getDownloadURL(r);
+            payload.photoURL = url;
           }
 
           // Write only allowed fields on /users/{uid}
@@ -295,7 +340,7 @@
               if (!ds.length) break;
               const batch = writeBatch(db);
               for (const d of ds) {
-                batch.set(d.ref, { displayName: currentUsername || u.name || 'Member', photoURL: currentPhoto || u.photoURL || '' }, { merge: true });
+                batch.set(d.ref, { displayName: currentUsername || 'Member', photoURL: currentPhoto || u.photoURL || '' }, { merge: true });
                 processed++;
               }
               await batch.commit();
@@ -311,6 +356,9 @@
           setTimeout(() => location.href = './user-profile.html?uid=' + encodeURIComponent(user.uid), 600);
         } catch (e) {
           console.error(e);
+          if ((e?.message || '').toLowerCase().includes('taken')) {
+            els.usernameNote.textContent = 'That username is already taken. Try another.';
+          }
           toast('Save failed');
         } finally {
           enable(els.save, true);
@@ -326,12 +374,11 @@
           const snap = await getDoc(doc(db, 'users', user.uid));
           const data = snap.exists() ? (snap.data() || {}) : {};
           els.username.value = data.username || '';
-          els.usernameNote.textContent = 'Usernames can be changed at most once every 30 days.';
+          els.usernameNote.textContent = 'Pick a unique username.';
           els.name.value = data.name || user.displayName || '';
           els.first.value = data.firstName || '';
           els.last.value = data.lastName || '';
-          els.photo.value = data.photoURL || user.photoURL || '';
-          els.preview.src = els.photo.value || '/images/logo_white.png';
+          els.preview.src = data.photoURL || user.photoURL || '/images/logo_white.png';
           els.birthday.value = data.birthday || '';
           els.memberSince.textContent = sinceText(data.createdAt || (user.metadata?.creationTime ? new Date(user.metadata.creationTime) : null));
 
