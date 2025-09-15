@@ -232,6 +232,23 @@
     </article>
   </template>
 
+  <!-- Suggestion Card Template (for right rail) -->
+  <template id="suggestion-card-template">
+    <article class="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-900">
+      <a href="#" class="shrink-0">
+        <img class="sug-avatar h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="Avatar">
+      </a>
+      <div class="min-w-0 flex-1">
+        <a href="#" class="sug-name block font-medium truncate hover:underline">Member</a>
+        <div class="sug-sub text-xs text-neutral-500 truncate">@username</div>
+      </div>
+      <div class="shrink-0">
+        <button class="sug-follow btn-neon px-3 py-1.5 rounded-xl text-xs">Follow</button>
+        <button class="sug-unfollow hidden px-3 py-1.5 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-xs">Unfollow</button>
+      </div>
+    </article>
+  </template>
+
   <!-- Core app scripts (absolute paths so header is shared everywhere) -->
   <script type="module" src="/api/firebase.js"></script>
   <script type="module" src="/auth/auth-check.js"></script>
