@@ -28,6 +28,9 @@ const els = {
   badge: document.getElementById('profile-badge'),
   bio: document.getElementById('profile-bio'),
   email: document.getElementById('profile-email'),
+  username: document.getElementById('profile-username'),
+  birthday: document.getElementById('profile-birthday'),
+  memberSince: document.getElementById('profile-member-since'),
   followers: document.getElementById('profile-followers'),
   following: document.getElementById('profile-following'),
   btnFollow: document.getElementById('btn-follow'),
@@ -97,16 +100,34 @@ async function loadYourProfile(uid) {
   }
 }
 
+function fmtMemberSince(ts) {
+  const d = ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+  if (!d || Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+}
+
+function fmtBirthday(s) {
+  if (!s) return '—';
+  try { return new Date(s).toLocaleDateString(); } catch { return s; }
+}
+
 function applyHeaderFromProfile(profile, fallback) {
-  const display = profile.displayName || profile.firstName || fallback?.name || 'Member';
+  const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim();
+  const display = fullName || profile.name || profile.displayName || fallback?.name || 'Member';
   const photo = profile.photoURL || fallback?.photoURL || '/images/logo_white.png';
   const bio = profile.bio || '';
   const email = profile.email || '';
+  const username = profile.username ? `@${profile.username}` : '';
+  const birthday = fmtBirthday(profile.birthday || '');
+  const memberSince = fmtMemberSince(profile.createdAt || null);
 
   if (els.avatar) els.avatar.src = photo;
   safeText(els.name, display);
   safeText(els.bio, bio);
   safeText(els.email, email);
+  safeText(els.username, username);
+  safeText(els.birthday, birthday);
+  safeText(els.memberSince, memberSince);
 
   const followersCount = (Array.isArray(profile.followers) ? profile.followers.length : (profile.followersCount|0)) || 0;
   const followingCount = (Array.isArray(profile.following) ? profile.following.length : (profile.followingCount|0)) || 0;

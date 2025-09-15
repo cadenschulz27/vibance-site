@@ -117,11 +117,17 @@ export async function createPost({ description = '', visibility = 'public', tags
   if (!me) throw new Error('Not signed in');
 
   const username = await getUsername(me.uid);
+  // Prefer Firestore profile photo over Auth photo
+  let photoURL = '';
+  try {
+    const u = await loadUser(me.uid);
+    photoURL = (u?.photoURL || me.photoURL || '') || '';
+  } catch { photoURL = me.photoURL || ''; }
 
   const base = {
     userId: me.uid,
     displayName: username,          // store username for renderers
-    photoURL: me.photoURL || '',
+    photoURL,
     description: description.trim(),
     createdAt: nowServer(),
     visibility: visibility === 'followers' ? 'followers' : 'public',
@@ -186,11 +192,16 @@ export async function addComment(postId, text) {
   if (!me) throw new Error('Not signed in');
 
   const username = await getUsername(me.uid);
+  let photoURL = '';
+  try {
+    const u = await loadUser(me.uid);
+    photoURL = (u?.photoURL || me.photoURL || '') || '';
+  } catch { photoURL = me.photoURL || ''; }
 
   await addDoc(collection(db, 'posts', postId, 'comments'), {
     userId: me.uid,
     displayName: username,       // store username
-    photoURL: me.photoURL || '',
+    photoURL,
     text: String(text || ''),
     createdAt: nowServer(),
   });

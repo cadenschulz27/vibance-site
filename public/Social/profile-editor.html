@@ -60,7 +60,7 @@
     <!-- Title -->
     <header class="mb-6 md:mb-8">
       <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight">Edit your profile</h1>
-      <p class="text-neutral-400 mt-2">Update your name and avatar (image URL). Your bio is saved privately in your settings.</p>
+      <p class="text-neutral-400 mt-2">Update your name, username, birthday and avatar. Your bio is saved privately in your settings.</p>
     </header>
 
     <!-- Form card -->
@@ -75,6 +75,17 @@
                    class="w-full px-3 py-2" autocomplete="off"/>
             <p class="text-xs text-neutral-500 mt-2">Tip: Use a square image (≥ 256×256). Storage uploads aren’t enabled for avatars; paste a URL instead.</p>
           </div>
+        </div>
+
+        <!-- Username (with 30-day cooldown) -->
+        <div>
+          <label for="username" class="block mb-2">Username <span class="text-neutral-500">(3–20 chars, a–z, 0–9, _)</span></label>
+          <div class="flex items-center gap-2">
+            <span class="text-neutral-400">@</span>
+            <input id="username" name="username" type="text" maxlength="20" placeholder="yourname"
+                   class="w-full px-3 py-2" autocomplete="off"/>
+          </div>
+          <p id="username-note" class="text-xs mt-2 text-neutral-400">Usernames can be changed at most once every 30 days.</p>
         </div>
 
         <!-- Display name -->
@@ -93,6 +104,18 @@
           <div>
             <label for="lastName" class="block mb-2">Last name</label>
             <input id="lastName" name="lastName" type="text" maxlength="40" class="w-full px-3 py-2"/>
+          </div>
+        </div>
+
+        <!-- Birthday -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="birthday" class="block mb-2">Birthday</label>
+            <input id="birthday" name="birthday" type="date" class="w-full px-3 py-2"/>
+          </div>
+          <div>
+            <label class="block mb-2">Member since</label>
+            <div id="member-since" class="px-3 py-2 rounded-2xl bg-neutral-950 border border-neutral-800 text-neutral-300 text-sm">—</div>
           </div>
         </div>
 
@@ -127,14 +150,18 @@
   <script type="module">
     import { auth, db } from '/api/firebase.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { doc, getDoc, getDocs, setDoc, serverTimestamp, runTransaction, collection, query, where, orderBy, limit, startAfter, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const els = {
       form: document.getElementById('profile-form'),
+      username: document.getElementById('username'),
+      usernameNote: document.getElementById('username-note'),
       name: document.getElementById('name'),
       first: document.getElementById('firstName'),
       last: document.getElementById('lastName'),
       photo: document.getElementById('photoURL'),
+      birthday: document.getElementById('birthday'),
+      memberSince: document.getElementById('member-since'),
       bio: document.getElementById('bio'),
       bioCount: document.getElementById('bio-count'),
       preview: document.getElementById('avatar-preview'),
@@ -152,6 +179,16 @@
     }
     function enable(el, yes=true){ el.disabled=!yes; el.classList.toggle('opacity-50', !yes); }
 
+    const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
+    const DAY_MS = 86400 * 1000;
+
+    function sinceText(ts) {
+      if (!ts) return '—';
+      const d = ts?.toDate ? ts.toDate() : new Date(ts);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString(undefined, { year:'numeric', month:'short' });
+    }
+
     function wire() {
       els.photo.addEventListener('input', () => {
         const url = els.photo.value.trim();
@@ -159,6 +196,17 @@
       });
       els.bio.addEventListener('input', () => {
         els.bioCount.textContent = String(els.bio.value.length);
+      });
+
+      // Username validation feedback
+      els.username?.addEventListener('input', () => {
+        const v = (els.username.value || '').trim().toLowerCase();
+        if (!v) { els.usernameNote.textContent = 'Usernames can be changed at most once every 30 days.'; return; }
+        if (!USERNAME_RE.test(v)) {
+          els.usernameNote.textContent = 'Invalid: use 3–20 chars (a–z, 0–9, _).';
+        } else {
+          els.usernameNote.textContent = 'Looks good ✓';
+        }
       });
 
       els.form.addEventListener('submit', async (e) => {
@@ -171,6 +219,7 @@
           firstName: (els.first.value || '').trim(),
           lastName: (els.last.value || '').trim(),
           photoURL: (els.photo.value || '').trim(),
+          birthday: (els.birthday.value || '').trim() || null,
           updatedAt: serverTimestamp(),
         };
 
@@ -181,12 +230,81 @@
 
         enable(els.save, false);
         try {
+          // Handle username change if requested
+          const newUsername = (els.username.value || '').trim().toLowerCase();
+          const userRef = doc(db, 'users', user.uid);
+          let oldUsername = null;
+          let allowChange = true;
+
+          if (newUsername) {
+            const snap = await getDoc(userRef);
+            const data = snap.exists() ? (snap.data() || {}) : {};
+            oldUsername = (data.username || '').trim().toLowerCase();
+
+            if (newUsername !== oldUsername) {
+              // Cooldown check: lastUsernameChangeAt or createdAt (fallback to auth metadata)
+              const lastTs = data.lastUsernameChangeAt || data.createdAt || (user.metadata?.creationTime ? new Date(user.metadata.creationTime) : null);
+              const last = lastTs?.toDate ? lastTs.toDate() : (lastTs instanceof Date ? lastTs : null);
+              const now = new Date();
+              if (last && (now.getTime() - last.getTime()) < 30 * DAY_MS) {
+                const daysLeft = Math.ceil((30 * DAY_MS - (now.getTime() - last.getTime())) / DAY_MS);
+                els.usernameNote.textContent = `You can change your username in ${daysLeft} day(s).`;
+                allowChange = false;
+              }
+
+              if (allowChange) {
+                if (!USERNAME_RE.test(newUsername)) {
+                  throw new Error('Username must be 3–20 chars, lowercase letters, numbers, or underscore.');
+                }
+                // Transaction: reserve new, release old, update user
+                await runTransaction(db, async (tx) => {
+                  const newRef = doc(db, 'usernames', newUsername);
+                  const prevRef = oldUsername ? doc(db, 'usernames', oldUsername) : null;
+                  const exists = await tx.get(newRef);
+                  if (exists.exists()) throw new Error('That username is already taken.');
+                  tx.set(newRef, { uid: user.uid, reservedAt: serverTimestamp() });
+                  if (prevRef) tx.delete(prevRef);
+                  tx.set(userRef, { username: newUsername, lastUsernameChangeAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
+                });
+                toast('Username updated ✓');
+              }
+            }
+          }
+
           // Write only allowed fields on /users/{uid}
           await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
 
           // Save bio in settings subcollection (rules: allowed for owner)
           const bio = (els.bio.value || '').trim();
           await setDoc(doc(db, 'users', user.uid, 'settings', 'profile'), { bio, updatedAt: serverTimestamp() }, { merge: true });
+
+          // Best-effort propagate new avatar/username to recent posts by this user
+          try {
+            const uSnap = await getDoc(userRef);
+            const u = uSnap.exists() ? (uSnap.data() || {}) : {};
+            const currentUsername = (u.username || '').trim();
+            const currentPhoto = (u.photoURL || '').trim();
+            let cursor = null;
+            let processed = 0;
+            const PAGE = 100;
+            while (true) {
+              let qBase = query(collection(db, 'posts'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(PAGE));
+              if (cursor) qBase = query(collection(db, 'posts'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), startAfter(cursor), limit(PAGE));
+              const docsSnap = await getDocs(qBase);
+              const ds = docsSnap.docs;
+              if (!ds.length) break;
+              const batch = writeBatch(db);
+              for (const d of ds) {
+                batch.set(d.ref, { displayName: currentUsername || u.name || 'Member', photoURL: currentPhoto || u.photoURL || '' }, { merge: true });
+                processed++;
+              }
+              await batch.commit();
+              cursor = ds[ds.length - 1];
+              if (ds.length < PAGE || processed >= 500) break; // safety limit
+            }
+          } catch (e) {
+            console.warn('Post propagation skipped/failed', e?.message || e);
+          }
 
           toast('Saved ✓');
           // small delay then go back
@@ -207,11 +325,15 @@
           // Load root user doc (owner read allowed by rules)
           const snap = await getDoc(doc(db, 'users', user.uid));
           const data = snap.exists() ? (snap.data() || {}) : {};
+          els.username.value = data.username || '';
+          els.usernameNote.textContent = 'Usernames can be changed at most once every 30 days.';
           els.name.value = data.name || user.displayName || '';
           els.first.value = data.firstName || '';
           els.last.value = data.lastName || '';
           els.photo.value = data.photoURL || user.photoURL || '';
           els.preview.src = els.photo.value || '/images/logo_white.png';
+          els.birthday.value = data.birthday || '';
+          els.memberSince.textContent = sinceText(data.createdAt || (user.metadata?.creationTime ? new Date(user.metadata.creationTime) : null));
 
           // Load bio from settings subcollection (allowed)
           const bioSnap = await getDoc(doc(db, 'users', user.uid, 'settings', 'profile'));

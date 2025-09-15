@@ -89,10 +89,11 @@ function suggestionCard(user) {
   const unfollow = root.querySelector('.sug-unfollow');
   const links = root.querySelectorAll('a');
 
-  const display = user.displayName || user.firstName || user.name || 'Member';
+  const display = user.displayName || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.name || 'Member';
+  const uname = user.username ? `@${user.username}` : (user.email || 'Active member');
   avatar.src = user.photoURL || '/images/logo_white.png';
   name.textContent = display;
-  sub.textContent = user.email || 'Active member';
+  sub.textContent = uname;
   links.forEach(a => a.href = `./user-profile.html?uid=${encodeURIComponent(user.id)}`);
 
   const canFollow = YOU && user.id !== YOU.uid;
