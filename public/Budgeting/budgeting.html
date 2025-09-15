@@ -38,7 +38,7 @@
     .muted { color:#a1a1aa; }
   </style>
 </head>
-<body>
+<body class="bg-black text-white">
   <!-- Global header mount -->
   <div id="site-header"></div>
 
@@ -53,10 +53,10 @@
         </div>
         <div class="flex items-center gap-2">
           <label for="month-select" class="text-sm text-neutral-400">Month</label>
-          <select id="month-select" class="chip px-3 py-2 rounded-xl bg-transparent text-sm ring-neon">
+          <select id="month-select" class="chip px-3 py-2 rounded-xl text-sm ring-neon">
             <!-- budgeting.js will populate -->
           </select>
-          <button id="export-csv" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Export CSV</button>
+          <button id="export-csv" class="chip px-3 py-2 rounded-xl text-sm">Export CSV</button>
         </div>
       </div>
 
@@ -138,9 +138,9 @@
         <div class="flex items-center justify-between">
           <h2 class="font-medium text-lg">Cash-Flow Calendar</h2>
           <div class="flex items-center gap-2">
-            <button id="prev-month" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Prev</button>
+            <button id="prev-month" class="chip px-3 py-2 rounded-xl text-sm">Prev</button>
             <div id="month-label" class="text-sm text-neutral-300"></div>
-            <button id="next-month" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Next</button>
+            <button id="next-month" class="chip px-3 py-2 rounded-xl text-sm">Next</button>
           </div>
         </div>
         <div class="mt-4 grid grid-cols-7 gap-2 text-center text-xs text-neutral-400">

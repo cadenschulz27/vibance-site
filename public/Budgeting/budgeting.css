@@ -11,6 +11,7 @@
   --panel: rgba(10,10,10,0.88);
   --panel-top: rgba(24,24,27,0.72);
   --border: #222226;
+  --border-2: #2d2f33;
   --muted: #a1a1aa;
   --ink: #ffffff;
   --ink-dim: #e5e7eb;
@@ -28,6 +29,7 @@ html, body { background: var(--bg); color: var(--ink); }
 ::selection { background: color-mix(in oklab, var(--neon) 45%, transparent); color: #0a0a0a; }
 
 /* Scrollbar (WebKit) */
+* { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
 *::-webkit-scrollbar { height: 10px; width: 10px; }
 *::-webkit-scrollbar-thumb { background: #1c1c20; border-radius: 999px; border: 2px solid #0a0a0a; }
 *::-webkit-scrollbar-track { background: transparent; }
@@ -38,15 +40,25 @@ html, body { background: var(--bg); color: var(--ink); }
   border: 1px solid var(--border);
   border-radius: 1rem;
   backdrop-filter: blur(8px);
+  box-shadow: 0 0 0 1px rgba(34,34,38,0.9), 0 10px 30px rgba(0,0,0,0.35);
+  transition: border-color .2s ease, transform .15s ease, box-shadow .2s ease;
+}
+.glass:hover { border-color: var(--border-2); }
+.glass:focus-within {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 1px rgba(204,255,0,0.3), 0 10px 30px rgba(204,255,0,0.06);
 }
 
 /* Chips / inputs */
 .chip {
-  background: var(--chip-bg);
-  border: 1px solid var(--chip-border);
+  background: var(--pill);
+  border: 1px solid var(--border);
   color: var(--ink);
   outline: none;
+  transition: border-color .2s ease, background .2s ease, transform .1s ease;
 }
+.chip:hover { border-color: var(--border-2); }
+.chip:active { transform: translateY(0.5px); }
 .chip:focus { box-shadow: 0 0 0 3px color-mix(in oklab, var(--neon) 35%, transparent); }
 
 /* Neon buttons */
@@ -213,3 +225,13 @@ a:hover { color: #fff; }
 
 /* Focus ring helper if Tailwind is absent for an element */
 .ring-neon:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--neon) 35%, transparent); }
+
+/* Global focus-visible ring for a11y (align with Social) */
+:where(button, a, input, textarea):focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--neon) 60%, transparent);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* High-DPI polish for icons */
+svg { shape-rendering: geometricPrecision; text-rendering: optimizeLegibility; }
