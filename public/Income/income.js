@@ -28,6 +28,8 @@ const els = {
   maxAmt: document.getElementById('max-amount'),
   reset: document.getElementById('reset-filters'),
   exportBtn: document.getElementById('export-csv'),
+  saveFilterBtn: document.getElementById('save-filter'),
+  savedFilterSelect: document.getElementById('saved-filter-select'),
 
   count: document.getElementById('tx-count'),
   incomeTotal: document.getElementById('totals-income'),
@@ -130,6 +132,44 @@ function readFilters() {
   return { account, start, end, q, minAmt, maxAmt };
 }
 
+async function loadSavedFilters(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid, 'settings', 'filters'));
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    const filters = data.filters || {};
+    if (els.savedFilterSelect) {
+      els.savedFilterSelect.innerHTML = '<option value="">—</option>' + Object.keys(filters).map(name => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join('');
+    }
+    return filters;
+  } catch { return {}; }
+}
+
+async function saveCurrentFilter(uid) {
+  const name = prompt('Save filter as:');
+  if (!name) return;
+  const f = readFilters();
+  const patch = { };
+  patch[`filters.${name}`] = { type: 'both', ...f };
+  await setDoc(doc(db, 'users', uid, 'settings', 'filters'), patch, { merge: true });
+  await loadSavedFilters(uid);
+  toast('Saved');
+}
+
+async function applySavedFilter(uid, name) {
+  if (!name) return;
+  const snap = await getDoc(doc(db, 'users', uid, 'settings', 'filters'));
+  const data = snap.exists() ? (snap.data() || {}) : {};
+  const f = (data.filters || {})[name];
+  if (!f) return;
+  if (els.account) els.account.value = f.account || '';
+  if (els.start) els.start.value = f.start || '';
+  if (els.end) els.end.value = f.end || '';
+  if (els.search) els.search.value = f.q || '';
+  if (els.minAmt) els.minAmt.value = (f.minAmt ?? '') === null ? '' : (f.minAmt ?? '');
+  if (els.maxAmt) els.maxAmt.value = (f.maxAmt ?? '') === null ? '' : (f.maxAmt ?? '');
+  applyFilters();
+}
+
 function applyFilters() {
   const { account, start, end, q, minAmt, maxAmt } = readFilters();
   let out = ALL_TX;
@@ -215,6 +255,8 @@ function wireUI() {
     applyFilters();
   });
   els.exportBtn?.addEventListener('click', () => { const csv = toCSV(FILTERED); const today = new Date().toISOString().slice(0,10); download(`income_${today}.csv`, csv); });
+  els.saveFilterBtn?.addEventListener('click', () => { if (UID) saveCurrentFilter(UID).catch(console.error); });
+  els.savedFilterSelect?.addEventListener('change', () => { if (UID) applySavedFilter(UID, els.savedFilterSelect.value).catch(console.error); });
   els.prev?.addEventListener('click', () => { if (PAGE > 1) { PAGE--; render(); } });
   els.next?.addEventListener('click', () => { const total = FILTERED.length; if (PAGE * PAGE_SIZE < total) { PAGE++; render(); } });
   els.syncAll?.addEventListener('click', async () => {
@@ -232,10 +274,11 @@ function init() {
     if (!user) return; UID = user.uid;
     try {
       if (AUTO_FIRST_SYNC) { if (els.syncAll) { els.syncAll.disabled = true; els.syncAll.textContent = 'Syncing…'; } try { await syncAllItems(UID); } catch(e){ console.warn('Auto first sync failed', e); } finally { if (els.syncAll) { els.syncAll.disabled = false; els.syncAll.textContent = 'Sync all'; } } }
-      await loadAllTransactions(UID); toast('Income loaded');
+      await loadAllTransactions(UID);
+      await loadSavedFilters(UID);
+      toast('Income loaded');
     } catch (e) { console.error('Income init failed', e); if (els.empty) els.empty.style.display = ''; }
   });
 }
 
 document.addEventListener('DOMContentLoaded', init);
-

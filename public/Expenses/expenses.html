@@ -121,7 +121,10 @@
           <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">Your Spending</h1>
           <p class="text-sm md:text-base text-neutral-400 mt-2">Review, search, and categorize your recent transactions.</p>
         </div>
-        <button id="sync-all-expenses" class="px-4 py-2 rounded-xl btn-neon text-sm font-semibold">Sync all</button>
+        <div class="flex items-center gap-2">
+          <a href="/Income/income.html" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">View Income</a>
+          <button id="sync-all-expenses" class="px-4 py-2 rounded-xl btn-neon text-sm font-semibold">Sync all</button>
+        </div>
       </div>
     </header>
 
@@ -181,6 +184,11 @@
             class="w-44 rounded-full bg-neutral-900 border border-neutral-800 px-4 py-2 text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/50 focus:border-emerald-500" />
 
           <div class="ml-auto flex items-center gap-2">
+            <label for="saved-filter-select" class="text-xs text-neutral-400">Saved</label>
+            <select id="saved-filter-select" class="rounded-full bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm">
+              <option value="">—</option>
+            </select>
+            <button id="save-filter" class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-sm">Save</button>
             <span class="hidden sm:inline text-xs text-neutral-400">Rows:</span>
             <span id="tx-count" class="text-sm font-medium">0</span>
 

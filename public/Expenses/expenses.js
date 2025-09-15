@@ -37,6 +37,8 @@ const els = {
   category: document.getElementById('category-filter'),
   reset: document.getElementById('reset-filters'),
   exportBtn: document.getElementById('export-csv'),
+  saveFilterBtn: document.getElementById('save-filter'),
+  savedFilterSelect: document.getElementById('saved-filter-select'),
 
   count: document.getElementById('tx-count'),
   incomeTotal: document.getElementById('totals-income'),
@@ -241,6 +243,45 @@ function readFilters() {
   return { account, start, end, q, cat, minAmt, maxAmt };
 }
 
+async function loadSavedFilters(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid, 'settings', 'filters'));
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    const filters = data.filters || {};
+    if (els.savedFilterSelect) {
+      els.savedFilterSelect.innerHTML = '<option value="">—</option>' + Object.keys(filters).map(name => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join('');
+    }
+    return filters;
+  } catch { return {}; }
+}
+
+async function saveCurrentFilter(uid) {
+  const name = prompt('Save filter as:');
+  if (!name) return;
+  const f = readFilters();
+  const patch = { };
+  patch[`filters.${name}`] = { type: 'both', ...f };
+  await setDoc(doc(db, 'users', uid, 'settings', 'filters'), patch, { merge: true });
+  await loadSavedFilters(uid);
+  toast('Saved');
+}
+
+async function applySavedFilter(uid, name) {
+  if (!name) return;
+  const snap = await getDoc(doc(db, 'users', uid, 'settings', 'filters'));
+  const data = snap.exists() ? (snap.data() || {}) : {};
+  const f = (data.filters || {})[name];
+  if (!f) return;
+  if (els.account) els.account.value = f.account || '';
+  if (els.start) els.start.value = f.start || '';
+  if (els.end) els.end.value = f.end || '';
+  if (els.search) els.search.value = f.q || '';
+  if (els.minAmt) els.minAmt.value = (f.minAmt ?? '') === null ? '' : (f.minAmt ?? '');
+  if (els.maxAmt) els.maxAmt.value = (f.maxAmt ?? '') === null ? '' : (f.maxAmt ?? '');
+  if (els.category) els.category.value = f.cat || '';
+  applyFilters();
+}
+
 function applyFilters() {
   const { account, start, end, q, cat, minAmt, maxAmt } = readFilters();
   let out = ALL_TX;
@@ -421,6 +462,8 @@ function wireUI() {
   });
 
   ensureCategoryDatalist();
+  els.saveFilterBtn?.addEventListener('click', () => { if (UID) saveCurrentFilter(UID).catch(console.error); });
+  els.savedFilterSelect?.addEventListener('change', () => { if (UID) applySavedFilter(UID, els.savedFilterSelect.value).catch(console.error); });
 
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
@@ -459,6 +502,7 @@ function init() {
       }
 
       await loadAllTransactions(UID);
+      await loadSavedFilters(UID);
       toast('Transactions loaded');
     } catch (e) {
       console.error('Expenses init failed', e);

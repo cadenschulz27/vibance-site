@@ -31,6 +31,7 @@ function setActiveNav(root) {
     [/\/expenses\//,  '#nav-expenses'],
     [/\/income\//,    '#nav-income'],
     [/\/budgeting\//, '#nav-budgeting'],
+    [/\/net\//,       '#nav-net'],
     [/\/social\//,    '#nav-community'],
     [/\/literacy\//,  '#nav-literacy'],
     [/\/admin\//,     '#nav-admin'],
