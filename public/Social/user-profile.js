@@ -398,13 +398,16 @@ async function boot() {
     if (!user) return; // auth-check likely redirects if not authed
     YOU = user;
 
+    // If no uid param is provided, treat the page as "your" profile
+    if (!TARGET_UID) TARGET_UID = YOU.uid;
+
     // Load your profile to get 'following'
     YOUR_PROFILE = await loadYourProfile(YOU.uid);
     FOLLOWING = Array.isArray(YOUR_PROFILE?.following) ? YOUR_PROFILE.following : [];
 
     // Load target profile (may be blocked by rules)
     let fallback = null;
-    TARGET_PROFILE = TARGET_UID ? await tryLoadUserProfile(TARGET_UID) : (await tryLoadUserProfile(YOU.uid));
+    TARGET_PROFILE = await tryLoadUserProfile(TARGET_UID);
     if ((!TARGET_PROFILE || Object.keys(TARGET_PROFILE).length === 0) && TARGET_UID) {
       // fall back to latest post for avatar/name
       fallback = await fallbackHeaderFromPosts(TARGET_UID);
