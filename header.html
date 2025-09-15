@@ -19,6 +19,8 @@
         background-color: #1F2937; /* gray-800 */
         color: #D1D5DB; /* gray-300 */
     }
+    /* Global safe areas for iPhone */
+    body { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
 </style>
 <header class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-gray-800">
     <div class="container mx-auto px-6 py-3 flex justify-between items-center">
@@ -49,4 +51,3 @@
         </div>
     </div>
 </header>
-

@@ -78,6 +78,8 @@ async function ensureHeaderMarkup() {
   // push content down below the fixed header
   const headerHeight = clamp($('#app-header')?.offsetHeight || 64, 56, 96);
   document.body.style.paddingTop = `${headerHeight}px`;
+  // Expose header offset for sticky elements (e.g., Expenses toolbar)
+  document.documentElement.style.setProperty('--vb-header-offset', `${headerHeight}px`);
   return document.body;
 }
 

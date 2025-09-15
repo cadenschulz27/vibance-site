@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Expenses • Vibance</title>
 
   <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
@@ -84,6 +84,9 @@
 
     /* Sticky toolbar under the header */
     .toolbar-sticky { position: sticky; top: 64px; z-index: 30; backdrop-filter: blur(6px); }
+    @supports (top: var(--vb-header-offset)) {
+      .toolbar-sticky { top: var(--vb-header-offset, 64px); }
+    }
 
     /* Stat tiles glow ring (neon) */
     .ring-soft { box-shadow: 0 0 0 1px rgba(204,255,0,0.15), 0 10px 30px rgba(204,255,0,0.08); }
