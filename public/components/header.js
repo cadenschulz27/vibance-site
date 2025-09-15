@@ -29,6 +29,7 @@ function setActiveNav(root) {
   const pairs = [
     [/\/dashboard\//, '#nav-dashboard'],
     [/\/expenses\//,  '#nav-expenses'],
+    [/\/income\//,    '#nav-income'],
     [/\/budgeting\//, '#nav-budgeting'],
     [/\/social\//,    '#nav-community'],
     [/\/literacy\//,  '#nav-literacy'],

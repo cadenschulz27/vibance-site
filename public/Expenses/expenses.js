@@ -263,6 +263,9 @@ function applyFilters() {
   if (minAmt != null && !Number.isNaN(minAmt)) out = out.filter(r => r.amount >= minAmt);
   if (maxAmt != null && !Number.isNaN(maxAmt)) out = out.filter(r => r.amount <= maxAmt);
 
+  // Expenses tab: show only outflows (positive amounts in Plaid polarity)
+  out = out.filter(r => r.amount > 0);
+
   FILTERED = out;
   PAGE = 1;
   render();
@@ -275,9 +278,9 @@ function paginate(list, page, size) {
 
 function render() {
   const totalCount = FILTERED.length;
-  const income = FILTERED.filter(r => r.amount < 0).reduce((s, r) => s + Math.abs(r.amount), 0);
-  const expense = FILTERED.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0);
-  const net = income - expense;
+  const income = 0;
+  const expense = FILTERED.reduce((s, r) => s + r.amount, 0);
+  const net = -expense;
 
   if (els.count) els.count.textContent = `${totalCount} row${totalCount === 1 ? '' : 's'}`;
   if (els.incomeTotal) els.incomeTotal.textContent = fmtMoney(income);
