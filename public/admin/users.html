@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin • Users</title>
+
+  <!-- Tailwind (matches your dark/neon theme) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      background:#000; color:#fff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    }
+    .card {
+      background: rgba(18,18,18,.7);
+      border: 1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .btn      { background:#CCFF00; color:#000; font-weight:700; border-radius:9999px; padding:.6rem 1rem; }
+    .btn-ghost{ background:#1f2937; color:#e5e7eb; border-radius:9999px; padding:.5rem .9rem; }
+    .btn:active, .btn-ghost:active { transform: translateY(1px); }
+    .chip { border-radius:9999px; padding:2px 10px; font-size:12px; }
+    .chip-yes { background:#0f5132; color:#d1fae5; }
+    .chip-no  { background:#5c2a2a; color:#fee2e2; }
+    .row:hover { background: rgba(255,255,255,.04); }
+    input, select {
+      background:#1C1C1E; border:1px solid #3A3A3C; border-radius: .75rem; color:#fff;
+      padding:.5rem .75rem;
+    }
+    th { font-weight:600; color:#e5e7eb; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="px-4 py-4 flex items-center gap-3">
+    <img src="/images/logo_white.png" class="w-8 h-8" alt="Vibance">
+    <h1 class="text-xl font-semibold">Admin • Users</h1>
+    <div class="ml-auto">
+      <a href="/admin/admin.html" class="btn-ghost">← Back to Admin</a>
+    </div>
+  </header>
+
+  <main class="p-4">
+    <!-- Access Gate -->
+    <div id="gate" class="card rounded-2xl p-4 mb-4 hidden"></div>
+
+    <!-- Toolbar -->
+    <section id="toolbar" class="card rounded-2xl p-4 mb-4 hidden">
+      <div class="flex flex-col md:flex-row gap-3 md:items-center">
+        <div class="flex-1 flex gap-2">
+          <input id="search" class="w-full" placeholder="Search email (exact) or username…" />
+          <button id="btn-refresh" class="btn">Refresh</button>
+        </div>
+        <div class="flex gap-2">
+          <select id="filter-verified" class="min-w-[150px]">
+            <option value="">All</option>
+            <option value="true">Verified</option>
+            <option value="false">Unverified</option>
+          </select>
+          <select id="filter-status" class="min-w-[160px]">
+            <option value="">Any status</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+            <option value="flagged">Flagged</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <section id="tableWrap" class="card rounded-2xl overflow-hidden hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-[#111] text-left">
+            <tr>
+              <th class="px-4 py-3">Email</th>
+              <th class="px-4 py-3">Username</th>
+              <th class="px-4 py-3">Presence</th>
+              <th class="px-4 py-3">Verified</th>
+              <th class="px-4 py-3">Disabled</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3">Created</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="p-3 flex gap-2 justify-between">
+        <button id="prev" class="btn-ghost">Prev</button>
+        <div id="pageMeta" class="text-xs text-gray-400"></div>
+        <button id="next" class="btn-ghost">Next</button>
+      </div>
+    </section>
+
+    <!-- Drawer / Modal -->
+    <dialog id="drawer" class="rounded-2xl p-0 bg-transparent">
+      <div class="card rounded-2xl p-4 w-[95vw] max-w-2xl">
+        <div class="flex items-center mb-3">
+          <h2 id="d-email" class="text-lg font-semibold"></h2>
+          <button id="d-close" class="ml-auto btn-ghost">Close</button>
+        </div>
+        <div id="d-body" class="space-y-3 text-sm"></div>
+        <div class="pt-3 flex flex-wrap gap-2">
+          <button id="d-toggle-disabled" class="btn"></button>
+          <button id="d-status-active" class="btn-ghost">Set Active</button>
+          <button id="d-status-suspended" class="btn-ghost">Set Suspended</button>
+          <button id="d-status-flagged" class="btn-ghost">Set Flagged</button>
+          <button id="d-delete" class="btn-ghost">Delete User</button>
+        </div>
+        <p id="d-msg" class="text-xs text-gray-400 h-4"></p>
+      </div>
+    </dialog>
+  </main>
+
+  <!-- Firebase app/init -->
+  <script type="module" src="/api/firebase.js"></script>
+  <!-- Presence heartbeat (RTDB + Firestore mirror) -->
+  <script type="module" src="/presence.js"></script>
+  <!-- Page logic -->
+  <script type="module" src="/admin/users.js"></script>
+</body>
+</html>

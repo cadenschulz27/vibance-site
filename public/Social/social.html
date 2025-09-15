@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Social • Vibance</title>
+
+  <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Social theme -->
+  <link rel="stylesheet" href="./social.css"/>
+
+  <style>
+    :root { --neon:#CCFF00; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .font-headline { font-family: 'Lora', serif; }
+    .glass {
+      background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88));
+      border: 1px solid #222226; border-radius: 1rem; backdrop-filter: blur(8px);
+    }
+    #toast { transition: opacity .2s ease; }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <!-- Global header mount (shared across the app) -->
+  <div id="site-header"></div>
+
+  <main class="mx-auto max-w-6xl px-4 pt-24 pb-16">
+    <!-- Page header -->
+    <header class="mb-6 md:mb-10">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Social</p>
+          <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">What’s new</h1>
+          <p class="text-sm md:text-base text-neutral-400 mt-2">Share progress, swap tips, and cheer each other on.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="./follow-list.html" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Find people</a>
+          <a href="./user-profile.html" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Your profile</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <!-- Left column: Composer + Feed (spans 2 on large) -->
+      <section class="lg:col-span-2 space-y-4">
+        <!-- Composer -->
+        <article class="glass p-4 md:p-5">
+          <form id="composer" class="space-y-4" autocomplete="off">
+            <div class="flex items-start gap-3">
+              <img id="you-avatar" class="h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="Your avatar">
+              <div class="flex-1 min-w-0">
+                <textarea id="post-text" rows="3" maxlength="800" placeholder="Share a win, a question, or a tip…"
+                          class="w-full px-3 py-2 text-sm resize-y" required></textarea>
+
+                <!-- Image preview (hidden until a file is picked) -->
+                <div id="image-preview" class="mt-3 hidden">
+                  <img id="image-preview-img" class="post-image" alt="Selected image preview"/>
+                  <div class="mt-2 flex items-center gap-2">
+                    <button id="remove-image" type="button" class="px-3 py-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-900 text-xs">Remove image</button>
+                    <span id="image-filename" class="text-xs text-neutral-400 truncate"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <!-- Hidden file input -->
+              <input id="post-file" type="file" accept="image/*" class="hidden"/>
+
+              <button id="btn-attach" type="button" class="chip px-3 py-2 rounded-xl text-sm flex items-center gap-2">
+                <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21.44 11.05 12 20.5a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66L8.5 18.5a2 2 0 1 1-2.83-2.83L14.17 7.17"/></svg>
+                Add image
+              </button>
+
+              <div class="flex items-center gap-2">
+                <label for="visibility" class="text-sm text-neutral-400">Visibility</label>
+                <select id="visibility" class="chip px-3 py-2 rounded-xl text-sm">
+                  <option value="public">Public</option>
+                  <option value="followers">Followers</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <label for="tags" class="text-sm text-neutral-400">Tags</label>
+                <input id="tags" type="text" maxlength="60" placeholder="budgeting, debt, investing"
+                       class="chip px-3 py-2 rounded-xl text-sm bg-transparent placeholder-neutral-500"
+                       aria-describedby="tags-help"/>
+                <span id="tags-help" class="text-xs text-neutral-500">comma-separated</span>
+              </div>
+
+              <button id="btn-post" type="submit" class="ml-auto btn-neon px-4 py-2 rounded-xl text-sm">Post</button>
+            </div>
+          </form>
+        </article>
+
+        <!-- Feed -->
+        <div id="feed-empty" class="hidden glass p-10 text-center">Your feed is quiet. Follow a few people or make the first move!</div>
+        <div id="feed-list" class="space-y-3">
+          <!-- Cards injected by social.js using #post-card-template -->
+        </div>
+        <div class="pt-2 text-center">
+          <button id="load-more" class="hidden px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Load more</button>
+        </div>
+      </section>
+
+      <!-- Right column: Suggestions -->
+      <aside class="space-y-4">
+        <section class="glass p-4 md:p-5">
+          <div class="flex items-center justify-between">
+            <h2 class="font-medium">Suggested for you</h2>
+            <a href="./follow-list.html" class="text-xs text-neutral-400 hover:text-white">See all</a>
+          </div>
+          <div id="suggested-users" class="mt-4 grid grid-cols-1 gap-3 max-h-[520px] overflow-auto pr-1">
+            <!-- User suggestion cards injected by social.js -->
+          </div>
+        </section>
+
+        <section class="glass p-4 md:p-5">
+          <h2 class="font-medium">Community tips</h2>
+          <ul class="mt-3 text-sm text-neutral-300 list-disc pl-5 space-y-2">
+            <li>Keep it helpful. Explain what worked, and why.</li>
+            <li>Mask personal info on screenshots.</li>
+            <li>Follow folks who focus on your goals.</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-white px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
+
+  <!-- Post Card Template (shared by profile & post pages) -->
+  <template id="post-card-template">
+    <article class="glass p-4 md:p-5">
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <img class="post-avatar h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="Avatar">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <a class="post-author font-medium truncate hover:underline" href="#"></a>
+              <span class="post-badge text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 hidden"></span>
+            </div>
+            <div class="post-meta text-xs text-neutral-500 truncate">•</div>
+          </div>
+        </div>
+        <div class="relative">
+          <button class="post-menu px-2 py-1 rounded-lg hover:bg-neutral-900" aria-haspopup="menu" aria-expanded="false">
+            <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+          <div class="post-menu-popover absolute right-0 mt-2 w-40 rounded-xl border border-neutral-800 bg-neutral-950 shadow-lg p-1 hidden">
+            <button class="post-edit block w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-900 text-sm">Edit</button>
+            <button class="post-delete block w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-900 text-sm text-red-400">Delete</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="post-body text-neutral-100 mt-3 whitespace-pre-wrap"></div>
+
+      <figure class="post-image-wrap mt-3 hidden">
+        <img class="post-image w-full rounded-xl border border-neutral-800 object-cover" alt="Post image"/>
+      </figure>
+
+      <footer class="mt-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button class="post-like px-3 py-1.5 rounded-lg chip hover:border-neutral-700 flex items-center gap-2 text-sm">
+            <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
+            <span class="post-like-count">0</span>
+          </button>
+          <button class="post-comment px-3 py-1.5 rounded-lg chip hover:border-neutral-700 flex items-center gap-2 text-sm">
+            <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a4 4 0 01-4 4H7l-4 4V5a4 4 0 014-4h10a4 4 0 014 4z"/></svg>
+            <span class="post-comment-count">0</span>
+          </button>
+        </div>
+        <a class="post-permalink text-xs text-neutral-400 hover:text-white" href="./post.html">Open</a>
+      </footer>
+
+      <!-- Comments (collapsed by default in feed) -->
+      <section class="post-comments mt-4 hidden">
+        <div class="space-y-3" data-comments-list></div>
+        <div class="mt-3 flex items-start gap-2">
+          <img class="h-8 w-8 rounded-full object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="">
+          <div class="flex-1 flex items-center gap-2">
+            <input type="text" maxlength="240" class="comment-input flex-1 bg-neutral-950/70 border border-neutral-800 rounded-xl px-3 py-2 text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/40" placeholder="Write a comment…"/>
+            <button class="comment-submit btn-neon px-3 py-2 rounded-xl text-sm">Send</button>
+          </div>
+        </div>
+      </section>
+    </article>
+  </template>
+
+  <!-- Core app scripts (absolute paths so header is shared everywhere) -->
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/auth/auth-check.js"></script>
+
+  <!-- Shared global header (ensures same header as other tabs) -->
+  <script type="module" src="/components/header.js"></script>
+
+  <!-- Social modules -->
+  <script type="module" src="./ui-helpers.js"></script>
+  <script type="module" src="./listeners.js"></script>
+  <script type="module" src="./modal-manager.js"></script>
+  <script type="module" src="./data-service.js"></script>
+  <script type="module" src="./post-renderer.js"></script>
+
+  <!-- Page controller -->
+  <script type="module" src="./social.js"></script>
+</body>
+</html>

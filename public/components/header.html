@@ -1,0 +1,96 @@
+<!-- public/components/header.html -->
+<header
+  id="app-header"
+  class="fixed inset-x-0 top-0 z-50 border-b border-neutral-900/70 bg-black/70 backdrop-blur supports-[backdrop-filter]:bg-black/50"
+  role="banner"
+>
+  <div class="mx-auto max-w-7xl px-4">
+    <div class="h-16 flex items-center justify-between gap-3">
+      <!-- Left: Brand -->
+      <a id="brand-link" href="/dashboard/dashboard.html" class="flex items-center gap-3 shrink-0" aria-label="Vibance Home">
+        <img src="/images/logo_white.png" alt="" class="h-6 w-6 rounded" />
+        <span class="text-white font-semibold tracking-tight">Vibance</span>
+      </a>
+
+      <!-- Center: Primary Nav (desktop) -->
+      <nav id="desktop-nav" class="hidden md:flex items-center gap-1 text-sm" aria-label="Primary">
+        <a id="nav-dashboard" href="/dashboard/dashboard.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Dashboard</a>
+        <a id="nav-accounts"  href="/Accounts/accounts.html"  class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Accounts</a>
+        <a id="nav-expenses"  href="/Expenses/expenses.html"  class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expenses</a>
+        <a id="nav-budgeting" href="/Budgeting/budgeting.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Budgeting</a>
+        <a id="nav-community" href="/Social/social.html"        class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Social</a>
+        <!-- Admin link is toggled visible by header.js if user is admin -->
+        <a id="nav-admin"     href="/admin/users.html"          class="nav-link hidden px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Admin</a>
+      </nav>
+
+      <!-- Right cluster -->
+      <div class="flex items-center gap-2">
+        <!-- Shown when signed OUT -->
+        <div id="auth-actions" class="flex items-center gap-2">
+          <a href="/login.html"  class="px-3 py-1.5 rounded-lg text-sm text-neutral-200 hover:bg-neutral-900">Log in</a>
+          <a href="/signup.html" class="px-3 py-1.5 rounded-lg text-sm font-medium text-black bg-[var(--neon,#CCFF00)] hover:opacity-90">Sign up</a>
+        </div>
+
+        <!-- Shown when signed IN -->
+        <div id="user-menu" class="hidden relative">
+          <button
+            id="user-menu-button"
+            class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon,#CCFF00)]"
+            aria-haspopup="menu"
+            aria-expanded="false"
+          >
+            <img id="user-avatar" class="h-8 w-8 rounded-full object-cover border border-neutral-800" src="/images/logo_white.png" alt="Your avatar"/>
+            <span id="user-name" class="hidden md:inline text-sm text-neutral-200 max-w-[16ch] truncate"></span>
+            <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <!-- Popover is populated by header.js -->
+          <div
+            id="user-pop"
+            class="absolute right-0 mt-2 w-56 rounded-xl border border-neutral-800 bg-neutral-950 shadow-xl p-1 hidden"
+            role="menu"
+            aria-labelledby="user-menu-button"
+          ></div>
+        </div>
+
+        <!-- Mobile hamburger -->
+        <button id="btn-mobile" class="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon,#CCFF00)]" aria-label="Open menu" aria-controls="mobile-panel" aria-expanded="false">
+          <svg class="h-5 w-5 text-neutral-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile panel -->
+  <div id="mobile-panel" class="md:hidden hidden border-t border-neutral-900/70 bg-black/85 backdrop-blur" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+    <nav class="p-3 space-y-1 text-sm">
+      <div id="m-auth-actions" class="space-y-1">
+        <a href="/login.html"  class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Log in</a>
+        <a href="/signup.html" class="block px-3 py-2 rounded-lg bg-[var(--neon,#CCFF00)] text-black font-medium hover:opacity-90">Sign up</a>
+      </div>
+      <div id="m-user-actions" class="hidden space-y-1">
+        <a href="/dashboard/dashboard.html" class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Dashboard</a>
+        <a href="/Accounts/accounts.html"    class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Accounts</a>
+        <a href="/Expenses/expenses.html"    class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Expenses</a>
+        <a href="/Budgeting/budgeting.html"  class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Budgeting</a>
+        <a href="/Social/social.html"        class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Social</a>
+        <a id="m-admin-link" href="/admin/users.html" class="mnav-link hidden block px-3 py-2 rounded-lg hover:bg-neutral-900">Admin</a>
+        <hr class="my-1 border-neutral-800"/>
+        <a href="/Social/user-profile.html"  class="block px-3 py-2 rounded-lg hover:bg-neutral-900">My Profile</a>
+        <a href="/pages/profile.html"        class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Settings</a>
+        <button id="m-btn-signout" class="w-full text-left mt-1 px-3 py-2 rounded-lg text-red-300 hover:bg-neutral-900">Log out</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<style>
+  :root { --neon:#CCFF00; }
+  .nav-link.active, .mnav-link.active {
+    background: var(--neon);
+    color: #0a0a0a;
+  }
+  .nav-link.active:hover, .mnav-link.active:hover {
+    background: var(--neon);
+    color:#0a0a0a;
+  }
+</style>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced VibeScore Component</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-green: #CCFF00;
+            --color-red: #FF4500;
+            --color-yellow: #FFD700;
+            --color-green: #90EE90;
+            --color-nodata: #555;
+            --bg-color: #000;
+            --container-size: 700px;
+            --center-ring-size: 220px;
+            --hud-radius: 300px;
+            --bubble-width: 150px;
+            --bubble-height: 55px;
+        }
+        body { background-color: var(--bg-color); color: #FFFFFF; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow: hidden; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .vibescore-wrapper { position: relative; width: var(--container-size); height: var(--container-size); display: flex; align-items: center; justify-content: center; }
+        .vibescore-gauge { width: var(--center-ring-size); height: var(--center-ring-size); position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); transform-style: preserve-3d; }
+        .gauge-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .gauge-bezel { transform: translateZ(10px); }
+        .bezel-ticks { stroke: #444; stroke-width: 1.5; }
+        .gauge-progress { background: conic-gradient(var(--neon-green) 75%, #1C1C1E 0); box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
+        .gauge-inner-ring { animation: rotate-reverse 20s linear infinite; transform: translateZ(-10px); }
+        .inner-ring-dashes { stroke: var(--neon-green); stroke-width: 2; stroke-dasharray: 2 10; opacity: 0.3; }
+        .gauge-glass { background: rgba(10, 10, 10, 0.5); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.1); transform: translateZ(20px); }
+        .vibescore-wrapper:hover .vibescore-gauge { transform: perspective(1000px) rotateX(10deg) rotateY(-5deg); }
+        .vibescore-wrapper:hover .gauge-bezel { transform: translateZ(30px) scale(1.05); }
+        .vibescore-wrapper:hover .gauge-progress { transform: translateZ(10px); }
+        .vibescore-wrapper:hover .gauge-inner-ring { transform: translateZ(-20px); }
+        .vibescore-wrapper:hover .gauge-glass { transform: translateZ(40px) scale(0.95); }
+        .vibescore-inner-text { position: relative; z-index: 15; text-align: center; text-shadow: 0 0 15px rgba(0,0,0,0.8); transform: translateZ(30px); transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .vibescore-wrapper:hover .vibescore-inner-text { transform: translateZ(60px) scale(0.95); }
+        .vibescore-percentage { font-size: 2.5rem; font-weight: 700; color: var(--neon-green); line-height: 1; }
+        .vibescore-label { font-family: 'Lora', serif; font-size: 1.1rem; color: #FFF; margin-top: 0.25rem; }
+        .hud-plane { position: absolute; width: 100%; height: 100%; z-index: 5; }
+        .hud-bubble { width: var(--bubble-width); height: var(--bubble-height); position: absolute; top: calc(50% - (var(--bubble-height) / 2)); left: calc(50% - (var(--bubble-width) / 2)); transform-origin: center; transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)); opacity: 0; animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: var(--delay); transition: opacity 0.3s ease; }
+        .bubble-core { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 500; color: #e5e7eb; border-radius: 10px; background: rgba(28, 28, 30, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); box-shadow: 0 0 20px -5px var(--glow-color); transition: all 0.3s ease; cursor: pointer; }
+        .bubble-score { font-size: 0.75rem; margin-left: 6px; font-weight: 700; color: var(--text-color); }
+        .hud-bubble.is-nodata .bubble-core { background: rgba(20, 20, 22, 0.6); border-color: var(--color-nodata); box-shadow: none; color: #9CA3AF; }
+        .bubble-core-link { display: block; width: 100%; height: 100%; text-decoration: none; }
+        .vibescore-wrapper:has(.hud-bubble:hover) .hud-bubble:not(:hover) { opacity: 0.3; }
+        .tracer-line { position: absolute; top: 50%; left: 50%; width: 2px; background: var(--glow-color); transform-origin: top; opacity: 0; height: 0; transition: opacity 0.3s ease; }
+        .hud-bubble:hover .tracer-line { opacity: 0.7; animation: trace 0.5s ease-out forwards; }
+        .insight-panel { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%) translateY(20px); width: 320px; background: rgba(18, 18, 18, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.5rem; z-index: 20; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease, border-color 0.3s ease; pointer-events: none; }
+        .insight-panel.visible { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+        .insight-title { font-family: 'Lora', serif; }
+        .insight-score { color: var(--text-color); }
+        @keyframes rotate-reverse { from { transform: rotate(360deg) translateZ(-10px); } to { transform: rotate(0deg) translateZ(-10px); } }
+        @keyframes fan-out { from { opacity: 0; transform: rotate(var(--angle)) translateY(-100px) rotate(calc(var(--angle) * -1)) scale(0.5); } to { opacity: 1; transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1); } }
+        @keyframes trace { from { height: 0; } to { height: var(--trace-height); } }
+    </style>
+</head>
+<body>
+
+    <div class="vibescore-wrapper">
+        <div class="vibescore-gauge">
+            <div class="gauge-layer gauge-progress"></div>
+            <svg class="gauge-layer gauge-bezel" viewBox="0 0 100 100"><circle class="bezel-ticks" cx="50" cy="50" r="48" fill="none" stroke-dasharray="1 3" pathLength="120"/></svg>
+            <svg class="gauge-layer gauge-inner-ring" viewBox="0 0 100 100"><circle class="inner-ring-dashes" cx="50" cy="50" r="38" fill="none"/></svg>
+            <div class="gauge-layer gauge-glass"></div>
+            <div class="vibescore-inner-text">
+                <span id="vibe-score-percentage" class="vibescore-percentage">75%</span>
+                <span class="vibescore-label">VibeScore</span>
+            </div>
+        </div>
+
+        <div id="hud-plane" class="hud-plane"></div>
+        <div id="insight-panel-container">
+             </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DATA SOURCE ---
+        const financialData = [
+            { name: 'Savings', score: 85, insight: "Excellent savings rate. Your consistent contributions are building a strong financial cushion.", hasData: true }, 
+            { name: 'Budgeting', score: 92, insight: "Masterful budgeting. You're tracking spending effectively and staying well within your means.", hasData: true },
+            { name: 'Income', score: 0, insight: "No data found. Click to go to your profile and add your information.", hasData: false },
+            { name: 'Cash Flow', score: 75, insight: "Healthy cash flow. Your income comfortably covers your expenses.", hasData: true },
+            { name: 'Credit Score', score: 78, insight: "Good credit health. Your score is solid.", hasData: true }, 
+            { name: 'Investing', score: 45, insight: "There's an opportunity to grow here.", hasData: true },
+            { name: 'Retirement', score: 55, insight: "A good start on retirement planning.", hasData: true }, 
+            { name: 'Debt', score: 30, insight: "High debt levels are impacting your score.", hasData: true },
+            { name: 'Net Worth', score: 60, insight: "Your net worth is growing steadily.", hasData: true }, 
+            { name: 'Emergency Fund', score: 88, insight: "Your emergency fund is well-established.", hasData: true }
+        ];
+
+        // --- ELEMENT REFERENCES ---
+        const hudPlane = document.getElementById('hud-plane');
+        const insightPanelContainer = document.getElementById('insight-panel-container');
+        const vibeScorePercentage = document.getElementById('vibe-score-percentage');
+        
+        // Inject the Insight Panel HTML
+        insightPanelContainer.innerHTML = `
+            <div id="insight-panel" class="insight-panel">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 id="insight-title" class="insight-title text-lg font-semibold">Category</h3>
+                    <p id="insight-score" class="insight-score font-bold text-lg">0</p>
+                </div>
+                <p id="insight-text" class="text-gray-400 text-sm leading-relaxed">Insight text will appear here.</p>
+            </div>
+        `;
+        const insightPanel = document.getElementById('insight-panel');
+        const insightTitle = document.getElementById('insight-title');
+        const insightScore = document.getElementById('insight-score');
+        const insightText = document.getElementById('insight-text');
+
+
+        // --- INITIALIZATION ---
+        function initialize() {
+            const angleStep = 360 / financialData.length;
+            const startingAngle = -90;
+
+            financialData.forEach((item, index) => {
+                const angle = startingAngle + (index * angleStep);
+                
+                // Determine colors based on score and data availability
+                let colors;
+                if (!item.hasData) {
+                    colors = { borderColor: 'var(--color-nodata)', glowColor: 'rgba(0,0,0,0)', hoverBorderColor: '#9CA3AF', textColor: '#9CA3AF' };
+                } else if (item.score < 50) {
+                    colors = { borderColor: 'rgba(255, 69, 0, 0.4)', glowColor: 'rgba(255, 69, 0, 0.3)', hoverBorderColor: 'rgba(255, 69, 0, 0.8)', textColor: 'var(--color-red)' };
+                } else if (item.score < 80) {
+                    colors = { borderColor: 'rgba(255, 215, 0, 0.4)', glowColor: 'rgba(255, 215, 0, 0.3)', hoverBorderColor: 'rgba(255, 215, 0, 0.8)', textColor: 'var(--color-yellow)' };
+                } else {
+                    colors = { borderColor: 'rgba(144, 238, 144, 0.4)', glowColor: 'rgba(144, 238, 144, 0.3)', hoverBorderColor: 'rgba(144, 238, 144, 0.8)', textColor: 'var(--color-green)' };
+                }
+
+                // Create the bubble element
+                const bubble = document.createElement('div');
+                bubble.className = 'hud-bubble';
+                if (!item.hasData) {
+                    bubble.classList.add('is-nodata');
+                }
+
+                // Set CSS variables for styling and animation
+                bubble.style.setProperty('--angle', `${angle}deg`);
+                bubble.style.setProperty('--delay', `${index * 80}ms`);
+                bubble.style.setProperty('--border-color', colors.borderColor);
+                bubble.style.setProperty('--glow-color', colors.glowColor);
+                bubble.style.setProperty('--hover-border-color', colors.hoverBorderColor);
+                bubble.style.setProperty('--text-color', colors.textColor);
+                
+                // Create the content of the bubble
+                const scoreText = item.hasData ? item.score.toFixed(2) : 'N/A';
+                const coreContent = `
+                    <div class="bubble-core">
+                        <span>${item.name}</span>
+                        <span class="bubble-score">${scoreText}</span>
+                    </div>
+                    <div class="tracer-line"></div>
+                `;
+                bubble.innerHTML = item.hasData ? coreContent : `<a href="#" onclick="alert('Navigate to profile page')" class="bubble-core-link">${coreContent}</a>`;
+
+                hudPlane.appendChild(bubble);
+
+                // --- INTERACTIVITY ---
+                bubble.addEventListener('mouseenter', () => {
+                    // Populate and show the insight panel
+                    insightTitle.textContent = item.name;
+                    insightScore.textContent = scoreText;
+                    insightText.textContent = item.insight;
+                    insightPanel.style.setProperty('--border-color', colors.borderColor);
+                    insightPanel.style.setProperty('--text-color', colors.textColor);
+                    insightPanel.classList.add('visible');
+
+                    // Calculate tracer line height
+                    const radius = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hud-radius'));
+                    const bubbleHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bubble-height'));
+                    const traceHeight = radius - (bubbleHeight / 2) - 20; // Subtract half bubble height and some padding
+                    const tracerLine = bubble.querySelector('.tracer-line');
+                    if(tracerLine) {
+                        tracerLine.style.setProperty('--trace-height', `${traceHeight}px`);
+                        tracerLine.style.setProperty('--glow-color', colors.glowColor);
+                    }
+                });
+
+                bubble.addEventListener('mouseleave', () => {
+                    // Hide the insight panel
+                    insightPanel.classList.remove('visible');
+                });
+            });
+
+            // Calculate and set the main VibeScore
+            const itemsWithData = financialData.filter(item => item.hasData);
+            const totalScore = itemsWithData.reduce((acc, item) => acc + item.score, 0);
+            const userVibeScore = itemsWithData.length > 0 ? Math.round(totalScore / itemsWithData.length) : 0;
+            vibeScorePercentage.textContent = `${userVibeScore}%`;
+        }
+
+        initialize();
+    });
+    </script>
+</body>
+</html>

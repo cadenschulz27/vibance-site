@@ -1,0 +1,64 @@
+/**
+ * @file VibeScore/insight-panel.css
+ * @description Styles for the Insight Panel that appears on bubble hover.
+ */
+
+/* --- INSIGHT PANEL CORE --- */
+/*
+ * FIX: The panel is now positioned absolutely in the center of its container.
+ * The transform property ensures it is perfectly centered regardless of its own width.
+ * A high z-index guarantees it appears on top of the gauge.
+ */
+.insight-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 340px; /* Slightly wider for a more premium feel */
+    z-index: 20; /* Ensures it appears above the gauge */
+    
+    background: rgba(18, 18, 18, 0.9); /* Darker, less transparent background */
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 1.5rem 2rem;
+
+    /* Initial state: hidden and slightly scaled down */
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, -50%) scale(0.95);
+    
+    /* Smooth transitions for all animated properties */
+    transition: 
+        opacity 0.25s ease, 
+        transform 0.25s ease, 
+        visibility 0.25s ease;
+    
+    pointer-events: none;
+}
+
+/* --- VISIBLE STATE --- */
+/* This class is added by JavaScript on bubble hover to reveal the panel. */
+.insight-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1); /* Animate to full size */
+    pointer-events: auto;
+}
+
+
+/* --- TEXT ELEMENTS --- */
+.insight-title {
+    font-family: 'Lora', serif;
+}
+
+.insight-score {
+    color: var(--text-color);
+}
+
+.insight-text {
+    color: #b0b0b0; /* Lighter text for better contrast */
+    line-height: 1.6;
+}
+

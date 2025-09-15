@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibance - Financial Empowerment for Everyone</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- NEW: Three.js for WebGL Background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .font-headline {
+            font-family: 'Lora', serif;
+        }
+        .bg-neon {
+            background-color: #CCFF00;
+        }
+        .text-neon {
+            color: #CCFF00;
+        }
+        .btn-neon {
+            background-color: #CCFF00;
+            color: #000000;
+            font-weight: 700;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2);
+        }
+        .hero-bg {
+            position: relative;
+            background-color: #0D0D0D;
+            overflow: hidden;
+        }
+        /* NEW: Canvas for WebGL */
+        #webgl-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        .section-bg {
+            background-color: #101010;
+        }
+
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in-up.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .delay-1 { transition-delay: 100ms; }
+        .delay-2 { transition-delay: 200ms; }
+        .delay-3 { transition-delay: 300ms; }
+        .delay-4 { transition-delay: 400ms; }
+
+        #connecting-line {
+            stroke-dasharray: 3000;
+            stroke-dashoffset: 3000;
+            transition: stroke-dashoffset 0.5s ease-out;
+        }
+        
+        .interactive-card {
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: rgba(26, 26, 26, 0.5);
+            border: 1px solid #2A2A2A;
+            backdrop-filter: blur(5px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+        .interactive-card:hover {
+            box-shadow: 0 0 40px rgba(204, 255, 0, 0.1);
+        }
+
+        /* NEW: Wall of Wins Styling */
+        .wall-of-wins-container {
+            overflow: hidden;
+            position: relative;
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .wall-of-wins-track {
+            display: flex;
+            width: fit-content;
+            animation: scroll 60s linear infinite;
+        }
+        .wall-of-wins-card {
+            width: 350px;
+            flex-shrink: 0;
+            margin: 0 1rem;
+            padding: 1.5rem;
+            background-color: #1A1A1A;
+            border: 1px solid #2A2A2A;
+            border-radius: 1rem;
+        }
+        .data-card {
+            background-color: #CCFF00;
+            color: #000;
+        }
+        @keyframes scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+    </style>
+</head>
+<body class="bg-black text-white">
+
+    <header class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="images/logo_white.png" alt="Vibance Logo" class="h-8 w-8">
+                <span class="text-xl font-bold">Vibance</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="login.html" class="text-sm font-medium hover:text-neon transition-colors">Log In</a>
+                <a href="signup.html" class="btn-neon px-4 py-2 rounded-full text-sm">Sign Up</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-bg pt-32 pb-20 md:pt-48 md:pb-32 text-center relative">
+            <!-- NEW: WebGL CANVAS HERE -->
+            <canvas id="webgl-canvas"></canvas>
+            <div class="container mx-auto px-6 relative z-10">
+                <p class="text-neon font-semibold mb-2 fade-in-up">Vibance Presents</p>
+                <h1 class="font-headline text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight max-w-4xl mx-auto fade-in-up delay-1">
+                    Master Your Money. <br/>Enter a New Era of Financial Control.
+                </h1>
+                <p class="mt-6 text-lg text-gray-300 max-w-2xl mx-auto fade-in-up delay-2">
+                    The all-in-one finance app to master your money. Build smart habits today for a wealthier tomorrow.
+                </p>
+                <div class="mt-10 fade-in-up delay-3">
+                    <a href="signup.html" class="btn-neon inline-block px-8 py-4 rounded-full text-lg">Get Started Now</a>
+                </div>
+                <div id="live-data-ticker" class="mt-12 text-sm text-gray-400 fade-in-up delay-4">
+                    🎉 Total Members: <span id="member-count" class="font-bold text-white">...</span>
+                </div>
+            </div>
+        </section>
+
+        <div id="content-wrapper" class="relative">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 h-full w-px z-0 hidden lg:block">
+                <svg width="2" height="100%" class="h-full">
+                    <path id="connecting-line" d="M 1 0 V 3000" stroke="#2A2A2A" stroke-width="2"/>
+                </svg>
+            </div>
+
+            <section id="features" class="py-20 md:py-32 relative">
+                <div class="container mx-auto px-6 relative z-10">
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div class="fade-in-up delay-1 interactive-card">
+                            <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                            <h2 class="font-headline text-2xl font-semibold mb-4">Build a Budget That Works for You.</h2>
+                            <p class="text-gray-400">Stop guessing where your money goes. Our tools help you track spending patterns and create a simple, effective budget in minutes.</p>
+                        </div>
+                        <div class="fade-in-up delay-2 interactive-card">
+                            <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
+                            <h2 class="font-headline text-2xl font-semibold mb-4">See Your Spending Clearly.</h2>
+                            <p class="text-gray-400">Log your daily expenses to gain a clear understanding of your habits. From coffee to subscriptions, know exactly where your money is going.</p>
+                        </div>
+                        <div class="fade-in-up delay-3 interactive-card">
+                            <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg></div>
+                            <h2 class="font-headline text-2xl font-semibold mb-4">Level Up Your Financial IQ.</h2>
+                            <p class="text-gray-400">Learn the essentials with our interactive modules on budgeting, saving, investing, and managing debt.</p>
+                        </div>
+                        <div class="fade-in-up delay-4 interactive-card">
+                            <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.002 3.002 0 013.42-2.322M12 12a3 3 0 11-6 0 3 3 0 016 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>
+                            <h2 class="font-headline text-2xl font-semibold mb-4">Learn and Grow with Your Peers.</h2>
+                            <p class="text-gray-400">Engage with a community on the same financial journey. Participate in group saving challenges, climb leaderboards, and earn rewards for hitting your goals.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- NEW: WALL OF WINS SECTION -->
+            <section class="py-20 md:py-32 section-bg relative">
+                <div class="container mx-auto text-center fade-in-up relative z-10">
+                     <h2 class="font-headline text-3xl md:text-4xl font-bold mb-12">Join a Community of Winners</h2>
+                </div>
+                <div class="wall-of-wins-container">
+                    <div id="wall-of-wins-track" class="wall-of-wins-track">
+                        <!-- Content will be duplicated by JS for a seamless loop -->
+                    </div>
+                </div>
+            </section>
+
+            <section class="py-20 md:py-32 text-center relative">
+                <div class="container mx-auto px-6 fade-in-up relative z-10">
+                    <h2 class="font-headline text-4xl md:text-5xl font-bold mb-4">Ready to Master Your Money?</h2>
+                    <p class="text-lg text-gray-300 mb-8">It's free, easy to get started, and is the most valuable investment you can make in your financial future.</p>
+                    <a href="signup.html" class="btn-neon inline-block px-8 py-4 rounded-full text-lg">Get Started Now</a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="section-bg pt-16 pb-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+                 <div>
+                    <h3 class="font-bold mb-4">Product</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Budgeting</a></li>
+                        <li><a href="#" class="hover:text-white">Expense Tracking</a></li>
+                        <li><a href="#" class="hover:text-white">Goals</a></li>
+                        <li><a href="#" class="hover:text-white">Literacy</a></li>
+                        <li><a href="#" class="hover:text-white">Community</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Company</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="pages/about.html" class="hover:text-white">About us</a></li>
+                        <li><a href="pages/blog.html" class="hover:text-white">Blog</a></li>
+                        <li><a href="pages/careers.html" class="hover:text-white">Careers</a></li>
+                        <li><a href="pages/press.html" class="hover:text-white">Press</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Legal & Regulatory</h3>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="pages/terms.html" class="hover:text-white">Terms & Conditions</a></li>
+                        <li><a href="pages/privacy.html" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="pages/disclosures.html" class="hover:text-white">Disclosures</a></li>
+                    </ul>
+                </div>
+                <div>
+                     <h3 class="font-bold mb-4">Follow Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <img src="images/Instagram_Logo.webp" alt="Instagram" class="h-6 w-6">
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <img src="images/LinkedIn_Logo.webp" alt="LinkedIn" class="h-6 w-6">
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2025 Vibance. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4yxIaK9WDTwrk1riHfYxAvq9Z_v7wGDM",
+            authDomain: "vibanceco.firebaseapp.com",
+            projectId: "vibanceco",
+            storageBucket: "vibanceco.appspot.com",
+            messagingSenderId: "1068160687178",
+            appId: "1:1068160687178:web:3cbff24fe03c98fc521ab3",
+            measurementId: "G-T-9L0S3VSKP"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... (Observer, Ticker, and SVG Line code remains the same) ...
+            const sections = document.querySelectorAll('.fade-in-up');
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+            sections.forEach(section => observer.observe(section));
+
+            const memberCountEl = document.getElementById('member-count');
+            async function fetchTotalMembers() {
+                try {
+                    const querySnapshot = await getDocs(collection(db, "users"));
+                    const count = querySnapshot.size;
+
+                    let currentCount = 0;
+                    const increment = Math.ceil(count / 50);
+                    const interval = setInterval(() => {
+                        currentCount += increment;
+                        if (currentCount >= count) {
+                            memberCountEl.textContent = count.toLocaleString();
+                            clearInterval(interval);
+                        } else {
+                            memberCountEl.textContent = currentCount.toLocaleString();
+                        }
+                    }, 20);
+                } catch (error) {
+                    console.error("Error fetching total members:", error);
+                    memberCountEl.textContent = "1,234+";
+                }
+            }
+            fetchTotalMembers();
+
+            const line = document.getElementById('connecting-line');
+            const contentWrapper = document.getElementById('content-wrapper');
+            
+            if(line && contentWrapper) {
+                const lineLength = 3000;
+                line.style.strokeDasharray = lineLength;
+                line.style.strokeDashoffset = lineLength;
+
+                window.addEventListener('scroll', () => {
+                    const rect = contentWrapper.getBoundingClientRect();
+                    const scrollPercent = -rect.top / (rect.height - window.innerHeight);
+                    const clampedPercent = Math.max(0, Math.min(1, scrollPercent));
+
+                    if (!isNaN(clampedPercent)) {
+                        const drawLength = clampedPercent * lineLength;
+                        line.style.strokeDashoffset = lineLength - drawLength;
+                    }
+                });
+            }
+
+            const cards = document.querySelectorAll('.interactive-card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const rotateX = ((y - centerY) / centerY) * -5;
+                    const rotateY = ((x - centerX) / centerX) * 5;
+
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+                });
+            });
+
+            // NEW: WEBGL BACKGROUND SCRIPT
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl-canvas'), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            const particlesGeometry = new THREE.BufferGeometry;
+            const particlesCnt = 4000; // Reduced particle count for subtlety
+            const posArray = new Float32Array(particlesCnt * 3);
+            for (let i = 0; i < particlesCnt * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 5;
+            }
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            
+            // UPDATED: Made particles smaller and transparent
+            const particlesMaterial = new THREE.PointsMaterial({ 
+                size: 0.004, 
+                color: 0xCCFF00,
+                transparent: true,
+                opacity: 0.5 
+            });
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
+            
+            camera.position.z = 2;
+
+            let mouseX = 0;
+            let mouseY = 0;
+            document.addEventListener('mousemove', (event) => {
+                mouseX = event.clientX / window.innerWidth - 0.5;
+                mouseY = event.clientY / window.innerHeight - 0.5;
+            });
+            
+            const clock = new THREE.Clock();
+            const animate = () => {
+                requestAnimationFrame(animate);
+                const elapsedTime = clock.getElapsedTime();
+                particlesMesh.rotation.y = elapsedTime * 0.1;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                renderer.render(scene, camera);
+            };
+            animate();
+
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            });
+
+            // NEW: WALL OF WINS SCRIPT
+            const winsData = [
+                { type: 'testimonial', text: 'Vibance finally helped me get my spending under control. Seeing everything in one place is a game-changer!', author: 'Sarah K.' },
+                { type: 'data', text: '15%', subtext: 'Average reduction in subscription spending in the first month.' },
+                { type: 'testimonial', text: 'The savings goals feature kept me motivated to save for my first car. I actually did it!', author: 'Mike P.' },
+                { type: 'data', text: '10,000+', subtext: 'Savings goals created by our members.' },
+                { type: 'testimonial', text: 'I thought investing was too complicated, but the literacy modules made it so easy to understand.', author: 'Jessica L.' },
+                { type: 'data', text: '$1.2M+', subtext: 'Total debt our members are actively paying down.' }
+            ];
+
+            const track = document.getElementById('wall-of-wins-track');
+            const allWins = [...winsData, ...winsData]; // Duplicate for seamless loop
+            
+            allWins.forEach(win => {
+                const card = document.createElement('div');
+                if (win.type === 'testimonial') {
+                    card.className = 'wall-of-wins-card';
+                    card.innerHTML = `<p class="text-lg">“${win.text}”</p><p class="mt-4 font-bold text-neon">- ${win.author}</p>`;
+                } else {
+                    card.className = 'wall-of-wins-card data-card';
+                    card.innerHTML = `<p class="font-headline text-5xl font-bold">${win.text}</p><p class="mt-2 font-semibold">${win.subtext}</p>`;
+                }
+                track.appendChild(card);
+            });
+        });
+    </script>
+</body>
+</html>
+
+

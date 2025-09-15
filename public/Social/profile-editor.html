@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Edit Profile • Vibance Community</title>
+
+  <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Shared social styles -->
+  <link rel="stylesheet" href="./social.css"/>
+
+  <style>
+    :root { --neon:#CCFF00; --border:#222226; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .font-headline { font-family: 'Lora', serif; }
+    .glass {
+      background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88));
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      backdrop-filter: blur(8px);
+    }
+    label { color:#d1d5db; font-size: .825rem; }
+    input[type="text"], input[type="url"], textarea {
+      background: rgba(10,10,10,0.7);
+      border: 1px solid #232428;
+      border-radius: 0.75rem;
+      color: #fff;
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    input[type="text"]:focus, input[type="url"]:focus, textarea:focus {
+      border-color: var(--neon);
+      box-shadow: 0 0 0 2px rgba(204,255,0,0.15);
+    }
+    #toast { transition: opacity .2s ease; }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <!-- Header mount -->
+  <div id="site-header"></div>
+
+  <main class="mx-auto max-w-3xl px-4 pt-24 pb-16">
+    <!-- Breadcrumb -->
+    <nav class="mb-6 text-sm text-neutral-400">
+      <a href="./user-profile.html" class="hover:text-white">← Back to Profile</a>
+    </nav>
+
+    <!-- Title -->
+    <header class="mb-6 md:mb-8">
+      <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight">Edit your profile</h1>
+      <p class="text-neutral-400 mt-2">Update your name and avatar (image URL). Your bio is saved privately in your settings.</p>
+    </header>
+
+    <!-- Form card -->
+    <section class="glass p-5 md:p-6">
+      <form id="profile-form" class="space-y-5">
+        <!-- Avatar Preview + URL -->
+        <div class="flex items-start gap-4">
+          <img id="avatar-preview" class="h-20 w-20 rounded-2xl object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="Avatar preview">
+          <div class="flex-1">
+            <label for="photoURL" class="block mb-2">Avatar image URL</label>
+            <input id="photoURL" name="photoURL" type="url" placeholder="https://…"
+                   class="w-full px-3 py-2" autocomplete="off"/>
+            <p class="text-xs text-neutral-500 mt-2">Tip: Use a square image (≥ 256×256). Storage uploads aren’t enabled for avatars; paste a URL instead.</p>
+          </div>
+        </div>
+
+        <!-- Display name -->
+        <div>
+          <label for="name" class="block mb-2">Display name</label>
+          <input id="name" name="name" type="text" maxlength="60" placeholder="e.g., Caden S."
+                 class="w-full px-3 py-2" autocomplete="name"/>
+        </div>
+
+        <!-- First / Last -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="firstName" class="block mb-2">First name</label>
+            <input id="firstName" name="firstName" type="text" maxlength="40" class="w-full px-3 py-2"/>
+          </div>
+          <div>
+            <label for="lastName" class="block mb-2">Last name</label>
+            <input id="lastName" name="lastName" type="text" maxlength="40" class="w-full px-3 py-2"/>
+          </div>
+        </div>
+
+        <!-- Bio (stored in settings subcollection) -->
+        <div>
+          <label for="bio" class="block mb-2">Bio <span class="text-neutral-500">(saved in Settings)</span></label>
+          <textarea id="bio" name="bio" rows="4" maxlength="280" placeholder="Short intro, goals, or interests…"
+                    class="w-full px-3 py-2"></textarea>
+          <p class="text-xs text-neutral-500 mt-1"><span id="bio-count">0</span> / 280</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between gap-3 pt-2">
+          <a href="./user-profile.html" class="px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Cancel</a>
+          <div class="flex items-center gap-2">
+            <button id="btn-save" type="submit" class="btn-neon px-4 py-2 rounded-xl text-sm">Save changes</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-white px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
+
+  <!-- Core app scripts -->
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/auth/auth-check.js"></script>
+  <script type="module" src="/components/header.js"></script>
+
+  <!-- Page controller -->
+  <script type="module">
+    import { auth, db } from '/api/firebase.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const els = {
+      form: document.getElementById('profile-form'),
+      name: document.getElementById('name'),
+      first: document.getElementById('firstName'),
+      last: document.getElementById('lastName'),
+      photo: document.getElementById('photoURL'),
+      bio: document.getElementById('bio'),
+      bioCount: document.getElementById('bio-count'),
+      preview: document.getElementById('avatar-preview'),
+      toast: document.getElementById('toast'),
+      save: document.getElementById('btn-save'),
+    };
+
+    function toast(msg) {
+      els.toast.textContent = msg;
+      els.toast.classList.remove('opacity-0','pointer-events-none');
+      els.toast.classList.add('opacity-100');
+      setTimeout(() => {
+        els.toast.classList.add('opacity-0','pointer-events-none');
+      }, 1500);
+    }
+    function enable(el, yes=true){ el.disabled=!yes; el.classList.toggle('opacity-50', !yes); }
+
+    function wire() {
+      els.photo.addEventListener('input', () => {
+        const url = els.photo.value.trim();
+        els.preview.src = url || '/images/logo_white.png';
+      });
+      els.bio.addEventListener('input', () => {
+        els.bioCount.textContent = String(els.bio.value.length);
+      });
+
+      els.form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const payload = {
+          name: (els.name.value || '').trim(),
+          firstName: (els.first.value || '').trim(),
+          lastName: (els.last.value || '').trim(),
+          photoURL: (els.photo.value || '').trim(),
+          updatedAt: serverTimestamp(),
+        };
+
+        // Remove empty keys so we don't overwrite with ''
+        Object.keys(payload).forEach(k => {
+          if (payload[k] === '') delete payload[k];
+        });
+
+        enable(els.save, false);
+        try {
+          // Write only allowed fields on /users/{uid}
+          await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
+
+          // Save bio in settings subcollection (rules: allowed for owner)
+          const bio = (els.bio.value || '').trim();
+          await setDoc(doc(db, 'users', user.uid, 'settings', 'profile'), { bio, updatedAt: serverTimestamp() }, { merge: true });
+
+          toast('Saved ✓');
+          // small delay then go back
+          setTimeout(() => location.href = './user-profile.html?uid=' + encodeURIComponent(user.uid), 600);
+        } catch (e) {
+          console.error(e);
+          toast('Save failed');
+        } finally {
+          enable(els.save, true);
+        }
+      });
+    }
+
+    async function loadInitial() {
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) return; // auth-check will redirect if needed
+        try {
+          // Load root user doc (owner read allowed by rules)
+          const snap = await getDoc(doc(db, 'users', user.uid));
+          const data = snap.exists() ? (snap.data() || {}) : {};
+          els.name.value = data.name || user.displayName || '';
+          els.first.value = data.firstName || '';
+          els.last.value = data.lastName || '';
+          els.photo.value = data.photoURL || user.photoURL || '';
+          els.preview.src = els.photo.value || '/images/logo_white.png';
+
+          // Load bio from settings subcollection (allowed)
+          const bioSnap = await getDoc(doc(db, 'users', user.uid, 'settings', 'profile'));
+          const bio = bioSnap.exists() ? (bioSnap.data().bio || '') : '';
+          els.bio.value = bio;
+          els.bioCount.textContent = String(bio.length);
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { wire(); loadInitial(); });
+  </script>
+</body>
+</html>

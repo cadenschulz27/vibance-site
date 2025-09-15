@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verify Your Email • Vibance</title>
+
+  <!-- Minimal styling to match your black/neon theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root { color-scheme: dark; }
+    body { background:#000; color:#fff; font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; }
+    .card {
+      background-color: rgba(18, 18, 18, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .input-field { background:#1C1C1E; border:1px solid #3A3A3C; transition: border-color .15s ease; }
+    .input-field:focus { border-color:#CCFF00; outline: none; }
+    .btn-neon { background:#CCFF00; color:#000; font-weight:700; transition: transform .08s ease; }
+    .btn-neon:active { transform: translateY(1px); }
+    a.minor { color:#9ca3af; }
+    a.minor:hover { color:#e5e7eb; }
+  </style>
+</head>
+<body class="min-h-screen grid place-items-center px-4">
+  <main class="w-full max-w-md card rounded-2xl p-6 space-y-6">
+    <div class="text-center space-y-2">
+      <a href="/index.html" class="inline-block">
+        <img src="/images/logo_white.png" alt="Vibance" class="h-10 w-10 mx-auto">
+      </a>
+      <h1 class="text-2xl md:text-3xl font-semibold">Verify your email</h1>
+      <p class="text-neutral-400 text-sm">Enter the 6-digit code we sent to your inbox.</p>
+    </div>
+
+    <!-- FORM -->
+    <form id="code-form" class="space-y-3" novalidate>
+      <label for="verify-code" class="text-sm text-neutral-300">Verification code</label>
+      <input
+        id="verify-code"
+        type="text"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        maxlength="6"
+        placeholder="123456"
+        class="w-full px-4 py-3 rounded-xl input-field text-white"
+        required
+      >
+      <button id="submit-code" class="w-full py-3 rounded-full btn-neon">Verify</button>
+    </form>
+
+    <button id="resend-code" class="w-full py-2 rounded-full bg-neutral-800 hover:bg-neutral-700">
+      Resend code
+    </button>
+
+    <p id="status" class="text-center text-sm text-neutral-400 h-6"></p>
+
+    <div class="text-center">
+      <a href="/login.html" class="minor text-sm">Back to login</a>
+    </div>
+  </main>
+
+  <!-- Firebase App & Auth (your initialized module) -->
+  <script type="module" src="/api/firebase.js"></script>
+
+  <!-- Page logic -->
+  <script type="module">
+    import { auth } from '/api/firebase.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+    const codeForm  = document.getElementById('code-form');
+    const codeInput = document.getElementById('verify-code');
+    const resendBtn = document.getElementById('resend-code');
+    const statusEl  = document.getElementById('status');
+
+    const show = (msg) => { statusEl.textContent = msg || ''; };
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, async (u) => {
+      currentUser = u;
+      if (!u) {
+        show('Please sign in first…');
+        setTimeout(() => (window.location.href = '/login.html'), 1200);
+        return;
+      }
+      try {
+        await u.reload();
+        if (u.emailVerified) {
+          show('Already verified. Redirecting…');
+          setTimeout(() => (window.location.href = '/dashboard/dashboard.html'), 800);
+        } else {
+          show('We sent a code to your email. Enter it above.');
+        }
+      } catch {
+        show('Could not load your session. Try again.');
+      }
+    });
+
+    async function callFn(path, body) {
+      if (!currentUser) throw new Error('Not signed in');
+      const idToken = await currentUser.getIdToken(true);
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Bubble up the function's explicit error message if present
+        throw new Error(data?.error || `Request failed (${res.status})`);
+      }
+      return data;
+    }
+
+    codeForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      show('');
+
+      // Keep only digits; restrict to 6
+      const code = (codeInput.value || '').replace(/\D/g, '').slice(0, 6);
+      if (code.length !== 6) {
+        show('Enter the 6-digit code.');
+        codeInput.focus();
+        return;
+      }
+
+      try {
+        await callFn('/.netlify/functions/verify-code-check', { code });
+        show('Verified! Redirecting…');
+        await currentUser.reload();
+        window.location.href = '/dashboard/dashboard.html';
+      } catch (err) {
+        show(err.message || 'Invalid code. Try again.');
+      }
+    });
+
+    resendBtn?.addEventListener('click', async () => {
+      show('');
+      try {
+        const result = await callFn('/.netlify/functions/verify-code-create');
+        // result: { ok: true, emailed: true, ttlMin, cooldownSec, attemptsLeft }
+        show(result.ok ? 'Code sent. Check your email.' : 'Unable to send code right now.');
+      } catch (err) {
+        // Includes cooldown messages like "Please wait 23s before requesting another code."
+        show(err.message || 'Could not resend. Try again soon.');
+      }
+    });
+  </script>
+</body>
+</html>

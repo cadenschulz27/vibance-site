@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Vibance</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="../VibeScore/vibescore.css">
+    <link rel="stylesheet" href="../VibeScore/hud.css">
+    <link rel="stylesheet" href="../VibeScore/insight-panel.css">
+</head>
+<body class="bg-black text-white font-['Inter']">
+
+    <div id="header-placeholder"></div>
+
+    <main class="pt-24">
+        <section id="vibescore-section" class="vibescore-wrapper">
+            <div id="vibescore-container" class="vibescore-gauge">
+                </div>
+            <div id="hud-plane" class="hud-plane">
+                </div>
+            <div id="insight-panel-container">
+                </div>
+        </section>
+
+        <section id="financial-news" class="content-section">
+            <h2 class="section-header">Financial News</h2>
+            <div id="news-grid" class="news-grid">
+                </div>
+            <div id="news-empty" style="display: none;" class="text-center text-gray-500 py-10">
+                Could not load financial news at this time.
+            </div>
+        </section>
+
+        <section id="savings-goals" class="content-section">
+            <h2 class="section-header">Savings Goals</h2>
+            <div class="placeholder-box"><span>Savings Goals Content Here</span></div>
+        </section>
+        
+        <section id="achievements" class="content-section">
+            <h2 class="section-header">Achievements</h2>
+            <div class="placeholder-box"><span>Achievements Content Here</span></div>
+        </section>
+    </main>
+
+    <script type="module" src="../api/firebase.js"></script>
+    <script type="module" src="../auth/auth-check.js"></script>
+    <script type="module" src="../components/header.js"></script>
+    <script type="module" src="../VibeScore/vibescore.js"></script>
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>

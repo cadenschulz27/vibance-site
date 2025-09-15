@@ -1,0 +1,214 @@
+/* public/Budgeting/budgeting.css */
+/* ------------------------------------------------------------------
+   Vibance • Budgeting Theme
+   - Dark glass aesthetic to match Dashboard / Expenses / Social
+   - Neon highlights (#CCFF00)
+   - Compact, responsive layout
+------------------------------------------------------------------- */
+
+:root {
+  --bg: #000000;
+  --panel: rgba(10,10,10,0.88);
+  --panel-top: rgba(24,24,27,0.72);
+  --border: #222226;
+  --muted: #a1a1aa;
+  --ink: #ffffff;
+  --ink-dim: #e5e7eb;
+  --neon: #CCFF00;
+  --pill: #0b0b0c;
+  --pill-border: #1f1f23;
+  --chip-bg: rgba(255,255,255,0.02);
+  --chip-border: #26262b;
+  --hover: #0f0f12;
+  --danger: #f87171;
+}
+
+/* Base reset-ish tweaks (page-level is Tailwind) */
+html, body { background: var(--bg); color: var(--ink); }
+::selection { background: color-mix(in oklab, var(--neon) 45%, transparent); color: #0a0a0a; }
+
+/* Scrollbar (WebKit) */
+*::-webkit-scrollbar { height: 10px; width: 10px; }
+*::-webkit-scrollbar-thumb { background: #1c1c20; border-radius: 999px; border: 2px solid #0a0a0a; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Glass panel */
+.glass {
+  background: linear-gradient(180deg, var(--panel-top), var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+}
+
+/* Chips / inputs */
+.chip {
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  color: var(--ink);
+  outline: none;
+}
+.chip:focus { box-shadow: 0 0 0 3px color-mix(in oklab, var(--neon) 35%, transparent); }
+
+/* Neon buttons */
+.btn-neon {
+  background: var(--neon);
+  color: #0a0a0a;
+  font-weight: 600;
+  transition: filter .15s ease, transform .02s ease;
+}
+.btn-neon:hover { filter: brightness(.95); }
+.btn-neon:active { transform: translateY(1px); }
+
+/* Secondary buttons (bordered) */
+button, .btn, .btn-secondary {
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .02s ease;
+}
+.btn-secondary:hover { background: var(--hover); }
+
+/* Tabs */
+.tab-btn {
+  border: 1px solid var(--border);
+  background: #0a0a0a;
+  color: var(--ink);
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.tab-btn:hover { background: #111114; }
+.tab-btn.active {
+  background: var(--neon);
+  color: #0a0a0a;
+  border-color: transparent;
+}
+
+/* Pills / helpers */
+.pill {
+  background: var(--pill);
+  border: 1px solid var(--pill-border);
+  border-radius: 999px;
+  color: var(--ink);
+}
+.muted { color: var(--muted); }
+
+/* Progress bars */
+.progress {
+  height: 8px;
+  background: #0c0c0c;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon), #d5ff66);
+  transition: width .25s ease;
+}
+
+/* Category rows */
+#cat-list .cat-row,
+#cat-list > div {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: #0a0a0a;
+}
+#cat-list .edit-btn,
+#cat-list .delete-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+}
+#cat-list .edit-btn:hover { background: var(--hover); }
+#cat-list .delete-btn { color: #fda4af; }
+#cat-list .delete-btn:hover { background: rgba(239,68,68,.08); border-color: #3a1717; }
+
+/* Totals strip */
+#totals-progress { min-width: 0%; }
+
+/* Calendar */
+#calendar-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.calendar-day {
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  border-radius: .9rem;
+  min-height: 88px;
+  padding: .5rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.calendar-day:hover { background: #0d0d0f; border-color: #2b2b31; }
+.calendar-day .date {
+  font-size: .75rem;
+  color: var(--muted);
+}
+.calendar-day .amount {
+  margin-top: auto;
+  font-size: .8rem;
+  font-weight: 600;
+}
+.amount-negative { color: #fda4af; }
+.amount-positive { color: #bbf7d0; }
+
+/* Month nav buttons */
+#prev-month, #next-month {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink);
+}
+#prev-month:hover, #next-month:hover { background: var(--hover); }
+
+/* Form tweaks */
+input[type="text"].chip,
+input[type="number"].chip,
+select.chip,
+textarea.chip {
+  width: 100%;
+  color: var(--ink);
+}
+input::placeholder, textarea::placeholder { color: #6b7280; }
+
+/* Responsive niceties */
+@media (max-width: 768px) {
+  .mobile-stack { display: grid; gap: .75rem; }
+}
+
+/* Header (active tab neon) lives in components/header.html;
+   included here for safety if page is standalone */
+.nav-link.active, .mnav-link.active {
+  background: var(--neon) !important;
+  color: #0a0a0a !important;
+  border: none !important;
+}
+
+/* Toast (if used) */
+#toast {
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-radius: .75rem;
+}
+
+/* Small utility tokens for this page */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .25rem .5rem;
+  border-radius: 999px;
+  background: #0c0c0c;
+  border: 1px solid var(--border);
+  font-size: .75rem;
+  color: var(--ink-dim);
+}
+
+/* Table-esque alignment helpers (if you add future list views) */
+.row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; }
+.row .meta { color: var(--muted); font-size: .85rem; }
+
+/* Links */
+a { color: inherit; }
+a:hover { color: #fff; }
+
+/* Focus ring helper if Tailwind is absent for an element */
+.ring-neon:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--neon) 35%, transparent); }

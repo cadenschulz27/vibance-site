@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Follow People • Vibance Community</title>
+
+  <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Social styles (shared theme) -->
+  <link rel="stylesheet" href="./social.css"/>
+
+  <style>
+    :root {
+      --neon: #CCFF00;
+      --panel: #111213;
+      --border: #222226;
+    }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .font-headline { font-family: 'Lora', serif; }
+    .glass {
+      background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88));
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      backdrop-filter: blur(8px);
+    }
+    #toast { transition: opacity .2s ease; }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <!-- Header mount -->
+  <div id="site-header"></div>
+
+  <main class="mx-auto max-w-6xl px-4 pt-24 pb-16">
+    <!-- Page header -->
+    <header class="mb-6 md:mb-10">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Community</p>
+          <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">Find people to follow</h1>
+          <p class="text-sm md:text-base text-neutral-400 mt-2">Grow your feed with helpful voices and fellow goal-getters.</p>
+        </div>
+        <a href="./social.html" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">
+          ← Back to Community
+        </a>
+      </div>
+    </header>
+
+    <!-- Toolbar -->
+    <section class="glass p-4 md:p-5 mb-6">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="relative flex-1 min-w-[240px]">
+          <input id="user-search" type="search" placeholder="Search name or bio…"
+                 class="w-full pr-10 rounded-xl bg-neutral-950/70 border border-neutral-800 px-4 py-2 text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/40"/>
+          <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path>
+          </svg>
+        </div>
+
+        <select id="sort-select"
+                class="rounded-xl bg-neutral-950/70 border border-neutral-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/40">
+          <option value="recommended">Recommended</option>
+          <option value="recent">Most recent</option>
+          <option value="popular">Popular</option>
+        </select>
+
+        <div class="ml-auto flex items-center gap-2">
+          <span id="result-count" class="text-sm text-neutral-400">0 results</span>
+          <button id="clear-search" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-sm">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results grid -->
+    <section>
+      <!-- Empty state -->
+      <div id="user-empty" class="hidden glass p-10 text-center text-neutral-400">
+        No people found. Try a broader search.
+      </div>
+
+      <!-- Grid -->
+      <div id="user-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+        <!-- Cards injected by follow-list.js -->
+      </div>
+
+      <!-- Load more -->
+      <div class="pt-6 text-center">
+        <button id="load-more-users" class="hidden px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Load more</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-white px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
+
+  <!-- User Card Template -->
+  <template id="user-card-template">
+    <article class="glass p-4 md:p-5 flex flex-col">
+      <div class="flex items-center gap-3">
+        <a class="block shrink-0" href="#">
+          <img class="user-avatar h-12 w-12 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="Avatar">
+        </a>
+        <div class="min-w-0">
+          <a class="user-name font-medium truncate hover:underline" href="#"></a>
+          <div class="user-sub text-xs text-neutral-500 truncate"></div>
+        </div>
+      </div>
+
+      <p class="user-bio text-sm text-neutral-300 mt-3 line-clamp-3"></p>
+
+      <div class="mt-4 flex items-center gap-2">
+        <button class="user-follow btn-neon px-3 py-2 rounded-xl text-xs">Follow</button>
+        <button class="user-unfollow px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-xs hidden">Unfollow</button>
+        <a class="ml-auto text-xs text-neutral-400 hover:text-white user-profile-link" href="#">View profile</a>
+      </div>
+    </article>
+  </template>
+
+  <!-- Core app scripts -->
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/auth/auth-check.js"></script>
+  <script type="module" src="/components/header.js"></script>
+
+  <!-- Page controller -->
+  <script type="module" src="./follow-list.js"></script>
+</body>
+</html>

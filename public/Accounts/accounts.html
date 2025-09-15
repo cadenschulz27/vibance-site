@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Linked Accounts • Vibance</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <!-- Header mount -->
+  <div id="site-header"></div>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <header class="flex items-center justify-between border-b border-neutral-800 pb-4 mb-6">
+      <h1 class="text-2xl md:text-3xl font-semibold">Linked Accounts</h1>
+      <button id="link-account-btn" class="px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 font-semibold text-sm text-black">
+        Link new account
+      </button>
+    </header>
+
+    <!-- Empty state message -->
+    <div id="empty-state" class="hidden text-neutral-400 text-center py-10">
+      You haven’t linked any accounts yet!
+    </div>
+
+    <!-- Accounts list container (injected by accounts.js) -->
+    <div id="accounts-list" class="space-y-4">
+      <!-- cards are inserted here dynamically -->
+    </div>
+  </main>
+
+  <!-- Toast notification -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2
+    rounded-lg bg-neutral-900 border border-neutral-800 text-white px-4 py-2
+    opacity-0 pointer-events-none transition-opacity">
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/auth/auth-check.js"></script>
+  <script type="module" src="/components/header.js"></script>
+  <script type="module" src="/Accounts/accounts.js"></script>
+</body>
+</html>

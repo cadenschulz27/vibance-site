@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Profile • Vibance Community</title>
+
+  <!-- Tailwind (CDN). For production, compile Tailwind instead of CDN. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Shared social styles -->
+  <link rel="stylesheet" href="./social.css"/>
+
+  <style>
+    :root { --neon: #CCFF00; --border: #222226; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .font-headline { font-family: 'Lora', serif; }
+    .glass {
+      background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88));
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      backdrop-filter: blur(8px);
+    }
+    #toast { transition: opacity .2s ease; }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <!-- Header mount -->
+  <div id="site-header"></div>
+
+  <main class="mx-auto max-w-5xl px-4 pt-24 pb-16">
+
+    <!-- Breadcrumb -->
+    <nav class="mb-6 text-sm text-neutral-400">
+      <a href="./social.html" class="hover:text-white">← Back to Community</a>
+    </nav>
+
+    <!-- Profile header -->
+    <section id="profile-header" class="glass p-5 md:p-6">
+      <div class="flex items-start gap-4">
+        <img id="profile-avatar" class="h-20 w-20 md:h-24 md:w-24 rounded-2xl object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="Avatar">
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 id="profile-name" class="font-headline text-2xl md:text-3xl font-semibold tracking-tight truncate">Member</h1>
+            <span id="profile-badge" class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 hidden"></span>
+          </div>
+          <p id="profile-bio" class="text-neutral-300 mt-2 whitespace-pre-wrap"></p>
+
+          <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-neutral-400">
+            <span id="profile-email" class="truncate"></span>
+            <span class="hidden md:inline">•</span>
+            <span><span id="profile-followers">0</span> followers</span>
+            <span>•</span>
+            <span><span id="profile-following">0</span> following</span>
+          </div>
+        </div>
+
+        <!-- Follow / Edit actions -->
+        <div class="shrink-0 flex flex-col gap-2">
+          <button id="btn-follow" class="btn-neon px-4 py-2 rounded-xl text-sm hidden">Follow</button>
+          <button id="btn-unfollow" class="px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm hidden">Unfollow</button>
+          <a id="btn-edit-profile" href="./profile-editor.html" class="px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm hidden">Edit profile</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <section class="mt-6">
+      <div class="flex items-center gap-2">
+        <button data-tab="posts" class="chip px-3 py-2 rounded-xl text-sm active">Posts</button>
+        <!-- Future: <button data-tab="likes" class="chip px-3 py-2 rounded-xl text-sm">Likes</button> -->
+      </div>
+    </section>
+
+    <!-- Posts list -->
+    <section class="mt-4 space-y-3" id="profile-posts">
+      <div id="posts-empty" class="hidden glass p-10 text-center text-neutral-400">No posts yet.</div>
+      <div id="posts-list" class="space-y-3"></div>
+      <div class="pt-2 text-center">
+        <button id="posts-load-more" class="hidden px-4 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Load more</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-950 border border-neutral-800 text-white px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
+
+  <!-- Post Card Template (same structure as social.html) -->
+  <template id="post-card-template">
+    <article class="glass p-4 md:p-5">
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <img class="post-avatar h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="Avatar">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <a class="post-author font-medium truncate hover:underline" href="#"></a>
+              <span class="post-badge text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 hidden"></span>
+            </div>
+            <div class="post-meta text-xs text-neutral-500 truncate">•</div>
+          </div>
+        </div>
+        <div class="relative">
+          <button class="post-menu px-2 py-1 rounded-lg hover:bg-neutral-900" aria-haspopup="menu" aria-expanded="false">
+            <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+          <div class="post-menu-popover absolute right-0 mt-2 w-40 rounded-xl border border-neutral-800 bg-neutral-950 shadow-lg p-1 hidden">
+            <button class="post-edit block w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-900 text-sm">Edit</button>
+            <button class="post-delete block w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-900 text-sm text-red-400">Delete</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="post-body text-neutral-100 mt-3 whitespace-pre-wrap"></div>
+
+      <figure class="post-image-wrap mt-3 hidden">
+        <img class="post-image w-full rounded-xl border border-neutral-800 object-cover" alt="Post image"/>
+      </figure>
+
+      <footer class="mt-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button class="post-like px-3 py-1.5 rounded-lg chip hover:border-neutral-700 flex items-center gap-2 text-sm">
+            <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
+            <span class="post-like-count">0</span>
+          </button>
+          <button class="post-comment px-3 py-1.5 rounded-lg chip hover:border-neutral-700 flex items-center gap-2 text-sm">
+            <svg class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a4 4 0 01-4 4H7l-4 4V5a4 4 0 014-4h10a4 4 0 014 4z"/></svg>
+            <span class="post-comment-count">0</span>
+          </button>
+        </div>
+        <a class="post-permalink text-xs text-neutral-400 hover:text-white" href="#">Open</a>
+      </footer>
+
+      <!-- Comments -->
+      <section class="post-comments mt-4 hidden">
+        <div class="space-y-3" data-comments-list></div>
+        <div class="mt-3 flex items-start gap-2">
+          <img class="h-8 w-8 rounded-full object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="">
+          <div class="flex-1 flex items-center gap-2">
+            <input type="text" maxlength="240" class="comment-input flex-1 bg-neutral-950/70 border border-neutral-800 rounded-xl px-3 py-2 text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/40" placeholder="Write a comment…"/>
+            <button class="comment-submit btn-neon px-3 py-2 rounded-xl text-sm">Send</button>
+          </div>
+        </div>
+      </section>
+    </article>
+  </template>
+
+  <!-- Core app scripts -->
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/auth/auth-check.js"></script>
+  <script type="module" src="/components/header.js"></script>
+
+  <!-- Page controller -->
+  <script type="module" src="./user-profile.js"></script>
+</body>
+</html>

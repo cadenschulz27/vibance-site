@@ -1,0 +1,224 @@
+/* public/Social/social.css
+   ------------------------------------------------------------
+   Vibance Community (Social) styles
+   - Neon-on-black aesthetic with soft glass panels
+   - Chips, popovers, toast, skeletons, and micro-interactions
+   - Scoped selectors to avoid leaking across the app
+   ------------------------------------------------------------ */
+
+/* ---- Theme tokens ---- */
+:root {
+  --vb-neon: #CCFF00;
+  --vb-bg: #000000;
+  --vb-panel: #111213;
+  --vb-panel-2: #0b0b0c;
+  --vb-border: #222226;
+  --vb-border-2: #2d2f33;
+  --vb-muted: #9CA3AF;
+  --vb-shadow: 0 0 0 1px rgba(34, 34, 38, 0.9), 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* ---- Page base (kept minimal—Tailwind does most) ---- */
+body {
+  background: var(--vb-bg);
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- Glass panel card ---- */
+.glass {
+  background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88));
+  border: 1px solid var(--vb-border);
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--vb-shadow);
+  transition: border-color .2s ease, transform .15s ease, box-shadow .2s ease;
+}
+.glass:hover {
+  border-color: var(--vb-border-2);
+}
+.glass:focus-within {
+  border-color: var(--vb-neon);
+  box-shadow: 0 0 0 1px rgba(204,255,0,0.3), 0 10px 30px rgba(204,255,0,0.06);
+}
+
+/* ---- Neon primary button ---- */
+.btn-neon {
+  background: var(--vb-neon);
+  color: #000;
+  font-weight: 700;
+  transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+}
+.btn-neon:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(204,255,0,0.18);
+}
+.btn-neon:active {
+  transform: translateY(0);
+}
+.btn-neon:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---- Compact pill (filter chips & quiet buttons) ---- */
+.chip {
+  border: 1px solid var(--vb-border);
+  background: var(--vb-panel-2);
+  color: #e5e7eb;
+  transition: border-color .2s ease, background .2s ease, transform .1s ease;
+}
+.chip:hover { border-color: var(--vb-border-2); }
+.chip:active { transform: translateY(0.5px); }
+.chip[aria-pressed="true"],
+.chip.active,
+.chip.border-\[var\(--neon\)\] { /* Tailwind-compatible active marker */
+  border-color: var(--vb-neon) !important;
+}
+
+/* ---- Composer text area & inputs ---- */
+#post-text,
+.comment-input {
+  background: rgba(10,10,10,0.7);
+  border: 1px solid var(--vb-border);
+  border-radius: 0.75rem;
+  color: #fff;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+#post-text:focus,
+.comment-input:focus {
+  border-color: var(--vb-neon);
+  box-shadow: 0 0 0 2px rgba(204,255,0,0.15);
+}
+
+/* ---- Composer dropzone preview ---- */
+.dropzone {
+  border: 1px dashed var(--vb-border);
+  background: #0b0b0c;
+  transition: border-color .2s ease, background .2s ease;
+}
+.dropzone.dragover {
+  border-color: var(--vb-neon);
+  background: rgba(204,255,0,0.06);
+}
+
+/* ---- Post card specifics ---- */
+.post-image {
+  display: block;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--vb-border);
+}
+.post-like,
+.post-comment {
+  transition: border-color .2s ease, background .2s ease, transform .1s ease;
+}
+.post-like:hover,
+.post-comment:hover { border-color: var(--vb-border-2); }
+.post-like:active,
+.post-comment:active { transform: translateY(0.5px); }
+
+/* visually mark liked state (UI-only; logic handled in JS) */
+.post-like.border-\[var\(--neon\)\],
+.post-like.liked {
+  border-color: var(--vb-neon) !important;
+  background: rgba(204,255,0,0.06);
+}
+
+/* ---- Overflow/ellipsis helpers ---- */
+.post-author,
+.post-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Popover menu (post actions) ---- */
+.post-menu-popover {
+  border: 1px solid var(--vb-border);
+  background: #0a0b0c;
+  border-radius: 0.75rem;
+  box-shadow: var(--vb-shadow);
+  animation: vb-fade-in .12s ease-out;
+}
+.post-menu-popover button {
+  width: 100%;
+  text-align: left;
+}
+.post-menu-popover button:hover {
+  background: #121315;
+}
+
+/* ---- Toast ---- */
+#toast {
+  background: #0b0c0d;
+  border: 1px solid var(--vb-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--vb-shadow);
+  opacity: 0;
+  pointer-events: none;
+}
+#toast.opacity-100 {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---- Suggested users scroller ---- */
+#suggested-users {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 #18181b;
+}
+#suggested-users::-webkit-scrollbar { height: 8px; }
+#suggested-users::-webkit-scrollbar-track { background: #18181b; }
+#suggested-users::-webkit-scrollbar-thumb { background-color: #3f3f46; border-radius: 8px; }
+
+/* ---- Empty state ---- */
+#feed-empty {
+  color: #9da3ae;
+}
+
+/* ---- Skeletons (optional: add .skeleton on any block) ---- */
+@keyframes vb-shimmer {
+  0% { background-position: -480px 0; }
+  100% { background-position: 480px 0; }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #131417;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  background-size: 480px 100%;
+  animation: vb-shimmer 1.2s infinite;
+}
+
+/* ---- Animations ---- */
+@keyframes vb-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Focus rings (keyboard a11y) ---- */
+:where(button, a, input, textarea):focus-visible {
+  outline: 2px solid rgba(204,255,0,0.6);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* ---- Small viewports polish ---- */
+@media (max-width: 480px) {
+  .glass { border-radius: 0.875rem; }
+  .post-image { border-radius: 0.625rem; }
+}
+
+/* ---- High-DPI polish for icons (crisper strokes) ---- */
+svg { shape-rendering: geometricPrecision; text-rendering: optimizeLegibility; }

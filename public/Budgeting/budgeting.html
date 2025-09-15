@@ -1,0 +1,194 @@
+<!-- public/Budgeting/budgeting.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Budgeting • Vibance</title>
+
+  <!-- Tailwind (CDN for now). For production, compile Tailwind. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Page styles -->
+  <link rel="stylesheet" href="./budgeting.css"/>
+
+  <style>
+    :root { --neon:#CCFF00; }
+    html, body { background:#000; color:#fff; }
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .font-headline { font-family: 'Lora', serif; }
+    .glass { background: linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88)); border:1px solid #222226; border-radius: 1rem; backdrop-filter: blur(8px); }
+    .chip { background: rgba(255,255,255,0.02); border:1px solid #26262b; }
+    .btn-neon { background: var(--neon); color:#0a0a0a; font-weight:600; }
+    .btn-neon:hover { filter: brightness(0.95); }
+    .ring-neon:focus { outline: none; box-shadow: 0 0 0 3px rgba(204,255,0,.35); }
+    .progress { height:8px; background:#0c0c0c; border:1px solid #222226; border-radius:999px; overflow:hidden; }
+    .progress > span { display:block; height:100%; background: linear-gradient(90deg, var(--neon), #d5ff66); }
+    .tab-btn { border:1px solid #222226; }
+    .tab-btn.active { background: var(--neon); color:#0a0a0a; border-color: transparent; }
+    .pill { background:#0b0b0c; border:1px solid #1f1f23; border-radius:999px; }
+    .muted { color:#a1a1aa; }
+  </style>
+</head>
+<body>
+  <!-- Global header mount -->
+  <div id="site-header"></div>
+
+  <main class="mx-auto max-w-7xl px-4 pt-24 pb-20">
+    <!-- Page header -->
+    <header class="mb-6 md:mb-10">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Budgeting</p>
+          <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">Your Financial Plan</h1>
+          <p class="text-sm md:text-base text-neutral-400 mt-2">Plan spending, track progress, and visualize your cash-flow.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="month-select" class="text-sm text-neutral-400">Month</label>
+          <select id="month-select" class="chip px-3 py-2 rounded-xl bg-transparent text-sm ring-neon">
+            <!-- budgeting.js will populate -->
+          </select>
+          <button id="export-csv" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="mt-4 flex items-center gap-2">
+        <button id="tab-budget" class="tab-btn active px-3 py-2 rounded-xl text-sm">Budget</button>
+        <button id="tab-calendar" class="tab-btn px-3 py-2 rounded-xl text-sm">Cash-Flow Calendar</button>
+      </div>
+    </header>
+
+    <!-- Views -->
+    <section id="view-budget" class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <!-- Left: categories + add form (spans 2) -->
+      <div class="lg:col-span-2 space-y-4">
+        <!-- Add category -->
+        <article class="glass p-4 md:p-5">
+          <h2 class="font-medium text-lg">Add Category</h2>
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <input id="add-name" type="text" maxlength="40" placeholder="e.g., Groceries" class="chip px-3 py-2 rounded-xl bg-transparent text-sm ring-neon" />
+            <input id="add-amount" type="number" min="0" step="0.01" placeholder="Monthly budget" class="chip px-3 py-2 rounded-xl bg-transparent text-sm ring-neon" />
+            <button id="add-btn" class="btn-neon px-4 py-2 rounded-xl text-sm">Add</button>
+          </div>
+          <p class="text-xs text-neutral-500 mt-2">Tip: You can edit or delete any category later.</p>
+        </article>
+
+        <!-- Categories list -->
+        <article class="glass p-4 md:p-5">
+          <div class="flex items-center justify-between">
+            <h2 class="font-medium text-lg">Categories</h2>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="pill px-2 py-1">Budgeted</span>
+              <span class="pill px-2 py-1">Spent</span>
+              <span class="pill px-2 py-1">Remaining</span>
+            </div>
+          </div>
+          <div id="cat-list" class="mt-4 space-y-4">
+            <!-- budgeting.js renders category rows here -->
+          </div>
+        </article>
+      </div>
+
+      <!-- Right: summary cards -->
+      <aside class="space-y-4">
+        <article class="glass p-4 md:p-5">
+          <h2 class="font-medium text-lg">This Month</h2>
+          <div class="mt-4 grid grid-cols-1 gap-3">
+            <div class="flex items-center justify-between">
+              <span class="muted">Budgeted</span>
+              <span id="totals-budgeted" class="font-semibold">$0</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="muted">Spent</span>
+              <span id="totals-spent" class="font-semibold">$0</span>
+            </div>
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="muted">Remaining</span>
+                <span id="totals-remaining" class="font-semibold">$0</span>
+              </div>
+              <div class="progress mt-2"><span id="totals-progress" style="width:0%"></span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="glass p-4 md:p-5">
+          <h2 class="font-medium text-lg">Insights</h2>
+          <ul id="insights" class="mt-3 text-sm text-neutral-300 list-disc pl-5 space-y-2">
+            <li>Connect bank accounts for automatic spend categorization.</li>
+            <li>Use tags like <span class="pill px-2 py-0.5 text-xs">food</span> or <span class="pill px-2 py-0.5 text-xs">transport</span> for quick filtering.</li>
+            <li>Keep 5–7 core categories to stay focused.</li>
+          </ul>
+        </article>
+      </aside>
+    </section>
+
+    <!-- Calendar view -->
+    <section id="view-calendar" class="hidden">
+      <article class="glass p-4 md:p-5">
+        <div class="flex items-center justify-between">
+          <h2 class="font-medium text-lg">Cash-Flow Calendar</h2>
+          <div class="flex items-center gap-2">
+            <button id="prev-month" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Prev</button>
+            <div id="month-label" class="text-sm text-neutral-300"></div>
+            <button id="next-month" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Next</button>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-7 gap-2 text-center text-xs text-neutral-400">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div id="calendar-grid" class="mt-2 grid grid-cols-7 gap-2">
+          <!-- budget-logic.js renders day cells here -->
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- Templates -->
+  <template id="category-row-template">
+    <div class="rounded-xl border border-neutral-800 p-3 md:p-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="cat-name font-medium truncate">Category</span>
+            <span class="text-xs text-neutral-500 cat-tags"></span>
+          </div>
+          <div class="muted text-xs mt-0.5"><span class="cat-budget">$0</span> budgeted • <span class="cat-spent">$0</span> spent</div>
+        </div>
+        <div class="w-full md:w-2/5">
+          <div class="progress"><span class="cat-progress" style="width:0%"></span></div>
+          <div class="flex items-center justify-between mt-1 text-xs muted">
+            <span>Remaining</span><span class="cat-remaining">$0</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="edit-btn px-3 py-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-900 text-sm">Edit</button>
+          <button class="delete-btn px-3 py-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-900 text-sm text-red-300">Delete</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Core app scripts -->
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/auth/auth-check.js"></script>
+
+  <!-- Shared global header -->
+  <script type="module" src="/components/header.js"></script>
+
+  <!-- Budgeting logic -->
+  <!-- Firestore-backed budgeting controller (categories, totals, export) -->
+  <script type="module" src="./budgeting.js"></script>
+  <!-- Calendar/tab controller (kept lightweight, operates on #view-calendar + tabs) -->
+  <script type="module" src="./budget-logic.js"></script>
+</body>
+</html>

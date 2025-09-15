@@ -1,0 +1,129 @@
+/**
+ * @file VibeScore/hud.css
+ * @description Styles for the Heads-Up Display (HUD) component of the VibeScore.
+ * This includes the orbiting data bubbles and all associated animations.
+ */
+
+/* --- HUD & BUBBLE VARIABLES --- */
+:root {
+    /* Dimensions */
+    --hud-radius: 300px;
+    --bubble-width: 150px;
+    --bubble-height: 55px;
+
+    /* Colors */
+    --bubble-bg-color: rgba(28, 28, 30, 0.6);
+    --bubble-nodata-bg-color: rgba(20, 20, 22, 0.6);
+    --bubble-nodata-border-color: #555;
+    --bubble-text-color: #e5e7eb;
+    --bubble-nodata-text-color: #9CA3AF;
+}
+
+/* --- HUD PLANE --- */
+/* This is the invisible rotating plane that contains all the bubbles. */
+.hud-plane {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* --- HUD BUBBLE --- */
+/* The base styles for each individual data point orbiting the center gauge. */
+.hud-bubble {
+    /* Set dimensions from variables */
+    width: var(--bubble-width);
+    height: var(--bubble-height);
+    
+    /* Positioning magic: place the bubble's center at the center of the plane */
+    position: absolute;
+    top: calc(50% - (var(--bubble-height) / 2));
+    left: calc(50% - (var(--bubble-width) / 2));
+    
+    /* The transform-origin is key for rotation */
+    transform-origin: center;
+    
+    /* * The transform is controlled by JS-injected CSS variables (--angle, --hud-radius).
+     * 1. Rotate the bubble to its designated spot on the circle.
+     * 2. Translate it outwards from the center by the radius.
+     * 3. Un-rotate the bubble itself so its text remains horizontal.
+    */
+    transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1));
+    
+    /* Initial state for the fan-out animation */
+    opacity: 0;
+    
+    /* Animation definition */
+    animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--delay); /* Staggered animation for each bubble */
+    
+    transition: opacity 0.3s ease;
+    pointer-events: auto; /* FIX: Explicitly make each bubble interactive. */
+}
+
+/* --- BUBBLE CORE & LINK --- */
+/* The visible, styled part of the bubble. */
+.bubble-core, .bubble-core-link {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--bubble-text-color);
+    border-radius: 10px;
+    background: var(--bubble-bg-color);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0 20px -5px var(--glow-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.bubble-core-link {
+    text-decoration: none;
+}
+
+/* --- BUBBLE STATES --- */
+.hud-bubble.is-nodata .bubble-core {
+    background: var(--bubble-nodata-bg-color);
+    border-color: var(--bubble-nodata-border-color);
+    box-shadow: none;
+    color: var(--bubble-nodata-text-color);
+}
+
+.vibescore-wrapper:has(.hud-bubble:hover) .hud-bubble:not(:hover) {
+    opacity: 0.3;
+}
+
+/* --- BUBBLE SCORE TEXT --- */
+.bubble-score {
+    font-size: 0.75rem;
+    margin-left: 6px;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+/*
+ * FIX: All CSS rules for the .tracer-line and its @keyframes animation
+ * have been removed to prevent them from affecting the layout.
+ */
+
+/* --- KEYFRAME ANIMATIONS --- */
+@keyframes fan-out {
+    from {
+        opacity: 0;
+        transform: rotate(var(--angle)) translateY(-100px) rotate(calc(var(--angle) * -1)) scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1);
+    }
+}
+
+
