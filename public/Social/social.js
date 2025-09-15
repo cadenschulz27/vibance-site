@@ -331,7 +331,10 @@ function wireUI() {
       toast('Updated');
       // Patch UI optimistically for text; media rerenders on next load
       const cards = qsa(`[data-post-id="${EDITING_POST.id}"]`, els.list);
-      cards.forEach(card => { card.querySelector('.post-body')?.textContent = description; });
+      cards.forEach(card => {
+        const body = card.querySelector('.post-body');
+        if (body) body.textContent = description;
+      });
       window.VB?.closeModal?.(els.editModal);
     } catch (err) {
       console.error('edit save failed', err);
