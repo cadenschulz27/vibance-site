@@ -28,7 +28,6 @@ function setActiveNav(root) {
   const path = (location.pathname || '').toLowerCase();
   const pairs = [
     [/\/dashboard\//, '#nav-dashboard'],
-    [/\/accounts\//,  '#nav-accounts'],
     [/\/expenses\//,  '#nav-expenses'],
     [/\/budgeting\//, '#nav-budgeting'],
     [/\/social\//,    '#nav-community'],
