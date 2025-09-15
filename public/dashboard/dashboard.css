@@ -92,3 +92,11 @@ body {
     font-size: 1.25rem;
     font-weight: 500;
 }
+
+/* -------------------- Mobile polish (<= 640px) -------------------- */
+@media (max-width: 640px) {
+    .content-section { padding: 0 1rem; margin-bottom: 3rem; }
+    .section-header { font-size: 1.5rem; margin-bottom: 1rem; }
+    .news-card-content { padding: 1rem; }
+    .news-grid { gap: 1rem; grid-template-columns: 1fr; }
+}

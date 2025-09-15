@@ -161,6 +161,11 @@ body {
   box-shadow: var(--vb-shadow);
   opacity: 0;
   pointer-events: none;
+  /* Safe area for iPhone */
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(1rem, env(safe-area-inset-bottom));
 }
 #toast.opacity-100 {
   opacity: 1;
@@ -227,3 +232,10 @@ svg { shape-rendering: geometricPrecision; text-rendering: optimizeLegibility; }
 .comment-item { padding: 2px 0; }
 .comment-author { color: #e5e7eb; }
 .comment-text { color: #d4d4d8; white-space: pre-wrap; }
+
+/* Carousel nav buttons (images) */
+.post-image-wrap { position: relative; }
+.post-image-wrap .pointer-events-auto { backdrop-filter: blur(2px); }
+@media (max-width: 480px) {
+  .post-image-wrap .pointer-events-auto { height: 32px; width: 32px; }
+}
