@@ -25,6 +25,7 @@ export function toPostModel(id, d = {}) {
     tags: Array.isArray(data.tags) ? data.tags : [],
     imageURL: data.imageURL || null,
     imagePath: data.imagePath || null,
+    images: Array.isArray(data.images) ? data.images : null,
     likes: Array.isArray(data.likes) ? data.likes : [],
     commentCount: Number(data.commentCount || 0),
   };
@@ -116,14 +117,49 @@ export function createPostCard(post, actions = {}) {
 
   // --- Body
   root.querySelector('.post-body').textContent = post.description || '';
+  if (post.tags?.length) {
+    const tagsWrap = document.createElement('div');
+    tagsWrap.className = 'mt-2 flex flex-wrap gap-2';
+    post.tags.slice(0,5).forEach(t => {
+      const chip = document.createElement('span');
+      chip.className = 'px-2 py-0.5 rounded-lg border border-neutral-800 text-xs text-neutral-300';
+      chip.textContent = `#${t}`;
+      tagsWrap.appendChild(chip);
+    });
+    const insertBefore = root.querySelector('.post-image-wrap');
+    if (insertBefore && !insertBefore.classList.contains('hidden')) insertBefore.before(tagsWrap);
+    else root.appendChild(tagsWrap);
+  }
 
-  // --- Image (optional)
+  // --- Image(s) with simple carousel
   const imgWrap = root.querySelector('.post-image-wrap');
   const img = root.querySelector('.post-image');
-  if (post.imageURL) {
+  const imgs = Array.isArray(post.images) && post.images.length ? post.images : (post.imageURL ? [{ url: post.imageURL, path: post.imagePath }] : []);
+  if (imgs.length) {
     imgWrap.classList.remove('hidden');
-    img.src = post.imageURL;
+    img.src = imgs[0].url || imgs[0];
     img.alt = 'Post image';
+
+    if (imgs.length > 1) {
+      const nav = document.createElement('div');
+      nav.className = 'absolute inset-0 flex items-center justify-between pointer-events-none';
+      const mkBtn = (dir) => {
+        const b = document.createElement('button');
+        b.className = 'pointer-events-auto h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 border border-neutral-800 flex items-center justify-center text-white';
+        b.innerHTML = dir < 0 ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"><path d="M15 18 9 12l6-6"/></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"><path d="m9 18 6-6-6-6"/></svg>';
+        return b;
+      };
+      const left = mkBtn(-1);
+      const right = mkBtn(1);
+      nav.appendChild(left);
+      nav.appendChild(right);
+      imgWrap.style.position = 'relative';
+      imgWrap.appendChild(nav);
+      let idx = 0;
+      const setIdx = (next) => { idx = (next + imgs.length) % imgs.length; img.src = imgs[idx].url || imgs[idx]; };
+      left.addEventListener('click', (e) => { e.preventDefault(); setIdx(idx - 1); });
+      right.addEventListener('click', (e) => { e.preventDefault(); setIdx(idx + 1); });
+    }
   }
 
   // --- Footer
@@ -197,7 +233,7 @@ export function createPostCard(post, actions = {}) {
     // Optimistic add
     const temp = renderCommentItem({
       userId: actions.currentUserId,
-      displayName: 'You',
+      displayName: actions.currentUserDisplayName || 'Member',
       photoURL: actions.currentUserPhoto || undefined,
       text,
       createdAt: new Date(),
@@ -253,8 +289,13 @@ export function createPostCard(post, actions = {}) {
       document.addEventListener('click', close, true);
     });
 
-    // Inline edit
+    // Inline edit or delegate to external modal
     editBtn.addEventListener('click', async () => {
+      if (typeof actions.onStartEdit === 'function') {
+        menu.classList.add('hidden');
+        actions.onStartEdit(post, { root });
+        return;
+      }
       const body = root.querySelector('.post-body');
       const current = body?.textContent || '';
       const next = prompt('Edit your post:', current);

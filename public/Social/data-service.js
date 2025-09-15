@@ -66,6 +66,7 @@ function toPostModel(id, d = {}) {
     tags: Array.isArray(d.tags) ? d.tags : [],
     imageURL: d.imageURL || null,
     imagePath: d.imagePath || null,
+    images: Array.isArray(d.images) ? d.images : null,
     likes: Array.isArray(d.likes) ? d.likes : [],
     commentCount: Number(d.commentCount || 0),
   };
@@ -112,7 +113,7 @@ export async function getPost(postId) {
  * Create a post (optional image).
  * -> displayName is set to the user's username.
  */
-export async function createPost({ description = '', visibility = 'public', tags = [], file = null } = {}) {
+export async function createPost({ description = '', visibility = 'public', tags = [], file = null, files = null } = {}) {
   const me = auth.currentUser;
   if (!me) throw new Error('Not signed in');
 
@@ -136,14 +137,21 @@ export async function createPost({ description = '', visibility = 'public', tags
     commentCount: 0,
   };
 
-  if (file) {
-    const safe = `${Date.now()}_${cleanFileName(file.name)}`;
-    const path = `posts/${me.uid}/${safe}`;
-    const r = sRef(storage, path);
-    await uploadBytes(r, file, { contentType: file.type || 'image/jpeg' });
-    const url = await getDownloadURL(r);
-    base.imageURL = url;
-    base.imagePath = path;
+  const list = Array.isArray(files) ? files : (file ? [file] : []);
+  if (list.length) {
+    const imgs = [];
+    for (const f of list) {
+      const safe = `${Date.now()}_${cleanFileName(f.name)}`;
+      const path = `posts/${me.uid}/${safe}`;
+      const r = sRef(storage, path);
+      await uploadBytes(r, f, { contentType: f.type || 'image/jpeg' });
+      const url = await getDownloadURL(r);
+      imgs.push({ url, path });
+    }
+    base.images = imgs;
+    // Back-compat: also stamp first imageURL/imagePath
+    base.imageURL = imgs[0]?.url || null;
+    base.imagePath = imgs[0]?.path || null;
   }
 
   const docRef = await addDoc(collection(db, 'posts'), base);
@@ -158,11 +166,58 @@ export async function updatePostDescription(postId, nextText) {
 }
 
 /**
+ * Replace post content and media (owner-only).
+ * If `files` provided, replaces all images with the new set.
+ */
+export async function updatePostContent(postId, { description, tags, visibility, files } = {}) {
+  const me = auth.currentUser;
+  if (!me) throw new Error('Not signed in');
+  const ref = doc(db, 'posts', postId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const curr = snap.data() || {};
+
+  const patch = {};
+  if (typeof description === 'string') patch.description = description;
+  if (Array.isArray(tags)) patch.tags = tags.slice(0,5);
+  if (visibility === 'followers' || visibility === 'public') patch.visibility = visibility;
+
+  if (Array.isArray(files) && files.length) {
+    // delete old media (best-effort)
+    try {
+      if (Array.isArray(curr.images)) {
+        for (const im of curr.images) { try { await deleteObject(sRef(storage, im.path)); } catch {} }
+      } else if (curr.imagePath) {
+        try { await deleteObject(sRef(storage, curr.imagePath)); } catch {}
+      }
+    } catch {}
+    // upload new
+    const imgs = [];
+    for (const f of files) {
+      const safe = `${Date.now()}_${cleanFileName(f.name)}`;
+      const path = `posts/${me.uid}/${safe}`;
+      const r = sRef(storage, path);
+      await uploadBytes(r, f, { contentType: f.type || 'image/jpeg' });
+      const url = await getDownloadURL(r);
+      imgs.push({ url, path });
+    }
+    patch.images = imgs;
+    patch.imageURL = imgs[0]?.url || null;
+    patch.imagePath = imgs[0]?.path || null;
+  }
+
+  await updateDoc(ref, patch);
+}
+
+/**
  * Delete a post (owner-only). Cleans image best-effort.
  */
 export async function deletePost(post) {
   if (post?.imagePath) {
     try { await deleteObject(sRef(storage, post.imagePath)); } catch {}
+  }
+  if (Array.isArray(post?.images)) {
+    for (const im of post.images) { try { await deleteObject(sRef(storage, im.path)); } catch {} }
   }
   await deleteDoc(doc(db, 'posts', post.id));
 }

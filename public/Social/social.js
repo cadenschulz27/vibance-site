@@ -25,6 +25,7 @@ const els = {
   imgWrap: document.getElementById('image-preview'),
   img: document.getElementById('image-preview-img'),
   imgName: document.getElementById('image-filename'),
+  imgGrid: null, // will create dynamically when multiple
   vis: document.getElementById('visibility'),
   tags: document.getElementById('tags'),
   youAvatar: document.getElementById('you-avatar'),
@@ -41,6 +42,16 @@ const els = {
 
   // Shared toast
   toast: document.getElementById('toast'),
+
+  // Edit modal
+  editModal: document.getElementById('edit-post-modal'),
+  editForm: document.getElementById('edit-post-form'),
+  editDesc: document.getElementById('edit-desc'),
+  editVis: document.getElementById('edit-visibility'),
+  editTags: document.getElementById('edit-tags'),
+  editPick: document.getElementById('edit-pick'),
+  editFiles: document.getElementById('edit-files'),
+  editPreview: document.getElementById('edit-preview'),
 };
 
 /* -------------------------------- State --------------------------------- */
@@ -63,18 +74,48 @@ function resetComposer() {
   if (els.text) els.text.value = '';
   if (els.tags) els.tags.value = '';
   if (els.vis) els.vis.value = 'public';
-  clearImage();
+  clearImages();
 }
-function setImage(file) {
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  els.img.src = url;
-  els.imgName.textContent = file.name;
+function setImages(files) {
+  const list = Array.from(files || []).filter(Boolean);
+  if (!list.length) { clearImages(); return; }
   show(els.imgWrap, true);
+  // If single, use existing img element
+  if (list.length === 1 && els.img) {
+    const url = URL.createObjectURL(list[0]);
+    els.img.src = url;
+    els.imgName.textContent = list[0].name;
+    els.imgGrid?.remove(); els.imgGrid = null;
+    return;
+  }
+  // Multiple: build a grid
+  if (!els.imgGrid) {
+    els.imgGrid = document.createElement('div');
+    els.imgGrid.id = 'image-grid';
+    els.imgGrid.className = 'grid grid-cols-2 sm:grid-cols-3 gap-2';
+    // replace single image element with grid
+    if (els.img && els.img.parentElement) {
+      els.img.replaceWith(els.imgGrid);
+      els.img = null;
+    } else {
+      els.imgWrap.prepend(els.imgGrid);
+    }
+  }
+  els.imgGrid.innerHTML = '';
+  list.slice(0,10).forEach(f => {
+    const url = URL.createObjectURL(f);
+    const im = document.createElement('img');
+    im.className = 'post-image';
+    im.src = url;
+    im.alt = f.name;
+    els.imgGrid.appendChild(im);
+  });
+  els.imgName.textContent = `${list.length} images selected`;
 }
-function clearImage() {
+function clearImages() {
   els.file.value = '';
-  els.img.src = '';
+  if (els.img) els.img.src = '';
+  if (els.imgGrid) { els.imgGrid.remove(); els.imgGrid = null; }
   els.imgName.textContent = '';
   show(els.imgWrap, false);
 }
@@ -138,9 +179,11 @@ async function loadSuggestions(initial = false) {
 
 /* ------------------------------ Feed render ----------------------------- */
 function mountPostCard(pModel) {
+  const displayName = (ME_PROFILE?.username ? `@${ME_PROFILE.username}` : (YOU?.displayName || 'Member'));
   const card = createPostCard(pModel, {
     currentUserId: YOU?.uid,
     currentUserPhoto: (ME_PROFILE?.photoURL || YOU?.photoURL || ''),
+    currentUserDisplayName: displayName,
     onToggleLike: async (post, nextLiked) => {
       await DS.toggleLike(post.id, nextLiked);
     },
@@ -148,6 +191,7 @@ function mountPostCard(pModel) {
       await DS.updatePostDescription(post.id, newText);
       toast('Updated');
     },
+    onStartEdit: (post) => openEditModal(post),
     onDelete: async (post) => {
       await DS.deletePost(post);
       toast('Deleted');
@@ -212,10 +256,10 @@ function wireComposer() {
   // attach image
   els.attach?.addEventListener('click', () => els.file?.click());
   els.file?.addEventListener('change', () => {
-    const f = els.file.files?.[0];
-    if (f) setImage(f);
+    const fs = els.file.files;
+    if (fs && fs.length) setImages(fs);
   });
-  els.removeImage?.addEventListener('click', clearImage);
+  els.removeImage?.addEventListener('click', clearImages);
 
   // submit
   els.composer?.addEventListener('submit', async (e) => {
@@ -226,11 +270,11 @@ function wireComposer() {
 
     const visibility = els.vis?.value === 'followers' ? 'followers' : 'public';
     const tags = parseTags(els.tags?.value || '');
-    const file = els.file?.files?.[0] || null;
+    const files = els.file?.files ? Array.from(els.file.files) : [];
 
     els.btnPost.disabled = true;
     try {
-      await DS.createPost({ description, visibility, tags, file });
+      await DS.createPost({ description, visibility, tags, files });
       toast('Posted ✓');
       resetComposer();
       // Reload first page fresh
@@ -259,7 +303,63 @@ function wireUI() {
     if (nearEnd && SUG_CURSOR) loadSuggestions(false);
   }, 150);
   els.sugWrap?.addEventListener('scroll', onScroll);
+
+  // Edit modal wiring
+  els.editPick?.addEventListener('click', (e) => { e.preventDefault(); els.editFiles?.click(); });
+  els.editFiles?.addEventListener('change', () => {
+    els.editPreview.innerHTML = '';
+    const fs = els.editFiles.files || [];
+    Array.from(fs).slice(0,10).forEach(f => {
+      const url = URL.createObjectURL(f);
+      const im = document.createElement('img');
+      im.className = 'post-image';
+      im.src = url;
+      im.alt = f.name;
+      els.editPreview.appendChild(im);
+    });
+  });
+
+  els.editForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!EDITING_POST) return;
+    try {
+      const description = (els.editDesc.value || '').trim();
+      const tags = parseTags(els.editTags.value || '');
+      const visibility = els.editVis.value === 'followers' ? 'followers' : 'public';
+      const files = els.editFiles.files && els.editFiles.files.length ? Array.from(els.editFiles.files) : null;
+      await DS.updatePostContent(EDITING_POST.id, { description, tags, visibility, files });
+      toast('Updated');
+      // Patch UI optimistically for text; media rerenders on next load
+      const cards = qsa(`[data-post-id="${EDITING_POST.id}"]`, els.list);
+      cards.forEach(card => { card.querySelector('.post-body')?.textContent = description; });
+      window.VB?.closeModal?.(els.editModal);
+    } catch (err) {
+      console.error('edit save failed', err);
+      toast('Save failed');
+    }
+  });
 }
+
+/* ------------------------------ Edit modal ------------------------------ */
+let EDITING_POST = null;
+function openEditModal(post) {
+  EDITING_POST = post;
+  els.editDesc.value = post.description || '';
+  els.editVis.value = post.visibility === 'followers' ? 'followers' : 'public';
+  els.editTags.value = (Array.isArray(post.tags) ? post.tags.join(', ') : '');
+  els.editFiles.value = '';
+  els.editPreview.innerHTML = '';
+  const imgs = Array.isArray(post.images) ? post.images : (post.imageURL ? [{ url: post.imageURL }] : []);
+  imgs.slice(0,6).forEach(im => {
+    const el = document.createElement('img');
+    el.className = 'post-image';
+    el.src = im.url || im;
+    els.editPreview.appendChild(el);
+  });
+  window.VB?.openModal?.(els.editModal);
+}
+
+function parseTagsInput(s) { return (s || '').split(',').map(t => t.trim().toLowerCase()).filter(Boolean).slice(0,5); }
 
 /* ---------------------------------- Boot --------------------------------- */
 onAuthStateChanged(auth, async (user) => {
