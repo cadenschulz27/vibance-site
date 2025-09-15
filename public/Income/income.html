@@ -55,6 +55,7 @@
         </div>
         <div class="flex items-center gap-2">
           <a href="/Expenses/expenses.html" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">View Expenses</a>
+          <a href="/Net/net.html" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Net</a>
           <button id="sync-all-income" class="px-4 py-2 rounded-xl btn-neon text-sm font-semibold">Sync all</button>
         </div>
       </div>
@@ -88,6 +89,15 @@
           <div class="flex items-center gap-2">
             <label for="end-date" class="text-xs text-neutral-400">To</label>
             <input id="end-date" type="date" class="rounded-full bg-neutral-900 border border-neutral-800 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/50 focus:border-emerald-500"/>
+          </div>
+
+          <!-- Quick presets -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-neutral-400">Presets</span>
+            <button id="preset-this-month" class="px-3 py-1.5 rounded-xl chip text-xs">This month</button>
+            <button id="preset-last-month" class="px-3 py-1.5 rounded-xl chip text-xs">Last month</button>
+            <button id="preset-ytd" class="px-3 py-1.5 rounded-xl chip text-xs">YTD</button>
+            <button id="preset-90d" class="px-3 py-1.5 rounded-xl chip text-xs">90d</button>
           </div>
 
           <div class="h-6 w-px bg-neutral-800 hidden md:block"></div>

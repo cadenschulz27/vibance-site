@@ -30,6 +30,10 @@ const els = {
   exportBtn: document.getElementById('export-csv'),
   saveFilterBtn: document.getElementById('save-filter'),
   savedFilterSelect: document.getElementById('saved-filter-select'),
+  presetThisMonth: document.getElementById('preset-this-month'),
+  presetLastMonth: document.getElementById('preset-last-month'),
+  presetYTD: document.getElementById('preset-ytd'),
+  preset90d: document.getElementById('preset-90d'),
 
   count: document.getElementById('tx-count'),
   incomeTotal: document.getElementById('totals-income'),
@@ -170,6 +174,30 @@ async function applySavedFilter(uid, name) {
   applyFilters();
 }
 
+function setDateInputs(startStr, endStr) {
+  if (els.start) els.start.value = startStr || '';
+  if (els.end) els.end.value = endStr || '';
+}
+function yyyy_mm_dd(d) { return d.toISOString().slice(0,10); }
+function firstOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+function lastOfMonth(d) { return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+function applyPreset(preset) {
+  const now = new Date();
+  if (preset === 'this') {
+    setDateInputs(yyyy_mm_dd(firstOfMonth(now)), yyyy_mm_dd(lastOfMonth(now)));
+  } else if (preset === 'last') {
+    const d = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    setDateInputs(yyyy_mm_dd(d), yyyy_mm_dd(lastOfMonth(d)));
+  } else if (preset === 'ytd') {
+    const start = new Date(now.getFullYear(), 0, 1);
+    setDateInputs(yyyy_mm_dd(start), yyyy_mm_dd(now));
+  } else if (preset === '90d') {
+    const start = new Date(now.getTime() - 89*24*3600*1000);
+    setDateInputs(yyyy_mm_dd(start), yyyy_mm_dd(now));
+  }
+  applyFilters();
+}
+
 function applyFilters() {
   const { account, start, end, q, minAmt, maxAmt } = readFilters();
   let out = ALL_TX;
@@ -218,7 +246,7 @@ function renderRow(r) {
     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${escapeHtml(formatLocalDate(r._epoch))}</td>
     <td class="px-4 py-3 text-sm font-medium text-neutral-100">${escapeHtml(r.name || '')}</td>
     <td class="px-4 py-3 whitespace-nowrap text-sm ${amountCls} text-right">${escapeHtml(fmtMoney(Math.abs(r.amount), r.isoCurrency))}</td>
-    <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${escapeHtml(r.merchant || '')}</td>
+    <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${r.merchant ? `<a class=\"hover:underline\" href=\"/Merchants/merchant.html?name=${encodeURIComponent(r.merchant)}\">${escapeHtml(r.merchant)}</a>` : ''}</td>
     <td class="px-4 py-3 text-sm">${escapeHtml(categoryText)}</td>
     <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-400">${r.pending ? 'Pending' : 'Posted'}</td>
   `;
@@ -257,6 +285,10 @@ function wireUI() {
   els.exportBtn?.addEventListener('click', () => { const csv = toCSV(FILTERED); const today = new Date().toISOString().slice(0,10); download(`income_${today}.csv`, csv); });
   els.saveFilterBtn?.addEventListener('click', () => { if (UID) saveCurrentFilter(UID).catch(console.error); });
   els.savedFilterSelect?.addEventListener('change', () => { if (UID) applySavedFilter(UID, els.savedFilterSelect.value).catch(console.error); });
+  els.presetThisMonth?.addEventListener('click', () => applyPreset('this'));
+  els.presetLastMonth?.addEventListener('click', () => applyPreset('last'));
+  els.presetYTD?.addEventListener('click', () => applyPreset('ytd'));
+  els.preset90d?.addEventListener('click', () => applyPreset('90d'));
   els.prev?.addEventListener('click', () => { if (PAGE > 1) { PAGE--; render(); } });
   els.next?.addEventListener('click', () => { const total = FILTERED.length; if (PAGE * PAGE_SIZE < total) { PAGE++; render(); } });
   els.syncAll?.addEventListener('click', async () => {
