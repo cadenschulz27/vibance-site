@@ -35,20 +35,43 @@ export function toPostModel(id, d = {}) {
  * @param {{displayName:string, photoURL?:string, text:string, createdAt:any}} c
  */
 export function renderCommentItem(c) {
-  const wrap = document.createElement('div');
-  wrap.className = 'flex items-start gap-3';
-  wrap.innerHTML = `
-    <img class="h-8 w-8 rounded-full object-cover bg-neutral-900 border border-neutral-800"
-         src="${c.photoURL || '/images/logo_white.png'}" alt="">
-    <div class="flex-1">
-      <div class="text-sm">
-        <span class="font-medium">${c.displayName || 'Member'}</span>
-        <span class="text-neutral-500 text-xs">• ${fmtTime(c.createdAt)}</span>
-      </div>
-      <div class="text-sm text-neutral-200 whitespace-pre-wrap"></div>
-    </div>`;
-  wrap.querySelector('.text-sm.text-neutral-200').textContent = c.text || '';
-  return wrap;
+  // Instagram-like comment row: avatar + inline username + text, tiny time below
+  const row = document.createElement('div');
+  row.className = 'comment-item flex items-start gap-3';
+
+  const img = document.createElement('img');
+  img.className = 'comment-avatar h-8 w-8 rounded-full object-cover bg-neutral-900 border border-neutral-800';
+  img.src = c.photoURL || '/images/logo_white.png';
+  img.alt = '';
+  row.appendChild(img);
+
+  const body = document.createElement('div');
+  body.className = 'flex-1 min-w-0';
+
+  const line = document.createElement('p');
+  line.className = 'text-sm leading-snug';
+
+  const author = document.createElement('a');
+  author.className = 'comment-author font-medium hover:underline';
+  author.textContent = c.displayName || 'Member';
+  if (c.userId) author.href = `./user-profile.html?uid=${encodeURIComponent(c.userId)}`;
+
+  const textEl = document.createElement('span');
+  textEl.className = 'comment-text text-neutral-200';
+  textEl.textContent = ` ${c.text || ''}`;
+
+  line.appendChild(author);
+  line.appendChild(textEl);
+
+  const meta = document.createElement('div');
+  meta.className = 'text-[11px] text-neutral-500 mt-1';
+  meta.textContent = fmtTime(c.createdAt);
+
+  body.appendChild(line);
+  body.appendChild(meta);
+  row.appendChild(body);
+
+  return row;
 }
 
 /**
@@ -173,8 +196,9 @@ export function createPostCard(post, actions = {}) {
 
     // Optimistic add
     const temp = renderCommentItem({
+      userId: actions.currentUserId,
       displayName: 'You',
-      photoURL: undefined,
+      photoURL: actions.currentUserPhoto || undefined,
       text,
       createdAt: new Date(),
     });

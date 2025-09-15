@@ -45,6 +45,7 @@ const els = {
 
 /* -------------------------------- State --------------------------------- */
 let YOU = null;
+let ME_PROFILE = null; // your user doc (for photo/username)
 let FEED_CURSOR = null;
 let FEED_LOADING = false;
 let SUG_CURSOR = null;
@@ -139,6 +140,7 @@ async function loadSuggestions(initial = false) {
 function mountPostCard(pModel) {
   const card = createPostCard(pModel, {
     currentUserId: YOU?.uid,
+    currentUserPhoto: (ME_PROFILE?.photoURL || YOU?.photoURL || ''),
     onToggleLike: async (post, nextLiked) => {
       await DS.toggleLike(post.id, nextLiked);
     },
@@ -267,6 +269,7 @@ onAuthStateChanged(auth, async (user) => {
   // Attempt to load your following list so suggestions can reflect state
   try {
     const me = await DS.loadUser(user.uid);
+    ME_PROFILE = me || {};
     FOLLOWING = Array.isArray(me?.following) ? me.following : [];
   } catch {
     FOLLOWING = [];

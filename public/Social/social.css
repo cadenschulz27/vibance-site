@@ -222,3 +222,8 @@ body {
 
 /* ---- High-DPI polish for icons (crisper strokes) ---- */
 svg { shape-rendering: geometricPrecision; text-rendering: optimizeLegibility; }
+
+/* ---- Comments (cleaner) ---- */
+.comment-item { padding: 2px 0; }
+.comment-author { color: #e5e7eb; }
+.comment-text { color: #d4d4d8; white-space: pre-wrap; }

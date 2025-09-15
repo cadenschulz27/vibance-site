@@ -153,7 +153,7 @@
   <script type="module">
     import { auth, db, storage } from '/api/firebase.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { doc, getDoc, getDocs, setDoc, serverTimestamp, runTransaction, collection, query, where, orderBy, limit, startAfter, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { doc, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp, runTransaction, collection, query, where, orderBy, limit, startAfter, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
     import { ref as sRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
     const els = {
@@ -294,13 +294,16 @@
               // Transaction: reserve new, release old, update user
               await runTransaction(db, async (tx) => {
                 const newRef = doc(db, 'usernames', newUsername);
-                const prevRef = oldUsername ? doc(db, 'usernames', oldUsername) : null;
                 const exists = await tx.get(newRef);
                 if (exists.exists()) throw new Error('That username is already taken.');
                 tx.set(newRef, { uid: user.uid, reservedAt: serverTimestamp() });
-                if (prevRef) tx.delete(prevRef);
                 tx.set(userRef, { username: newUsername, updatedAt: serverTimestamp() }, { merge: true });
               });
+              // Best-effort: release old handle outside the transaction so lack of delete permission
+              // doesn't block the profile save. This can be enabled in rules for owner delete.
+              if (oldUsername) {
+                try { await deleteDoc(doc(db, 'usernames', oldUsername)); } catch {}
+              }
               toast('Username updated ✓');
             }
           }
