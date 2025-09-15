@@ -138,7 +138,7 @@
           <thead class="table-head text-left text-xs uppercase tracking-wider text-neutral-400">
             <tr>
               <th class="px-4 py-3">Account</th>
-              <th class="px-4 py-3">Date</th>
+              <th class="px-4 py-3">Date <span id="date-range-label" class="ml-2 hidden px-2 py-0.5 rounded-lg border border-neutral-800 text-xs text-neutral-400"></span></th>
               <th class="px-4 py-3">Name</th>
               <th class="px-4 py-3 text-right">Amount</th>
               <th class="px-4 py-3">Merchant</th>
@@ -152,9 +152,12 @@
 
       <!-- Pagination -->
       <div class="flex items-center justify-between px-4 py-3 text-sm text-neutral-400">
-        <span id="pagination-label">0 of 0</span>
         <div class="flex items-center gap-2">
           <button id="pagination-prev" class="px-3 py-1.5 rounded-xl">Prev</button>
+          <a href="/Net/net.html" class="px-3 py-1.5 rounded-xl border border-neutral-800 hover:bg-neutral-900">Net</a>
+        </div>
+        <span id="pagination-label">0 of 0</span>
+        <div class="flex items-center gap-2">
           <button id="pagination-next" class="px-3 py-1.5 rounded-xl">Next</button>
         </div>
       </div>

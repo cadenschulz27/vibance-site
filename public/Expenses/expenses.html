@@ -225,7 +225,7 @@
           <thead class="table-head text-neutral-400">
             <tr>
               <th class="px-4 py-3 text-left font-medium">Account</th>
-              <th class="px-4 py-3 text-left font-medium">Date</th>
+              <th class="px-4 py-3 text-left font-medium">Date <span id="date-range-label" class="ml-2 hidden px-2 py-0.5 rounded-lg border border-neutral-800 text-xs text-neutral-400"></span></th>
               <th class="px-4 py-3 text-left font-medium">Name</th>
               <th class="px-4 py-3 text-right font-medium">Amount</th>
               <th class="px-4 py-3 text-left font-medium">Merchant</th>
@@ -241,13 +241,12 @@
 
     <!-- Pagination -->
     <section class="mt-4 flex items-center justify-between">
-      <button id="pagination-prev" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white disabled:opacity-50">
-        Prev
-      </button>
+      <div class="flex items-center gap-2">
+        <button id="pagination-prev" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white disabled:opacity-50">Prev</button>
+        <a href="/Net/net.html" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Net</a>
+      </div>
       <span id="pagination-label" class="text-neutral-400 text-sm">0 of 0</span>
-      <button id="pagination-next" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white disabled:opacity-50">
-        Next
-      </button>
+      <button id="pagination-next" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white disabled:opacity-50">Next</button>
     </section>
   </main>
 

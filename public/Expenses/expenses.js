@@ -309,7 +309,43 @@ function applyPreset(preset) {
     const start = new Date(now.getTime() - 89*24*3600*1000);
     setDateInputs(yyyy_mm_dd(start), yyyy_mm_dd(now));
   }
+  setActivePreset(preset);
   applyFilters();
+}
+
+function setActivePreset(name) {
+  const map = {
+    'this': els.presetThisMonth,
+    'last': els.presetLastMonth,
+    'ytd': els.presetYTD,
+    '90d': els.preset90d,
+  };
+  Object.entries(map).forEach(([k, btn]) => {
+    if (!btn) return;
+    btn.classList.toggle('border-[var(--neon)]', k === name);
+    btn.setAttribute('aria-pressed', String(k === name));
+  });
+}
+
+function updatePresetActiveFromDates() {
+  const now = new Date();
+  const ymd = (d)=> d.toISOString().slice(0,10);
+  const startStr = els.start?.value || '';
+  const endStr = els.end?.value || '';
+  let active = '';
+  if (startStr && endStr) {
+    if (startStr === ymd(firstOfMonth(now)) && endStr === ymd(lastOfMonth(now))) active = 'this';
+    else {
+      const last = new Date(now.getFullYear(), now.getMonth()-1, 1);
+      if (startStr === ymd(last) && endStr === ymd(lastOfMonth(last))) active = 'last';
+      else if (startStr === ymd(new Date(now.getFullYear(),0,1)) && endStr === ymd(now)) active = 'ytd';
+      else {
+        const past90 = new Date(now.getTime() - 89*24*3600*1000);
+        if (startStr === ymd(past90) && endStr === ymd(now)) active = '90d';
+      }
+    }
+  }
+  setActivePreset(active);
 }
 
 function applyFilters() {
@@ -366,6 +402,27 @@ function render() {
     for (const r of rows) {
       els.tbody.appendChild(renderRow(r));
     }
+  }
+
+  // Update date-range label chip
+  const chip = document.getElementById('date-range-label');
+  if (chip) {
+    const now = new Date();
+    const startStr = els.start?.value || '';
+    const endStr = els.end?.value || '';
+    let label = '';
+    const ymd = (d)=> d.toISOString().slice(0,10);
+    const firstOf = (d)=> new Date(d.getFullYear(), d.getMonth(), 1);
+    const lastOf = (d)=> new Date(d.getFullYear(), d.getMonth()+1, 0);
+    if (startStr && endStr) {
+      if (startStr === ymd(firstOf(now)) && endStr === ymd(lastOf(now))) label = 'This month';
+      else {
+        const last = new Date(now.getFullYear(), now.getMonth()-1, 1);
+        if (startStr === ymd(last) && endStr === ymd(lastOf(last))) label = 'Last month';
+      }
+    }
+    chip.textContent = label;
+    chip.classList.toggle('hidden', !label);
   }
 
   if (els.pageLabel) {
@@ -498,6 +555,8 @@ function wireUI() {
   els.presetLastMonth?.addEventListener('click', () => applyPreset('last'));
   els.presetYTD?.addEventListener('click', () => applyPreset('ytd'));
   els.preset90d?.addEventListener('click', () => applyPreset('90d'));
+  els.start?.addEventListener('change', updatePresetActiveFromDates);
+  els.end?.addEventListener('change', updatePresetActiveFromDates);
 
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;

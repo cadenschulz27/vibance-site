@@ -41,13 +41,23 @@
           </table>
         </div>
       </article>
-      <aside class="glass p-4 md:p-5">
-        <h2 class="font-medium">Summary</h2>
-        <ul class="mt-3 text-sm text-neutral-300 space-y-1">
-          <li>Total spent: <span id="sum-exp" class="font-medium">—</span></li>
-          <li>Total income: <span id="sum-inc" class="font-medium">—</span></li>
-          <li>Transactions: <span id="sum-count" class="font-medium">—</span></li>
-        </ul>
+      <aside class="space-y-4">
+        <article class="glass p-4 md:p-5">
+          <h2 class="font-medium">Summary</h2>
+          <ul class="mt-3 text-sm text-neutral-300 space-y-1">
+            <li>Total spent: <span id="sum-exp" class="font-medium">—</span></li>
+            <li>Total income: <span id="sum-inc" class="font-medium">—</span></li>
+            <li>Transactions: <span id="sum-count" class="font-medium">—</span></li>
+          </ul>
+        </article>
+        <article class="glass p-4 md:p-5">
+          <h2 class="font-medium">By category</h2>
+          <div id="cat-bars" class="mt-3 space-y-2"></div>
+        </article>
+        <article class="glass p-4 md:p-5">
+          <h2 class="font-medium">By month</h2>
+          <div id="month-bars" class="mt-3 space-y-2"></div>
+        </article>
       </aside>
     </section>
   </main>
@@ -58,4 +68,3 @@
   <script type="module" src="./merchant.js"></script>
 </body>
 </html>
-
