@@ -38,7 +38,7 @@
     #toast { transition: opacity .2s ease; }
   </style>
 </head>
-<body class="bg-black text-white">
+<body class="bg-black text-white anim-page">
   <!-- Header mount -->
   <div id="site-header"></div>
 
@@ -58,7 +58,7 @@
     </header>
 
     <!-- Toolbar -->
-    <section class="glass p-4 md:p-5 mb-6">
+    <section class="glass p-4 md:p-5 mb-6 anim-card">
       <div class="flex flex-wrap items-center gap-3">
         <div class="relative flex-1 min-w-[240px]">
           <input id="user-search" type="search" placeholder="Search name or bio…"
@@ -90,7 +90,7 @@
       </div>
 
       <!-- Grid -->
-      <div id="user-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+      <div id="user-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 stagger">
         <!-- Cards injected by follow-list.js -->
       </div>
 

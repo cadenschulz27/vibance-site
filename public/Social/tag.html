@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./social.css"/>
 </head>
-<body class="bg-black text-white">
+<body class="bg-black text-white anim-page">
   <div id="site-header"></div>
   <main class="mx-auto max-w-6xl px-4 pt-24 pb-16">
     <nav class="mb-6 text-sm text-neutral-400"><a href="./social.html" class="hover:text-white">← Back to Community</a></nav>
@@ -18,7 +18,7 @@
       <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight">#<span id="tag-name">tag</span></h1>
       <p class="text-sm md:text-base text-neutral-400 mt-2">Posts tagged with <span id="tag-count">0</span> results.</p>
     </header>
-    <section id="tag-list" class="space-y-3"></section>
+    <section id="tag-list" class="space-y-3 stagger"></section>
     <div id="tag-empty" class="hidden glass p-10 text-center text-neutral-400">No posts for this tag yet.</div>
   </main>
   <template id="post-card-template">
@@ -48,4 +48,3 @@
   <script type="module" src="./tag.js"></script>
 </body>
 </html>
-

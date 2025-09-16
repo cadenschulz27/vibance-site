@@ -38,9 +38,16 @@
 
     /* Toast */
     #toast { transition: opacity 200ms ease; }
+    /* Animations (unified) */
+    @keyframes vb-fade-in { from { opacity:0; transform: translateY(-2px);} to { opacity:1; transform:none; } }
+    @keyframes vb-fade-up { from { opacity:0; transform: translateY(8px);} to { opacity:1; transform:none; } }
+    .vb-anim-page { animation: vb-fade-in .28s ease-out both; }
+    .vb-anim-card { animation: vb-fade-up .35s ease-out both; }
+    .vb-stagger > * { animation: vb-fade-up .35s ease-out both; }
+    .vb-stagger > *:nth-child(1){animation-delay:.04s}.vb-stagger > *:nth-child(2){animation-delay:.08s}.vb-stagger > *:nth-child(3){animation-delay:.12s}.vb-stagger > *:nth-child(4){animation-delay:.16s}
   </style>
 </head>
-<body class="bg-black text-white">
+<body class="bg-black text-white vb-anim-page">
   <!-- Header mount -->
   <div id="site-header"></div>
 
@@ -79,7 +86,7 @@
     </section>
 
     <!-- Filters -->
-    <section class="toolbar-sticky">
+    <section class="toolbar-sticky vb-anim-card">
       <div class="card p-3 md:p-4">
         <div class="flex flex-wrap items-center gap-2 md:gap-3">
           <div class="flex items-center gap-2">

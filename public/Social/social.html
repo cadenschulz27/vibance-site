@@ -32,7 +32,7 @@
     #toast { transition: opacity .2s ease; }
   </style>
 </head>
-<body class="bg-black text-white">
+<body class="bg-black text-white anim-page">
   <!-- Global header mount (shared across the app) -->
   <div id="site-header"></div>
 
@@ -56,7 +56,7 @@
       <!-- Left column: Composer + Feed (spans 2 on large) -->
       <section class="lg:col-span-2 space-y-4">
         <!-- Composer -->
-        <article class="glass p-4 md:p-5">
+        <article class="glass p-4 md:p-5 anim-card">
           <form id="composer" class="space-y-4" autocomplete="off">
             <div class="flex items-start gap-3">
               <img id="you-avatar" class="h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" src="/images/logo_white.png" alt="Your avatar">
@@ -107,7 +107,7 @@
 
         <!-- Feed -->
         <div id="feed-empty" class="hidden glass p-10 text-center">Your feed is quiet. Follow a few people or make the first move!</div>
-        <div id="feed-list" class="space-y-3">
+        <div id="feed-list" class="space-y-3 stagger">
           <!-- Cards injected by social.js using #post-card-template -->
         </div>
         <div class="pt-2 text-center">
@@ -117,7 +117,7 @@
 
       <!-- Right column: Suggestions -->
       <aside class="space-y-4">
-        <section class="glass p-4 md:p-5">
+        <section class="glass p-4 md:p-5 anim-card">
           <div class="flex items-center justify-between">
             <h2 class="font-medium">Suggested for you</h2>
             <a href="./follow-list.html" class="text-xs text-neutral-400 hover:text-white">See all</a>
@@ -127,7 +127,7 @@
           </div>
         </section>
 
-        <section class="glass p-4 md:p-5">
+        <section class="glass p-4 md:p-5 anim-card">
           <h2 class="font-medium">Community tips</h2>
           <ul class="mt-3 text-sm text-neutral-300 list-disc pl-5 space-y-2">
             <li>Keep it helpful. Explain what worked, and why.</li>
