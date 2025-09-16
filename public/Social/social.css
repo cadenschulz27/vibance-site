@@ -73,6 +73,8 @@ body {
 }
 .chip:hover { border-color: var(--vb-border-2); }
 .chip:active { transform: translateY(0.5px); }
+.chip { will-change: transform, border-color; }
+.chip:hover { transform: translateY(-1px) scale(1.01); }
 .chip[aria-pressed="true"],
 .chip.active,
 .chip.border-\[var\(--neon\)\] { /* Tailwind-compatible active marker */
@@ -248,6 +250,11 @@ body {
 
 /* ---- High-DPI polish for icons (crisper strokes) ---- */
 svg { shape-rendering: geometricPrecision; text-rendering: optimizeLegibility; }
+
+/* Reduce motion prefers: disable animations and transitions */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
 
 /* ---- Comments (cleaner) ---- */
 .comment-item { padding: 2px 0; }
