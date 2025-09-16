@@ -34,6 +34,7 @@ const els = {
   presetLastMonth: document.getElementById('preset-last-month'),
   presetYTD: document.getElementById('preset-ytd'),
   preset90d: document.getElementById('preset-90d'),
+  presetSelect: document.getElementById('preset-select'),
 
   count: document.getElementById('tx-count'),
   incomeTotal: document.getElementById('totals-income'),
@@ -347,6 +348,13 @@ function wireUI() {
   els.preset90d?.addEventListener('click', () => applyPreset('90d'));
   els.start?.addEventListener('change', updatePresetActiveFromDates);
   els.end?.addEventListener('change', updatePresetActiveFromDates);
+  els.presetSelect?.addEventListener('change', () => {
+    const v = els.presetSelect.value;
+    if (!v) return;
+    if (v === 'custom') { localStorage.removeItem('vb_income_preset'); setActivePreset(''); return; }
+    localStorage.setItem('vb_income_preset', v);
+    applyPreset(v);
+  });
   els.prev?.addEventListener('click', () => { if (PAGE > 1) { PAGE--; render(); } });
   els.next?.addEventListener('click', () => { const total = FILTERED.length; if (PAGE * PAGE_SIZE < total) { PAGE++; render(); } });
   els.syncAll?.addEventListener('click', async () => {
@@ -367,6 +375,11 @@ function init() {
       await loadAllTransactions(UID);
       await loadSavedFilters(UID);
       toast('Income loaded');
+      const last = localStorage.getItem('vb_income_preset');
+      if (last) {
+        applyPreset(last);
+        if (els.presetSelect) els.presetSelect.value = last;
+      } else { updatePresetActiveFromDates(); }
     } catch (e) { console.error('Income init failed', e); if (els.empty) els.empty.style.display = ''; }
   });
 }

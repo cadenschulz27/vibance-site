@@ -38,16 +38,18 @@ async function boot(uid, merchant){
   const match = all.filter(x => String(x.merchant_name||'').toLowerCase() === m || String(x.name||'').toLowerCase().indexOf(m) >= 0);
   let exp=0, inc=0;
   const catAgg = {}; // name -> total spent
-  const monAgg = {}; // yyyy-mm -> total spent
+  const monAggExp = {}; // yyyy-mm -> total spent
+  const monAggInc = {}; // yyyy-mm -> total income
   if (bodyEl) bodyEl.innerHTML='';
   match.forEach(x => {
     const amt = Number(x.amount||0);
-    if (amt < 0) inc += Math.abs(amt); else {
+    if (amt < 0) { inc += Math.abs(amt); const ymInc = (new Date(x.date)).toISOString().slice(0,7); monAggInc[ymInc] = (monAggInc[ymInc] || 0) + Math.abs(amt); }
+    else {
       exp += amt;
       const cat = (x.categoryUser || (x.personal_finance_category && x.personal_finance_category.primary) || 'Uncategorized');
       catAgg[cat] = (catAgg[cat] || 0) + amt;
       const ym = (new Date(x.date)).toISOString().slice(0,7);
-      monAgg[ym] = (monAgg[ym] || 0) + amt;
+      monAggExp[ym] = (monAggExp[ym] || 0) + amt;
     }
     const tr = document.createElement('tr');
     const cls = amt<0 ? 'text-emerald-400' : 'text-red-400';
@@ -75,18 +77,22 @@ async function boot(uid, merchant){
     });
   }
 
-  // Render month bars (last 6 months)
+  // Render month bars (last 6 months, side-by-side income vs expense)
   if (monthBarsEl) {
     monthBarsEl.innerHTML = '';
-    const labels = Object.keys(monAgg).sort().slice(-6);
-    const max = Math.max(1, ...labels.map(k=>monAgg[k]));
+    const labels = Array.from(new Set([...Object.keys(monAggExp), ...Object.keys(monAggInc)])).sort().slice(-6);
+    const max = Math.max(1, ...labels.map(k=>Math.max(monAggExp[k]||0, monAggInc[k]||0)));
     labels.forEach(ym => {
       const d = new Date(ym+'-01T00:00:00');
       const lab = d.toLocaleDateString(undefined,{ month:'short', year:'2-digit' });
-      const total = monAgg[ym];
+      const e = monAggExp[ym] || 0;
+      const i = monAggInc[ym] || 0;
       const row = document.createElement('div');
-      row.innerHTML = `<div class="flex items-center justify-between text-sm"><span>${lab}</span><span>${fmt(total)}</span></div>
-        <div class="h-2 bg-neutral-900 border border-neutral-800 rounded"><div class="h-2 bg-red-500/70 rounded" style="width:${Math.round(total/max*100)}%"></div></div>`;
+      row.innerHTML = `<div class="flex items-center justify-between text-sm"><span title="${ym}">${lab}</span><span>${fmt(i)} / ${fmt(e)}</span></div>
+        <div class="grid grid-cols-2 gap-1">
+          <div class="h-2 bg-neutral-900 border border-neutral-800 rounded" title="Income ${fmt(i)}"><div class="h-2 bg-emerald-500/70 rounded" style="width:${Math.round(i/max*100)}%"></div></div>
+          <div class="h-2 bg-neutral-900 border border-neutral-800 rounded" title="Expenses ${fmt(e)}"><div class="h-2 bg-red-500/70 rounded" style="width:${Math.round(e/max*100)}%"></div></div>
+        </div>`;
       monthBarsEl.appendChild(row);
     });
   }

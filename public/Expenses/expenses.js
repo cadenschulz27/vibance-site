@@ -43,6 +43,7 @@ const els = {
   presetLastMonth: document.getElementById('preset-last-month'),
   presetYTD: document.getElementById('preset-ytd'),
   preset90d: document.getElementById('preset-90d'),
+  presetSelect: document.getElementById('preset-select'),
 
   count: document.getElementById('tx-count'),
   incomeTotal: document.getElementById('totals-income'),
@@ -557,6 +558,17 @@ function wireUI() {
   els.preset90d?.addEventListener('click', () => applyPreset('90d'));
   els.start?.addEventListener('change', updatePresetActiveFromDates);
   els.end?.addEventListener('change', updatePresetActiveFromDates);
+  els.presetSelect?.addEventListener('change', () => {
+    const v = els.presetSelect.value;
+    if (!v) return; // do nothing on blank
+    if (v === 'custom') {
+      localStorage.removeItem('vb_expenses_preset');
+      setActivePreset('');
+      return;
+    }
+    localStorage.setItem('vb_expenses_preset', v);
+    applyPreset(v);
+  });
 
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
@@ -597,6 +609,12 @@ function init() {
       await loadAllTransactions(UID);
       await loadSavedFilters(UID);
       toast('Transactions loaded');
+      // Apply last preset if present
+      const last = localStorage.getItem('vb_expenses_preset');
+      if (last) {
+        applyPreset(last);
+        if (els.presetSelect) els.presetSelect.value = last;
+      } else { updatePresetActiveFromDates(); }
     } catch (e) {
       console.error('Expenses init failed', e);
       if (els.empty) els.empty.style.display = '';
