@@ -197,6 +197,9 @@ function applyPreset(preset) {
     setDateInputs(yyyy_mm_dd(start), yyyy_mm_dd(now));
   }
   setActivePreset(preset);
+  if (UID) {
+    try { await setDoc(doc(db, 'users', UID, 'settings', 'filters'), { presets: { income: preset } }, { merge: true }); } catch {}
+  }
   applyFilters();
 }
 
@@ -375,11 +378,24 @@ function init() {
       await loadAllTransactions(UID);
       await loadSavedFilters(UID);
       toast('Income loaded');
-      const last = localStorage.getItem('vb_income_preset');
-      if (last) {
-        applyPreset(last);
-        if (els.presetSelect) els.presetSelect.value = last;
-      } else { updatePresetActiveFromDates(); }
+      let applied = false;
+      try {
+        const snap = await getDoc(doc(db, 'users', UID, 'settings', 'filters'));
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        const p = data.presets && data.presets.income;
+        if (p) {
+          if (els.presetSelect) els.presetSelect.value = p;
+          await applyPreset(p);
+          applied = true;
+        }
+      } catch {}
+      if (!applied) {
+        const last = localStorage.getItem('vb_income_preset');
+        if (last) {
+          if (els.presetSelect) els.presetSelect.value = last;
+          await applyPreset(last);
+        } else { updatePresetActiveFromDates(); }
+      }
     } catch (e) { console.error('Income init failed', e); if (els.empty) els.empty.style.display = ''; }
   });
 }

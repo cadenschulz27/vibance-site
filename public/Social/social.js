@@ -35,6 +35,8 @@ const els = {
   list: document.getElementById('feed-list'),
   empty: document.getElementById('feed-empty'),
   more: document.getElementById('load-more'),
+  feedAll: document.getElementById('feed-all'),
+  feedSaved: document.getElementById('feed-saved'),
 
   // Suggestions
   sugWrap: document.getElementById('suggested-users'),
@@ -61,6 +63,7 @@ let FEED_CURSOR = null;
 let FEED_LOADING = false;
 let SUG_CURSOR = null;
 let FOLLOWING = [];
+let SAVED_IDS = new Set();
 
 /* ------------------------------- Utilities ------------------------------ */
 const parseTags = (s) => (s || '')
@@ -184,8 +187,13 @@ function mountPostCard(pModel) {
     currentUserId: YOU?.uid,
     currentUserPhoto: (ME_PROFILE?.photoURL || YOU?.photoURL || ''),
     currentUserDisplayName: displayName,
+    isSaved: (id) => SAVED_IDS.has(id),
     onToggleLike: async (post, nextLiked) => {
       await DS.toggleLike(post.id, nextLiked);
+    },
+    onToggleSave: async (post, willSave) => {
+      await DS.toggleSavedPost(post.id, willSave);
+      if (willSave) SAVED_IDS.add(post.id); else SAVED_IDS.delete(post.id);
     },
     onEdit: async (post, newText) => {
       await DS.updatePostDescription(post.id, newText);
@@ -224,22 +232,28 @@ async function loadFeed(next = false) {
   show(els.more, false);
 
   try {
-    const { items, cursor } = await DS.fetchPostsPage({
-      after: next ? FEED_CURSOR : null,
-      pageSize: 12
-    });
-    FEED_CURSOR = cursor;
-
-    if (!next) els.list.innerHTML = '';
-
-    if (!items.length && els.list.children.length === 0) {
-      show(els.empty, true);
-      return;
+    // If Saved filter is active, load saved posts instead of timeline
+    const savedMode = !!els.feedSaved?.getAttribute('aria-pressed') && els.feedSaved.getAttribute('aria-pressed') === 'true';
+    if (savedMode) {
+      if (!SAVED_IDS.size) {
+        els.list.innerHTML = '';
+        show(els.empty, true);
+      } else {
+        const items = await DS.getPostsByIds(Array.from(SAVED_IDS));
+        els.list.innerHTML = '';
+        items.forEach(p => mountPostCard(toPostModel(p.id, p)));
+        show(els.empty, items.length === 0);
+      }
+      show(els.more, false);
+    } else {
+      const { items, cursor } = await DS.fetchPostsPage({ after: next ? FEED_CURSOR : null, pageSize: 12 });
+      FEED_CURSOR = cursor;
+      if (!next) els.list.innerHTML = '';
+      if (!items.length && els.list.children.length === 0) { show(els.empty, true); return; }
+      show(els.empty, false);
+      items.forEach(p => mountPostCard(toPostModel(p.id, p)));
+      show(els.more, !!FEED_CURSOR);
     }
-
-    show(els.empty, false);
-    items.forEach(p => mountPostCard(toPostModel(p.id, p)));
-    show(els.more, !!FEED_CURSOR);
   } catch (e) {
     console.error('feed load failed', e);
     toast('Failed to load feed');
@@ -303,6 +317,18 @@ function wireUI() {
     if (nearEnd && SUG_CURSOR) loadSuggestions(false);
   }, 150);
   els.sugWrap?.addEventListener('scroll', onScroll);
+
+  // Feed filter
+  function setFeedMode(saved) {
+    els.feedAll?.setAttribute('aria-pressed', String(!saved));
+    els.feedSaved?.setAttribute('aria-pressed', String(saved));
+    els.feedAll?.classList.toggle('border-[var(--neon)]', !saved);
+    els.feedSaved?.classList.toggle('border-[var(--neon)]', saved);
+    FEED_CURSOR = null;
+    loadFeed(false);
+  }
+  els.feedAll?.addEventListener('click', () => setFeedMode(false));
+  els.feedSaved?.addEventListener('click', () => setFeedMode(true));
 
   // Edit modal wiring
   els.editPick?.addEventListener('click', (e) => { e.preventDefault(); els.editFiles?.click(); });
@@ -377,6 +403,12 @@ onAuthStateChanged(auth, async (user) => {
   } catch {
     FOLLOWING = [];
   }
+
+  // Load saved post IDs
+  try {
+    const arr = await DS.loadSavedPosts();
+    SAVED_IDS = new Set(arr);
+  } catch { SAVED_IDS = new Set(); }
 
   wireComposer();
   wireUI();

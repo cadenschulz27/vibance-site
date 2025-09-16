@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Tag • Vibance Community</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./social.css"/>
+</head>
+<body class="bg-black text-white">
+  <div id="site-header"></div>
+  <main class="mx-auto max-w-6xl px-4 pt-24 pb-16">
+    <nav class="mb-6 text-sm text-neutral-400"><a href="./social.html" class="hover:text-white">← Back to Community</a></nav>
+    <header class="mb-6 md:mb-10">
+      <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight">#<span id="tag-name">tag</span></h1>
+      <p class="text-sm md:text-base text-neutral-400 mt-2">Posts tagged with <span id="tag-count">0</span> results.</p>
+    </header>
+    <section id="tag-list" class="space-y-3"></section>
+    <div id="tag-empty" class="hidden glass p-10 text-center text-neutral-400">No posts for this tag yet.</div>
+  </main>
+  <template id="post-card-template">
+    <!-- reuse same structure as social.html -->
+    <article class="glass p-4 md:p-5">
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <img class="post-avatar h-10 w-10 rounded-full object-cover bg-neutral-900 border border-neutral-800" alt="Avatar">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <a class="post-author font-medium truncate hover:underline" href="#"></a>
+              <span class="post-badge text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 hidden"></span>
+            </div>
+            <div class="post-meta text-xs text-neutral-500 truncate">•</div>
+          </div>
+        </div>
+      </header>
+      <div class="post-body text-neutral-100 mt-3 whitespace-pre-wrap"></div>
+      <figure class="post-image-wrap mt-3 hidden">
+        <img class="post-image w-full rounded-xl border border-neutral-800 object-cover" alt="Post image"/>
+      </figure>
+    </article>
+  </template>
+
+  <script type="module" src="/api/firebase.js"></script>
+  <script type="module" src="/components/header.js"></script>
+  <script type="module" src="./tag.js"></script>
+</body>
+</html>
+

@@ -232,6 +232,28 @@ export async function toggleLike(postId, like) {
   await updateDoc(ref, { likes: like ? arrayUnion(me.uid) : arrayRemove(me.uid) });
 }
 
+/* ------------------------------ Saved posts ------------------------------ */
+export async function loadSavedPosts() {
+  const me = auth.currentUser; if (!me) throw new Error('Not signed in');
+  const snap = await getDoc(doc(db, 'users', me.uid, 'settings', 'social'));
+  const data = snap.exists() ? (snap.data() || {}) : {};
+  const arr = Array.isArray(data.savedPosts) ? data.savedPosts : [];
+  return arr;
+}
+export async function toggleSavedPost(postId, save) {
+  const me = auth.currentUser; if (!me) throw new Error('Not signed in');
+  const ref = doc(db, 'users', me.uid, 'settings', 'social');
+  await setDoc(ref, { savedPosts: save ? arrayUnion(postId) : arrayRemove(postId), updatedAt: nowServer() }, { merge: true });
+}
+export async function getPostsByIds(ids = []) {
+  const out = [];
+  for (const id of ids) {
+    const p = await getPost(id);
+    if (p) out.push(p);
+  }
+  return out;
+}
+
 /* -------------------------------- Comments ------------------------------- */
 
 export async function fetchComments(postId, { pageSize = 40 } = {}) {

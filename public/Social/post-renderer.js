@@ -121,10 +121,11 @@ export function createPostCard(post, actions = {}) {
     const tagsWrap = document.createElement('div');
     tagsWrap.className = 'mt-2 flex flex-wrap gap-2';
     post.tags.slice(0,5).forEach(t => {
-      const chip = document.createElement('span');
-      chip.className = 'px-2 py-0.5 rounded-lg border border-neutral-800 text-xs text-neutral-300';
-      chip.textContent = `#${t}`;
-      tagsWrap.appendChild(chip);
+      const a = document.createElement('a');
+      a.href = `./tag.html?name=${encodeURIComponent(t)}`;
+      a.className = 'px-2 py-0.5 rounded-lg border border-neutral-800 text-xs text-neutral-300 hover:text-white hover:border-neutral-700';
+      a.textContent = `#${t}`;
+      tagsWrap.appendChild(a);
     });
     const insertBefore = root.querySelector('.post-image-wrap');
     if (insertBefore && !insertBefore.classList.contains('hidden')) insertBefore.before(tagsWrap);
@@ -166,6 +167,7 @@ export function createPostCard(post, actions = {}) {
   const likeBtn = root.querySelector('.post-like');
   const likeCountEl = root.querySelector('.post-like-count');
   const commentBtn = root.querySelector('.post-comment');
+  const saveBtn = root.querySelector('.post-save');
   const commentCountEl = root.querySelector('.post-comment-count');
   const permalink = root.querySelector('.post-permalink');
 
@@ -186,6 +188,9 @@ export function createPostCard(post, actions = {}) {
   const youLiked = post.likes?.includes?.(actions.currentUserId);
   if (youLiked) likeBtn.classList.add('border-[var(--neon)]');
 
+  // Initial saved state
+  if (actions.isSaved?.(post.id)) saveBtn?.classList.add('border-[var(--neon)]');
+
   likeBtn.addEventListener('click', async () => {
     const next = !likeBtn.classList.contains('border-[var(--neon)]');
     // Optimistic UI
@@ -202,6 +207,15 @@ export function createPostCard(post, actions = {}) {
         Math.max(0, Number(likeCountEl.textContent || '0') + (next ? -1 : 1))
       );
     }
+  });
+
+  // Save toggle
+  saveBtn?.addEventListener('click', async () => {
+    const willSave = !saveBtn.classList.contains('border-[var(--neon)]');
+    // optimistic
+    saveBtn.classList.toggle('border-[var(--neon)]', willSave);
+    try { await actions.onToggleSave?.(post, willSave); }
+    catch { saveBtn.classList.toggle('border-[var(--neon)]', !willSave); }
   });
 
   // --- Comments (lazy open + send)
