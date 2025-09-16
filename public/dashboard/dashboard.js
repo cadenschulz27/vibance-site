@@ -38,8 +38,29 @@ const els = {
   syncAllBtn: document.getElementById('sync-all-btn'),
   newsList: document.getElementById('news-grid'), // Corrected ID
   newsEmpty: document.getElementById('news-empty'), // Now correctly references the new element
+  newsDisclaimer: document.getElementById('news-disclaimer'),
   toast: document.getElementById('toast'),
 };
+
+const modalEls = {
+  container: document.getElementById('news-modal'),
+  overlay: document.getElementById('news-modal-overlay'),
+  panel: document.getElementById('news-modal-panel'),
+  closeBtn: document.getElementById('news-modal-close'),
+  badge: document.getElementById('news-modal-badge'),
+  title: document.getElementById('news-modal-title'),
+  date: document.getElementById('news-modal-date'),
+  summary: document.getElementById('news-modal-summary'),
+  takeawaysSection: document.getElementById('news-modal-takeaways-section'),
+  takeaways: document.getElementById('news-modal-takeaways'),
+  perspectiveSection: document.getElementById('news-modal-perspective-section'),
+  perspective: document.getElementById('news-modal-perspective'),
+  source: document.getElementById('news-modal-source'),
+  compliance: document.getElementById('news-modal-compliance'),
+};
+
+let newsStories = [];
+let activeStoryId = null;
 
 // ---------------- Utilities ----------------
 function showToast(msg) {
@@ -85,18 +106,28 @@ function fmtDateISO(isoOrTs) {
   return d.toLocaleDateString();
 }
 
-function titleCase(str = '') {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
+function fmtDateLong(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d?.getTime())) return null;
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 function buildNewsCard(story) {
   const card = document.createElement('article');
   card.className = 'news-card';
 
-  const content = document.createElement('div');
-  content.className = 'news-card-content';
-  card.appendChild(content);
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'news-card-trigger';
+  trigger.setAttribute('aria-label', `Open Vibance briefing: ${story.headline || 'Market briefing'}`);
+
+  const preview = document.createElement('div');
+  preview.className = 'news-card-preview';
 
   const topline = document.createElement('div');
   topline.className = 'news-card-topline';
@@ -105,126 +136,153 @@ function buildNewsCard(story) {
   badge.textContent = 'Vibance Briefing';
   topline.appendChild(badge);
 
-  if (story.method) {
-    const method = document.createElement('span');
-    method.className = 'news-card-method';
-    method.textContent = story.method === 'llm' ? 'AI assisted' : 'Editorial blend';
-    topline.appendChild(method);
+  const readable = fmtDateLong(story.publishedAt);
+  if (readable) {
+    const time = document.createElement('time');
+    time.className = 'news-card-date';
+    time.dateTime = new Date(story.publishedAt).toISOString();
+    time.textContent = readable;
+    topline.appendChild(time);
   }
-  content.appendChild(topline);
+
+  preview.appendChild(topline);
 
   const title = document.createElement('h3');
   title.className = 'news-card-title';
   title.textContent = story.headline || 'Market briefing';
-  content.appendChild(title);
+  preview.appendChild(title);
 
-  if (story.summary) {
-    const summary = document.createElement('p');
-    summary.className = 'news-card-summary';
-    summary.textContent = story.summary;
-    content.appendChild(summary);
+  const hint = document.createElement('span');
+  hint.className = 'news-card-hint';
+  hint.textContent = 'Open briefing';
+  preview.appendChild(hint);
+
+  trigger.appendChild(preview);
+  trigger.addEventListener('click', () => openNewsModal(story));
+
+  card.appendChild(trigger);
+  return card;
+}
+
+function resetNewsModal() {
+  if (!modalEls.container) return;
+  if (modalEls.title) modalEls.title.textContent = '';
+  if (modalEls.date) {
+    modalEls.date.textContent = '';
+    modalEls.date.style.display = 'none';
+  }
+  if (modalEls.summary) modalEls.summary.textContent = '';
+  if (modalEls.takeaways) modalEls.takeaways.innerHTML = '';
+  if (modalEls.takeawaysSection) modalEls.takeawaysSection.style.display = 'none';
+  if (modalEls.perspective) modalEls.perspective.textContent = '';
+  if (modalEls.perspectiveSection) modalEls.perspectiveSection.style.display = 'none';
+  if (modalEls.source) {
+    modalEls.source.textContent = '';
+    modalEls.source.removeAttribute('href');
+    modalEls.source.style.display = 'none';
+  }
+  if (modalEls.compliance) {
+    modalEls.compliance.textContent = '';
+    modalEls.compliance.style.display = 'none';
+  }
+}
+
+function closeNewsModal() {
+  if (!modalEls.container) return;
+  modalEls.container.classList.remove('news-modal--open');
+  modalEls.container.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  resetNewsModal();
+  activeStoryId = null;
+  document.removeEventListener('keydown', handleModalKeydown, true);
+}
+
+function handleModalKeydown(event) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeNewsModal();
+  }
+}
+
+function openNewsModal(story) {
+  if (!modalEls.container) return;
+  resetNewsModal();
+  activeStoryId = story.id || null;
+
+  if (modalEls.badge) modalEls.badge.textContent = 'Vibance Briefing';
+
+  if (modalEls.title) {
+    modalEls.title.textContent = story.headline || 'Market briefing';
   }
 
-  if (Array.isArray(story.keyTakeaways) && story.keyTakeaways.length) {
-    const list = document.createElement('ul');
-    list.className = 'news-card-takeaways';
-    story.keyTakeaways.forEach((item) => {
-      const li = document.createElement('li');
-      li.textContent = item;
-      list.appendChild(li);
-    });
-    content.appendChild(list);
-  }
-
-  if (story.insight) {
-    const insight = document.createElement('p');
-    insight.className = 'news-card-insight';
-    insight.textContent = story.insight;
-    content.appendChild(insight);
-  }
-
-  const meta = document.createElement('div');
-  meta.className = 'news-card-meta';
-
-  if (story.sentiment) {
-    const sentiment = document.createElement('span');
-    sentiment.className = `news-card-sentiment news-card-sentiment--${story.sentiment}`;
-    sentiment.textContent = `${titleCase(story.sentiment)} tone`;
-    meta.appendChild(sentiment);
-  }
-
-  if (story.riskLevel) {
-    const risk = document.createElement('span');
-    risk.className = 'news-card-risk';
-    risk.textContent = story.riskLevel;
-    meta.appendChild(risk);
-  }
-
-  if (Array.isArray(story.tickers) && story.tickers.length) {
-    const tickersWrap = document.createElement('div');
-    tickersWrap.className = 'news-card-tickers';
-    const label = document.createElement('span');
-    label.className = 'news-card-tickers-label';
-    label.textContent = 'Tickers:';
-    tickersWrap.appendChild(label);
-
-    story.tickers.slice(0, 6).forEach((ticker) => {
-      const badge = document.createElement('span');
-      badge.className = 'news-card-ticker';
-      badge.textContent = ticker;
-      tickersWrap.appendChild(badge);
-    });
-
-    meta.appendChild(tickersWrap);
-  }
-
-  if (meta.children.length) {
-    content.appendChild(meta);
-  }
-
-  const source = document.createElement('div');
-  source.className = 'news-card-source';
-
-  const sourceLabel = document.createElement('span');
-  sourceLabel.textContent = 'Source: ';
-  source.appendChild(sourceLabel);
-
-  if (story.attribution?.url) {
-    const link = document.createElement('a');
-    link.href = story.attribution.url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.textContent = story.attribution?.source || 'Original reporting';
-    source.appendChild(link);
-  } else if (story.attribution?.source) {
-    const span = document.createElement('span');
-    span.textContent = story.attribution.source;
-    source.appendChild(span);
-  } else {
-    const span = document.createElement('span');
-    span.textContent = 'Vibance Research Desk';
-    source.appendChild(span);
-  }
-
-  if (story.publishedAt) {
-    const published = new Date(story.publishedAt);
-    if (!Number.isNaN(published.getTime())) {
-      const divider = document.createElement('span');
-      divider.className = 'news-card-source-divider';
-      divider.setAttribute('aria-hidden', 'true');
-      divider.textContent = ' • ';
-      source.appendChild(divider);
-
-      const time = document.createElement('time');
-      time.dateTime = published.toISOString();
-      time.textContent = fmtDateISO(published);
-      source.appendChild(time);
+  const readableDate = fmtDateLong(story.publishedAt);
+  if (modalEls.date) {
+    if (readableDate) {
+      modalEls.date.textContent = readableDate;
+      modalEls.date.dateTime = new Date(story.publishedAt).toISOString();
+      modalEls.date.style.display = '';
+    } else {
+      modalEls.date.style.display = 'none';
     }
   }
 
-  content.appendChild(source);
+  if (modalEls.summary) {
+    modalEls.summary.textContent = story.summary || '';
+  }
 
-  return card;
+  if (Array.isArray(story.keyTakeaways) && story.keyTakeaways.length && modalEls.takeaways && modalEls.takeawaysSection) {
+    story.keyTakeaways.forEach((item) => {
+      if (!item) return;
+      const li = document.createElement('li');
+      li.textContent = item;
+      modalEls.takeaways.appendChild(li);
+    });
+    modalEls.takeawaysSection.style.display = modalEls.takeaways.children.length ? '' : 'none';
+  }
+
+  if (story.insight && modalEls.perspective && modalEls.perspectiveSection) {
+    modalEls.perspective.textContent = story.insight;
+    modalEls.perspectiveSection.style.display = '';
+  }
+
+  if (modalEls.source) {
+    if (story.attribution?.url) {
+      modalEls.source.href = story.attribution.url;
+      modalEls.source.textContent = 'Read the original report';
+      modalEls.source.style.display = '';
+    } else if (story.attribution?.source) {
+      modalEls.source.removeAttribute('href');
+      modalEls.source.textContent = story.attribution.source;
+      modalEls.source.style.display = '';
+    } else {
+      modalEls.source.style.display = 'none';
+    }
+  }
+
+  if (story.complianceNote && modalEls.compliance) {
+    modalEls.compliance.textContent = story.complianceNote;
+    modalEls.compliance.style.display = '';
+  }
+
+  modalEls.container.classList.add('news-modal--open');
+  modalEls.container.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+
+  if (modalEls.closeBtn) {
+    modalEls.closeBtn.focus({ preventScroll: true });
+  }
+
+  document.addEventListener('keydown', handleModalKeydown, true);
+}
+
+function bindNewsModal() {
+  if (!modalEls.container) return;
+  if (modalEls.overlay) {
+    modalEls.overlay.addEventListener('click', () => closeNewsModal());
+  }
+  if (modalEls.closeBtn) {
+    modalEls.closeBtn.addEventListener('click', () => closeNewsModal());
+  }
 }
 
 async function getIdToken() {
@@ -428,6 +486,12 @@ async function loadNews() {
     const data = await res.json();
 
     const stories = Array.isArray(data?.stories) ? data.stories : [];
+    if (els.newsDisclaimer) {
+      const disclaimerText = data?.meta?.disclaimer || '';
+      els.newsDisclaimer.textContent = disclaimerText;
+      els.newsDisclaimer.style.display = disclaimerText ? '' : 'none';
+    }
+    newsStories = stories;
     if (!stories.length) {
       if (els.newsEmpty) els.newsEmpty.style.display = '';
       return;
@@ -468,6 +532,7 @@ function wire() {
 }
 
 function init() {
+  bindNewsModal();
   wire();
 
   onAuthStateChanged(auth, async (user) => {

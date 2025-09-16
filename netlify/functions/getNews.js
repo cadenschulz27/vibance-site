@@ -8,13 +8,44 @@ const NEWS_CATEGORY = process.env.NEWS_CATEGORY || 'business';
 const MAX_CANDIDATES = Number(process.env.NEWS_CANDIDATE_LIMIT || 15);
 const MAX_STORIES = Number(process.env.NEWS_STORY_LIMIT || 6);
 const MIN_SENTENCE_LENGTH = 35;
+const CACHE_TTL_MS = Number(process.env.NEWS_CACHE_TTL_MS || 15 * 60 * 1000);
+const DEFAULT_DISCLAIMER = process.env.NEWS_GLOBAL_DISCLAIMER
+  || 'Vibance Briefs summarize third-party reporting. Verify details with the original source before making financial decisions.';
+
+const DISALLOWED_SOURCES = new Set(
+  (process.env.NEWS_BLOCKED_SOURCES || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+);
+
+let cachedPayload = null;
+let cacheTimestamp = 0;
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-const POSITIVE_TERMS = ['gain', 'growth', 'up', 'surge', 'improve', 'strong', 'bull'];
-const NEGATIVE_TERMS = ['loss', 'drop', 'down', 'decline', 'fall', 'weak', 'bear'];
-const STOP_TICKERS = new Set(['THE', 'AND', 'FROM', 'WILL', 'THIS', 'WITH', 'HAVE']);
+const POSITIVE_TERMS = ['gain', 'growth', 'up', 'surge', 'improve', 'strong', 'bull', 'record'];
+const NEGATIVE_TERMS = ['loss', 'drop', 'down', 'decline', 'fall', 'weak', 'bear', 'slump'];
+const STOP_TICKERS = new Set(['THE', 'AND', 'FROM', 'WILL', 'THIS', 'WITH', 'HAVE', 'ETF', 'NEWS']);
+
+const WORD_SUBSTITUTIONS = new Map([
+  ['surpasses', 'tops'],
+  ['surpassed', 'topped'],
+  ['climbs', 'advances'],
+  ['climb', 'advance'],
+  ['rises', 'strengthens'],
+  ['rise', 'strengthen'],
+  ['falls', 'slides'],
+  ['fall', 'slide'],
+  ['drops', 'eases'],
+  ['drop', 'ease'],
+  ['growth', 'expansion'],
+  ['decline', 'retreat'],
+  ['warns', 'signals'],
+  ['warn', 'signal'],
+  ['faces', 'confronts'],
+]);
 
 function splitSentences(text = '') {
   const raw = (text || '')
@@ -28,6 +59,85 @@ function splitSentences(text = '') {
 
 function uniqueId(input) {
   return crypto.createHash('sha1').update(input).digest('hex').slice(0, 12);
+}
+
+function sanitizeFragment(text = '') {
+  return (text || '')
+    .replace(/\s*\[\+\d+\s*chars?\]/gi, '')
+    .replace(/\s*\(\+\d+\s*chars?\)/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function uniqueByLower(values = []) {
+  const seen = new Set();
+  const out = [];
+  for (const value of values) {
+    const lower = (value || '').trim().toLowerCase();
+    if (!lower || seen.has(lower)) continue;
+    seen.add(lower);
+    out.push(value.trim());
+  }
+  return out;
+}
+
+function toSentenceCase(str = '') {
+  if (!str) return '';
+  const trimmed = str.trim();
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+function substituteWords(line = '') {
+  return line
+    .split(' ')
+    .map((word) => {
+      const key = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+      if (!key) return word;
+      const replacement = WORD_SUBSTITUTIONS.get(key);
+      if (!replacement) return word;
+      const suffix = word.slice(key.length);
+      return replacement + suffix;
+    })
+    .join(' ');
+}
+
+function rewriteHeadline(rawTitle = '', fallbackFocus = 'Market update') {
+  let cleaned = sanitizeFragment(rawTitle);
+  if (!cleaned) return fallbackFocus;
+
+  cleaned = cleaned.replace(/\s*-\s*[A-Za-z0-9. ]+$/, '');
+  cleaned = substituteWords(cleaned);
+
+  const commaParts = cleaned.split(',');
+  if (commaParts.length > 1) {
+    const first = sanitizeFragment(commaParts[0] || '');
+    const rest = sanitizeFragment(commaParts.slice(1).join(',') || '');
+    if (first && rest) {
+      return toSentenceCase(`${rest} as ${first.toLowerCase()}`);
+    }
+  }
+
+  const dashParts = cleaned.split(/[-–—:]/);
+  if (dashParts.length > 1) {
+    const primary = sanitizeFragment(dashParts[0] || '');
+    const secondary = sanitizeFragment(dashParts.slice(1).join(' ') || '');
+    if (primary && secondary) {
+      return toSentenceCase(`${secondary} while ${primary.toLowerCase()}`);
+    }
+  }
+
+  if (cleaned.length < 4) return fallbackFocus;
+  return toSentenceCase(cleaned);
+}
+
+function buildPerspective(sentiment) {
+  if (sentiment === 'positive') {
+    return 'Coverage highlights improving momentum; monitor upcoming data releases to confirm durability.';
+  }
+  if (sentiment === 'negative') {
+    return 'Coverage notes mounting headwinds; watch follow-up metrics to gauge how persistent the pressure becomes.';
+  }
+  return 'Coverage lays out mixed dynamics; stay attentive to new information that could shift the balance.';
 }
 
 function dedupeArticles(articles = []) {
@@ -77,46 +187,43 @@ function computeSentiment(text = '') {
 }
 
 function fallbackRewrite(article) {
+  const sourceName = article.sourceName || 'the original report';
   const context = [article.title, article.description, article.content]
     .filter(Boolean)
     .join(' ');
-  const sentences = splitSentences(context);
-  const summary = sentences.slice(0, 2).join(' ') || context.slice(0, 280);
-  const keyTakeaways = sentences.slice(0, 3).map((s) => s.replace(/\s+/g, ' '));
 
-  const rawTitle = article.title || 'Market update';
-  const parts = rawTitle.split(/[-–—:]/);
-  const focus = parts[0]?.trim() || 'Markets';
-  const angle = parts.slice(1).join(' ').trim();
-  let headline;
-  if (angle) {
-    headline = `How ${focus} is influencing ${angle}`;
-  } else {
-    headline = `Inside ${focus}: What Vibance clients should watch`;
+  const sentences = splitSentences(context);
+  const sanitizedSentences = uniqueByLower(sentences.map(sanitizeFragment));
+
+  const summarySentences = sanitizedSentences.slice(0, 2);
+  let summary = summarySentences.join(' ');
+  if (!summary) {
+    const fallback = sanitizeFragment(context);
+    summary = fallback ? toSentenceCase(fallback.slice(0, 240)) : 'Summary unavailable.';
   }
+  summary = sanitizeFragment(summary);
+  summary = toSentenceCase(substituteWords(summary));
+
+  const remainder = sanitizedSentences.slice(summarySentences.length);
+  const summaryLowerSet = new Set(summarySentences.map((s) => s.toLowerCase()));
+  const keyTakeaways = uniqueByLower(
+    remainder
+      .map((item) => sanitizeFragment(item))
+      .filter((item) => item && !summaryLowerSet.has(item.toLowerCase()))
+  ).map((item) => toSentenceCase(substituteWords(item))).slice(0, 3);
 
   const sentiment = computeSentiment(context);
-  const riskLevel = sentiment === 'positive'
-    ? 'moderate opportunity'
-    : sentiment === 'negative'
-      ? 'elevated risk'
-      : 'balanced';
-
-  const analysisNote = sentiment === 'positive'
-    ? 'Momentum appears constructive, but monitor follow-through before acting.'
-    : sentiment === 'negative'
-      ? 'Keep a defensive stance until catalysts confirm a reversal.'
-      : 'Mixed signals suggest waiting for a clearer catalyst.';
+  const headline = rewriteHeadline(article.title, `${sourceName} update`);
 
   return {
     headline,
-    summary: summary.trim(),
+    summary,
     keyTakeaways,
-    tickers: extractTickers(context),
+    tickers: [],
     sentiment,
-    riskLevel,
-    insight: analysisNote,
-    method: 'heuristic'
+    insight: buildPerspective(sentiment),
+    method: 'heuristic',
+    complianceNote: `Summary compiled by Vibance using reporting from ${sourceName}. Review the original article for complete context before making decisions.`
   };
 }
 
@@ -181,18 +288,24 @@ async function rewriteWithOpenAI(article) {
     throw new Error('OpenAI response incomplete');
   }
 
-  parsed.tickers = Array.isArray(parsed.tickers) ? parsed.tickers.slice(0, 6) : [];
-  parsed.keyTakeaways = Array.isArray(parsed.keyTakeaways)
-    ? parsed.keyTakeaways.slice(0, 3)
-    : [];
+  const takeawaysRaw = Array.isArray(parsed.keyTakeaways) ? parsed.keyTakeaways : [];
+  const rawSummary = sanitizeFragment(parsed.summary);
+  const summaryLower = rawSummary.toLowerCase();
+  const sanitizedTakeaways = uniqueByLower(
+    takeawaysRaw
+      .map((item) => sanitizeFragment(String(item)))
+      .filter((item) => item && item.toLowerCase() !== summaryLower)
+  ).map((item) => toSentenceCase(substituteWords(item))).slice(0, 3);
+  const sanitizedSummary = toSentenceCase(substituteWords(rawSummary));
+  const safeHeadline = rewriteHeadline(parsed.headline, `${article.sourceName || 'Market'} update`);
 
   return {
-    headline: parsed.headline.trim(),
-    summary: parsed.summary.trim(),
-    keyTakeaways: parsed.keyTakeaways.map((item) => String(item).trim()).filter(Boolean),
-    tickers: parsed.tickers.map((item) => String(item).trim()).filter(Boolean),
+    headline: safeHeadline,
+    summary: sanitizedSummary,
+    keyTakeaways: sanitizedTakeaways,
+    tickers: [],
     sentiment: parsed.sentiment === 'positive' || parsed.sentiment === 'negative' ? parsed.sentiment : 'neutral',
-    riskLevel: parsed.riskLevel ? String(parsed.riskLevel).trim() : 'balanced',
+    riskLevel: null,
     insight: parsed.insight ? String(parsed.insight).trim() : '',
     method: 'llm'
   };
@@ -202,7 +315,8 @@ async function curateArticle(article) {
   const base = {
     title: article.title,
     description: article.description,
-    content: article.content
+    content: article.content,
+    sourceName: article.source?.name || 'the original report'
   };
 
   let curated;
@@ -214,6 +328,8 @@ async function curateArticle(article) {
 
   if (!curated) {
     curated = fallbackRewrite(base);
+  } else {
+    curated.complianceNote = `Summary generated by Vibance using reporting from ${base.sourceName}. Review the original article for complete context before making decisions.`;
   }
 
   return {
@@ -223,8 +339,9 @@ async function curateArticle(article) {
     keyTakeaways: curated.keyTakeaways,
     insight: curated.insight,
     sentiment: curated.sentiment,
-    riskLevel: curated.riskLevel,
-    tickers: curated.tickers,
+    riskLevel: curated.riskLevel ?? null,
+    tickers: Array.isArray(curated.tickers) ? curated.tickers : [],
+    complianceNote: curated.complianceNote,
     attribution: {
       source: article.source?.name || 'Unknown publication',
       url: article.url
@@ -264,7 +381,11 @@ async function curateNewsFeed() {
       score: scoreArticle(article)
     }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, MAX_CANDIDATES);
+    .slice(0, MAX_CANDIDATES)
+    .filter((article) => {
+      const sourceName = (article.source?.name || '').toLowerCase();
+      return sourceName ? !DISALLOWED_SOURCES.has(sourceName) : true;
+    });
 
   const selected = [];
   for (const article of deduped) {
@@ -277,16 +398,32 @@ async function curateNewsFeed() {
     }
   }
 
-  return {
+  const payload = {
     stories: selected,
     meta: {
       totalResults,
       considered: deduped.length,
       curated: selected.length,
-      usedLLM: Boolean(OPENAI_API_KEY)
+      usedLLM: Boolean(OPENAI_API_KEY),
+      disclaimer: DEFAULT_DISCLAIMER,
+      blockedSources: Array.from(DISALLOWED_SOURCES)
     }
   };
+
+  console.info('Vibance Brief curated sources:', selected.map((story) => story.attribution.source).join(', '));
+
+  cachedPayload = payload;
+  cacheTimestamp = Date.now();
+
+  return payload;
 }
+
+exports._test = {
+  fallbackRewrite,
+  scoreArticle,
+  extractTickers,
+  computeSentiment,
+};
 
 exports.handler = async function handler(event) {
   if (event.httpMethod && event.httpMethod !== 'POST') {
@@ -306,6 +443,22 @@ exports.handler = async function handler(event) {
     };
   } catch (error) {
     console.error('Curated news function error:', error);
+    const age = Date.now() - cacheTimestamp;
+    if (cachedPayload && age < CACHE_TTL_MS) {
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...cachedPayload,
+          meta: {
+            ...cachedPayload.meta,
+            cacheFallback: true,
+            cacheAgeMs: age
+          }
+        })
+      };
+    }
+
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message })
