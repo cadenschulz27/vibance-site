@@ -85,6 +85,148 @@ function fmtDateISO(isoOrTs) {
   return d.toLocaleDateString();
 }
 
+function titleCase(str = '') {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function buildNewsCard(story) {
+  const card = document.createElement('article');
+  card.className = 'news-card';
+
+  const content = document.createElement('div');
+  content.className = 'news-card-content';
+  card.appendChild(content);
+
+  const topline = document.createElement('div');
+  topline.className = 'news-card-topline';
+  const badge = document.createElement('span');
+  badge.className = 'news-card-badge';
+  badge.textContent = 'Vibance Briefing';
+  topline.appendChild(badge);
+
+  if (story.method) {
+    const method = document.createElement('span');
+    method.className = 'news-card-method';
+    method.textContent = story.method === 'llm' ? 'AI assisted' : 'Editorial blend';
+    topline.appendChild(method);
+  }
+  content.appendChild(topline);
+
+  const title = document.createElement('h3');
+  title.className = 'news-card-title';
+  title.textContent = story.headline || 'Market briefing';
+  content.appendChild(title);
+
+  if (story.summary) {
+    const summary = document.createElement('p');
+    summary.className = 'news-card-summary';
+    summary.textContent = story.summary;
+    content.appendChild(summary);
+  }
+
+  if (Array.isArray(story.keyTakeaways) && story.keyTakeaways.length) {
+    const list = document.createElement('ul');
+    list.className = 'news-card-takeaways';
+    story.keyTakeaways.forEach((item) => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      list.appendChild(li);
+    });
+    content.appendChild(list);
+  }
+
+  if (story.insight) {
+    const insight = document.createElement('p');
+    insight.className = 'news-card-insight';
+    insight.textContent = story.insight;
+    content.appendChild(insight);
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'news-card-meta';
+
+  if (story.sentiment) {
+    const sentiment = document.createElement('span');
+    sentiment.className = `news-card-sentiment news-card-sentiment--${story.sentiment}`;
+    sentiment.textContent = `${titleCase(story.sentiment)} tone`;
+    meta.appendChild(sentiment);
+  }
+
+  if (story.riskLevel) {
+    const risk = document.createElement('span');
+    risk.className = 'news-card-risk';
+    risk.textContent = story.riskLevel;
+    meta.appendChild(risk);
+  }
+
+  if (Array.isArray(story.tickers) && story.tickers.length) {
+    const tickersWrap = document.createElement('div');
+    tickersWrap.className = 'news-card-tickers';
+    const label = document.createElement('span');
+    label.className = 'news-card-tickers-label';
+    label.textContent = 'Tickers:';
+    tickersWrap.appendChild(label);
+
+    story.tickers.slice(0, 6).forEach((ticker) => {
+      const badge = document.createElement('span');
+      badge.className = 'news-card-ticker';
+      badge.textContent = ticker;
+      tickersWrap.appendChild(badge);
+    });
+
+    meta.appendChild(tickersWrap);
+  }
+
+  if (meta.children.length) {
+    content.appendChild(meta);
+  }
+
+  const source = document.createElement('div');
+  source.className = 'news-card-source';
+
+  const sourceLabel = document.createElement('span');
+  sourceLabel.textContent = 'Source: ';
+  source.appendChild(sourceLabel);
+
+  if (story.attribution?.url) {
+    const link = document.createElement('a');
+    link.href = story.attribution.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = story.attribution?.source || 'Original reporting';
+    source.appendChild(link);
+  } else if (story.attribution?.source) {
+    const span = document.createElement('span');
+    span.textContent = story.attribution.source;
+    source.appendChild(span);
+  } else {
+    const span = document.createElement('span');
+    span.textContent = 'Vibance Research Desk';
+    source.appendChild(span);
+  }
+
+  if (story.publishedAt) {
+    const published = new Date(story.publishedAt);
+    if (!Number.isNaN(published.getTime())) {
+      const divider = document.createElement('span');
+      divider.className = 'news-card-source-divider';
+      divider.setAttribute('aria-hidden', 'true');
+      divider.textContent = ' • ';
+      source.appendChild(divider);
+
+      const time = document.createElement('time');
+      time.dateTime = published.toISOString();
+      time.textContent = fmtDateISO(published);
+      source.appendChild(time);
+    }
+  }
+
+  content.appendChild(source);
+
+  return card;
+}
+
 async function getIdToken() {
   const user = auth.currentUser;
   if (!user) throw new Error('Not signed in');
@@ -285,26 +427,17 @@ async function loadNews() {
     if (!res.ok) throw new Error(`getNews failed (${res.status})`);
     const data = await res.json();
 
-    const articles = Array.isArray(data?.articles) ? data.articles : [];
-    if (!articles.length) {
+    const stories = Array.isArray(data?.stories) ? data.stories : [];
+    if (!stories.length) {
       if (els.newsEmpty) els.newsEmpty.style.display = '';
       return;
     }
     if (els.newsEmpty) els.newsEmpty.style.display = 'none';
 
-    for (const a of articles.slice(0, 8)) {
-      const card = document.createElement('a');
-      card.href = a.url || '#';
-      card.target = '_blank';
-      card.rel = 'noopener noreferrer';
-      card.className = 'block p-4 rounded-lg bg-neutral-900/60 border border-neutral-800 hover:bg-neutral-900 transition-colors';
-      card.innerHTML = `
-        <div class="text-sm text-neutral-400 mb-1">${a.source?.name || 'News'}</div>
-        <div class="font-semibold leading-snug mb-1">${a.title || 'Untitled'}</div>
-        <div class="text-sm text-neutral-400 line-clamp-2">${a.description || ''}</div>
-      `;
+    stories.forEach((story) => {
+      const card = buildNewsCard(story);
       els.newsList.appendChild(card);
-    }
+    });
   } catch (e) {
     console.error(e);
     if (els.newsEmpty) els.newsEmpty.style.display = '';
