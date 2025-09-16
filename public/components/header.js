@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Bump this to force refetch of header.html if you update it
-const HEADER_VERSION = 'v14';
+const HEADER_VERSION = 'v15';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
@@ -83,6 +83,19 @@ async function ensureHeaderMarkup() {
   // Expose header offset for sticky elements (e.g., Expenses toolbar)
   document.documentElement.style.setProperty('--vb-header-offset', `${headerHeight}px`);
   return document.body;
+}
+
+// ---------------- Theme ----------------
+function applyTheme(theme) {
+  const root = document.documentElement;
+  const dark = theme !== 'light';
+  root.setAttribute('data-theme', dark ? 'dark' : 'light');
+  try { localStorage.setItem('vb_theme', dark ? 'dark' : 'light'); } catch {}
+  const logo = document.getElementById('brand-logo');
+  if (logo) logo.src = dark ? '/images/logo_white.png' : '/images/logo_black.png';
+  const sun = document.getElementById('icon-sun');
+  const moon = document.getElementById('icon-moon');
+  if (sun && moon) { sun.classList.toggle('hidden', !dark); moon.classList.toggle('hidden', dark); }
 }
 
 // Signed-out/signed-in UI toggles

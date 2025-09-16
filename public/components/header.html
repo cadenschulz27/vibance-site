@@ -8,7 +8,7 @@
     <div class="h-16 flex items-center justify-between gap-3">
       <!-- Left: Brand -->
       <a id="brand-link" href="/dashboard/dashboard.html" class="flex items-center gap-3 shrink-0" aria-label="Vibance Home">
-        <img src="/images/logo_white.png" alt="" class="h-6 w-6 rounded" />
+        <img id="brand-logo" src="/images/logo_white.png" alt="Vibance Logo" class="h-6 w-6 rounded" />
         <span class="text-white font-semibold tracking-tight">Vibance</span>
       </a>
 
@@ -27,6 +27,11 @@
 
       <!-- Right cluster -->
       <div class="flex items-center gap-2">
+        <!-- Theme toggle -->
+        <button id="btn-theme" class="inline-flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon,#CCFF00)]" title="Toggle theme" aria-label="Toggle theme">
+          <svg id="icon-sun" class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364-1.414-1.414M8.05 8.05 6.636 6.636m10.728 0-1.414 1.414M8.05 15.95l-1.414 1.414"/></svg>
+          <svg id="icon-moon" class="h-4 w-4 text-neutral-300 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
         <!-- Shown when signed OUT -->
         <div id="auth-actions" class="flex items-center gap-2">
           <a href="/login.html"  class="px-3 py-1.5 rounded-lg text-sm text-neutral-200 hover:bg-neutral-900">Log in</a>
