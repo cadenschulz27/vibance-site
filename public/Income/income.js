@@ -182,7 +182,7 @@ function setDateInputs(startStr, endStr) {
 function yyyy_mm_dd(d) { return d.toISOString().slice(0,10); }
 function firstOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function lastOfMonth(d) { return new Date(d.getFullYear(), d.getMonth()+1, 0); }
-function applyPreset(preset) {
+async function applyPreset(preset) {
   const now = new Date();
   if (preset === 'this') {
     setDateInputs(yyyy_mm_dd(firstOfMonth(now)), yyyy_mm_dd(lastOfMonth(now)));
@@ -294,6 +294,25 @@ function render() {
   }
   if (els.prev) els.prev.disabled = PAGE <= 1;
   if (els.next) els.next.disabled = PAGE * PAGE_SIZE >= totalCount;
+
+  // Category donut (income only)
+  try {
+    const donut = document.getElementById('inc-cat-donut');
+    const legend = document.getElementById('inc-cat-legend');
+    if (donut && legend) {
+      const agg = {};
+      for (const r of FILTERED) {
+        const cat = (r.categoryUser || r.categoryAuto || 'Uncategorized');
+        agg[cat] = (agg[cat] || 0) + Math.abs(Number(r.amount || 0));
+      }
+      const entries = Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,8);
+      const total = entries.reduce((s, [,v]) => s+v, 0) || 1;
+      const colors = ['#10b981','#3b82f6','#8b5cf6','#eab308','#ec4899','#f59e0b','#14b8a6','#ef4444'];
+      let acc = 0; const stops = entries.map(([k,v],i)=>{ const pct=v/total*100; const s=acc; acc+=pct; return `${colors[i%colors.length]} ${s.toFixed(1)}% ${acc.toFixed(1)}%`; });
+      donut.style.background = `conic-gradient(${stops.join(',')})`;
+      legend.innerHTML = entries.map(([k,v],i)=>`<div class=\"flex items-center gap-2\"><span class=\"inline-block h-3 w-3 rounded\" style=\"background:${colors[i%colors.length]}\"></span><span>${(k||'')}</span><span class=\"ml-auto text-neutral-400\">${(new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'})).format(v)}</span></div>`).join('');
+    }
+  } catch {}
 }
 
 function renderRow(r) {

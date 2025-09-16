@@ -41,6 +41,8 @@ const els = {
   postsList: document.getElementById('posts-list'),
   postsEmpty: document.getElementById('posts-empty'),
   postsMore: document.getElementById('posts-load-more'),
+  feedAll: document.getElementById('profile-feed-all'),
+  feedSaved: document.getElementById('profile-feed-saved'),
 
   // misc
   toast: document.getElementById('toast'),
@@ -56,6 +58,8 @@ let TARGET_PROFILE = null;      // their /users/{uid} (may be unavailable per ru
 let PAGE_SIZE = 10;
 let lastCursor = null;          // pagination cursor
 let loadingPosts = false;
+let SAVED_IDS = new Set();
+let PROFILE_SAVED_MODE = false;
 
 // ----------------------------- Utils -----------------------------
 function qparam(name) { return new URL(location.href).searchParams.get(name); }
