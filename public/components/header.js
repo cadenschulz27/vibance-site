@@ -212,6 +212,27 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
   // 3) Static nav highlighting (works even before auth)
   setActiveNav(root);
 
+  // 3b) Theme setup (CSS + initial apply + toggle)
+  try {
+    if (!document.getElementById('vb-theme-link')) {
+      const link = document.createElement('link');
+      link.id = 'vb-theme-link';
+      link.rel = 'stylesheet';
+      link.href = '/shared/theme.css';
+      document.head.appendChild(link);
+    }
+  } catch {}
+  let initTheme = 'dark';
+  try {
+    initTheme = localStorage.getItem('vb_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  } catch {}
+  applyTheme(initTheme);
+  const themeBtn = document.getElementById('btn-theme');
+  themeBtn?.addEventListener('click', () => {
+    const next = (document.documentElement.getAttribute('data-theme') === 'light') ? 'dark' : 'light';
+    applyTheme(next);
+  });
+
   // 4) Firebase
   const { auth, db } = await loadFirebase();
 
