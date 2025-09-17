@@ -80,12 +80,13 @@ function showToast(msg) {
 function setBtnBusy(btn, text, busy = true) {
   if (!btn) return;
   if (busy) {
-    btn.dataset.prevText = btn.textContent;
+    btn.dataset.prevHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = text || 'Working…';
+    if (/<[^>]+>/.test(String(text || ''))) btn.innerHTML = String(text);
+    else btn.innerHTML = '<img src="/images/sync-icon.svg" alt="Syncing" class="sync-icon spinning">';
   } else {
     btn.disabled = false;
-    btn.textContent = btn.dataset.prevText || 'Done';
+    btn.innerHTML = btn.dataset.prevHtml || (btn.dataset.prevText || 'Done');
   }
 }
 

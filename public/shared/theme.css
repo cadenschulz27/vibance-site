@@ -10,3 +10,37 @@
 [data-theme="light"] .text-neutral-400 { color:#6b7280 !important; }
 [data-theme="light"] .text-neutral-300 { color:#4b5563 !important; }
 [data-theme="light"] .bg-neutral-900 { background:#ffffff !important; }
+
+/* --- Sync Button Styles (refined) --- */
+.sync-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  padding: 6px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.sync-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+.sync-btn:active { transform: translateY(0); }
+.sync-btn:focus { outline: none; box-shadow: 0 0 0 4px rgba(96,165,250,0.08); }
+
+.sync-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  color: #e5e7eb;
+  transition: transform 0.25s linear;
+}
+
+.spinning { animation: spin 0.9s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }

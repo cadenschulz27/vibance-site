@@ -127,12 +127,14 @@ function toast(msg) {
 function setBtnBusy(btn, text, busy = true) {
   if (!btn) return;
   if (busy) {
-    btn.dataset.prevText = btn.textContent;
+    btn.dataset.prevHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = text || 'Working…';
+    // allow callers to pass either raw text or HTML
+    if (/<[^>]+>/.test(String(text || ''))) btn.innerHTML = String(text);
+    else btn.textContent = text || 'Working…';
   } else {
     btn.disabled = false;
-    btn.textContent = btn.dataset.prevText || 'Done';
+    btn.innerHTML = btn.dataset.prevHtml || (btn.dataset.prevText || 'Done');
   }
 }
 
@@ -844,7 +846,11 @@ function wireUI() {
     applyPreset(v);
   });
 
-  els.syncAll?.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">';
+  els.syncAll?.setAttribute('title', 'Sync accounts');
+  els.syncAll?.setAttribute('aria-label', 'Sync accounts');
+  els.syncAll.classList.add('sync-btn');
+  // ensure starting icon
+  if (els.syncAll && !els.syncAll.querySelector('.sync-icon')) els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">';
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
     setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Syncing" class="sync-icon spinning">', true);

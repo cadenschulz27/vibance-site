@@ -174,6 +174,26 @@
       background: linear-gradient(90deg, #23272f 40%, #23272f 100%);
       box-shadow: 0 4px 12px rgba(163,230,53,0.08);
     }
+    .sync-all-btn {
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      font-size: 0.95rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      border: 1.5px solid rgba(148,163,184,0.22);
+      background: linear-gradient(90deg, #23272f 60%, #18181b 100%);
+      color: #a3e635;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor: pointer;
+      margin-left: 0.5rem;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+    }
+    .sync-all-btn:hover {
+      border-color: #a3e635;
+      background: linear-gradient(90deg, #23272f 40%, #23272f 100%);
+      color: #e2e8f0;
+      box-shadow: 0 4px 12px rgba(163,230,53,0.08);
+  /* Removed stray closing brace and duplicate/invalid rules */
     </style>
   <!-- Header mount -->
   <div id="site-header"></div>
@@ -203,7 +223,9 @@
           <button id="toggle-income-archive" type="button" class="archive-toggle archive-logo-btn" aria-pressed="false" title="View archive">
             <img src="/images/archive-logo.svg" alt="Archive" style="width:22px;height:22px;filter:drop-shadow(0 1px 2px #222);vertical-align:middle;">
           </button>
-          <button id="sync-all-income" class="px-4 py-2 rounded-xl btn-neon text-sm font-semibold">Sync all</button>
+          <button id="sync-all-income" class="archive-logo-btn sync-all-btn" title="Sync all accounts" aria-label="Sync all accounts">
+            Sync All
+          </button>
         </div>
       </div>
     </header>

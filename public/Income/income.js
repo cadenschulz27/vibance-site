@@ -93,12 +93,13 @@ function toast(msg) { if (!els.toast) return console.log('[toast]', msg); els.to
 function setBtnBusy(btn, text, busy = true) {
   if (!btn) return;
   if (busy) {
-    btn.dataset.prevText = btn.textContent;
+    btn.dataset.prevHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = text || 'Working…';
+    if (/<[^>]+>/.test(String(text || ''))) btn.innerHTML = String(text);
+    else btn.textContent = text || 'Working…';
   } else {
     btn.disabled = false;
-    btn.textContent = btn.dataset.prevText || 'Done';
+    btn.innerHTML = btn.dataset.prevHtml || (btn.dataset.prevText || 'Done');
   }
 }
 
@@ -673,24 +674,28 @@ function wireUI() {
   els.presetSelect?.addEventListener('change', () => {
     const v = els.presetSelect.value;
     if (!v) return;
-    if (v === 'custom') { localStorage.removeItem('vb_income_preset'); setActivePreset(''); return; }
+  if (v === 'custom') { localStorage.removeItem('vb_income_preset'); setActivePreset(''); return; }
     localStorage.setItem('vb_income_preset', v);
     applyPreset(v);
   });
   els.prev?.addEventListener('click', () => { if (PAGE > 1) { PAGE--; render(); } });
   els.next?.addEventListener('click', () => { const total = FILTERED.length; if (PAGE * PAGE_SIZE < total) { PAGE++; render(); } });
+  els.syncAll?.setAttribute('title', 'Sync accounts');
+  els.syncAll?.setAttribute('aria-label', 'Sync accounts');
+  els.syncAll.classList.add('sync-btn');
+  if (els.syncAll && !els.syncAll.querySelector('.sync-icon')) els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">';
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
-    setBtnBusy(els.syncAll, 'Syncing…', true);
+    setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Syncing" class="sync-icon spinning">', true);
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
-      toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
+  toast(`Synced ${count} account${count===1?'':'s'}  +${added} ~${modified} -${removed}`);
       await loadAllTransactions(UID);
     } catch (e) {
       console.error(e);
       toast('Sync failed');
     } finally {
-      setBtnBusy(els.syncAll, '', false);
+      setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">', false);
     }
   });
 
@@ -846,7 +851,7 @@ function init() {
   onAuthStateChanged(auth, async (user) => {
     if (!user) return; UID = user.uid;
     try {
-      if (AUTO_FIRST_SYNC) { if (els.syncAll) { els.syncAll.disabled = true; els.syncAll.textContent = 'Syncing…'; } try { await syncAllItems(UID); } catch(e){ console.warn('Auto first sync failed', e); } finally { if (els.syncAll) { els.syncAll.disabled = false; els.syncAll.textContent = 'Sync all'; } } }
+      if (AUTO_FIRST_SYNC) { if (els.syncAll) { els.syncAll.disabled = true; els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Syncing" class="sync-icon spinning">'; } try { await syncAllItems(UID); } catch(e){ console.warn('Auto first sync failed', e); } finally { if (els.syncAll) { els.syncAll.disabled = false; els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">'; } } }
       await loadAllTransactions(UID);
       await loadSavedFilters(UID);
       toast('Income loaded');
