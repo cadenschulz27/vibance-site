@@ -14,6 +14,34 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
 
   <style>
+/* --- Red Button Styles for Expenses Tab --- */
+.btn-expense {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.6rem 1.15rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #fff;
+  background: linear-gradient(135deg, #f43f5e 0%, #f59e42 100%);
+  box-shadow: 0 14px 30px rgba(244,63,94,0.18);
+  border: none;
+  transition: transform .18s, box-shadow .22s, opacity .18s, background .18s;
+}
+.btn-expense:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #fb7185 0%, #f59e42 100%);
+  box-shadow: 0 18px 40px rgba(244,63,94,0.22);
+}
+.btn-expense:active {
+  opacity: 0.85;
+}
+.btn-expense.syncing {
+  background: linear-gradient(135deg, #64748b 0%, #f43f5e 100%);
+  color: #fee2e2;
+  cursor: wait;
+}
 /* --- Sync All Button (Styled Like Add Expense) --- */
 .btn-sync-all {
   display: inline-flex;
@@ -364,6 +392,13 @@
           <span id="expense-archive-indicator" class="archive-indicator hidden">Viewing archived expenses</span>
         </div>
         <div class="flex items-center gap-2 flex-wrap justify-end">
+          <button id="open-manual-expense" type="button" class="btn-expense">
+            + Add Expense
+          </button>
+          <a href="/Net/net.html?from=expenses" class="btn-expense">Net Insight</a>
+          <button id="toggle-expense-archive" type="button" class="btn-expense" aria-pressed="false" title="View archive">
+            Archive
+          </button>
           <button id="sync-all-expenses" type="button" class="btn-sync-all" title="Sync all accounts" aria-label="Sync all accounts">
             <span class="sync-btn-label">Sync All</span>
           </button>

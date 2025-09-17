@@ -14,8 +14,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
 
   <style>
-/* --- Sync All Button (Styled Like Add Income) --- */
-.btn-sync-all {
+/* --- Vibance Green Button Styles for Income Tab --- */
+.btn-income, .btn-sync-all {
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
@@ -23,23 +23,23 @@
   border-radius: 999px;
   font-weight: 600;
   font-size: 0.95rem;
-  color: #fff;
-  background: linear-gradient(135deg, #6366f1 0%, #60a5fa 100%);
-  box-shadow: 0 14px 30px rgba(99,102,241,0.18);
+  color: #222;
+  background: linear-gradient(135deg, #CCFF00 0%, #A3FF00 100%);
+  box-shadow: 0 14px 30px rgba(204,255,0,0.18);
   border: none;
   transition: transform .18s, box-shadow .22s, opacity .18s, background .18s;
 }
-.btn-sync-all:hover {
+.btn-income:hover, .btn-sync-all:hover {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, #818cf8 0%, #38bdf8 100%);
-  box-shadow: 0 18px 40px rgba(99,102,241,0.22);
+  background: linear-gradient(135deg, #E6FF66 0%, #CCFF00 100%);
+  box-shadow: 0 18px 40px rgba(204,255,0,0.22);
 }
-.btn-sync-all:active {
+.btn-income:active, .btn-sync-all:active {
   opacity: 0.85;
 }
-.btn-sync-all.syncing {
-  background: linear-gradient(135deg, #64748b 0%, #60a5fa 100%);
-  color: #dbeafe;
+.btn-income.syncing, .btn-sync-all.syncing {
+  background: linear-gradient(135deg, #64748b 0%, #CCFF00 100%);
+  color: #222;
   cursor: wait;
 }
     :root { color-scheme: dark; --neon:#CCFF00; --vb-border:#222226; --vb-border-2:#2d2f33; --vb-panel-2:#0b0b0c; }
@@ -211,13 +211,13 @@
       font-weight: 600;
       letter-spacing: 0.03em;
       font-size: 0.95rem;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
       border: 1.5px solid rgba(148,163,184,0.22);
-      background: linear-gradient(90deg, #23272f 60%, #18181b 100%);
-      color: #a3e635;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      background: linear-gradient(135deg, #CCFF00 0%, #A3FF00 100%);
+      color: #222;
+      box-shadow: 0 2px 8px rgba(204,255,0,0.18);
       cursor: pointer;
       margin-left: 0.5rem;
       transition: border-color .2s, background .2s, box-shadow .2s;
@@ -228,10 +228,10 @@
       filter: drop-shadow(0 1px 2px #222);
     }
     .sync-all-btn:hover {
-      border-color: #a3e635;
-      background: linear-gradient(90deg, #23272f 40%, #23272f 100%);
-      color: #e2e8f0;
-      box-shadow: 0 4px 12px rgba(163,230,53,0.08);
+      border-color: #CCFF00;
+      background: linear-gradient(135deg, #E6FF66 0%, #CCFF00 100%);
+      color: #222;
+      box-shadow: 0 4px 12px rgba(204,255,0,0.22);
     }
     </style>
   <!-- Header mount -->
@@ -248,6 +248,13 @@
           <span id="income-archive-indicator" class="archive-indicator hidden">Viewing archived income</span>
         </div>
         <div class="flex items-center gap-2 flex-wrap justify-end">
+          <button id="open-manual-income" type="button" class="btn-income">
+            + Add Income
+          </button>
+          <a href="/Net/net.html?from=income" class="btn-income">Net Insight</a>
+          <button id="toggle-income-archive" type="button" class="btn-income" aria-pressed="false" title="View archive">
+            Archive
+          </button>
           <button id="sync-all-income" type="button" class="btn-sync-all" title="Sync all accounts" aria-label="Sync all accounts">
             <span class="sync-btn-label">Sync All</span>
           </button>
@@ -259,7 +266,7 @@
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
       <div class="glass p-4 md:p-5 vb-anim-card ring-soft">
         <div class="text-xs uppercase tracking-wider text-neutral-400">Income</div>
-        <div id="totals-income" class="mt-1 text-xl md:text-2xl font-semibold text-emerald-400">—</div>
+  <div id="totals-income" class="mt-1 text-xl md:text-2xl font-semibold" style="color:#CCFF00">—</div>
       </div>
     </section>
 
