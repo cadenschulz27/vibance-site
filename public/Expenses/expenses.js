@@ -850,10 +850,14 @@ function wireUI() {
   els.syncAll?.setAttribute('aria-label', 'Sync accounts');
   els.syncAll.classList.add('sync-btn');
   // ensure starting icon
-  if (els.syncAll && !els.syncAll.querySelector('.sync-icon')) els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">';
+  // Do not overwrite the button's HTML; let the markup in expenses.html control the icon and text.
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
-    setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Syncing" class="sync-icon spinning">', true);
+  // Add spinning class to the SVG icon and change text to 'Syncing...'
+  const svg = els.syncAll?.querySelector('.sync-icon');
+  if (svg) svg.classList.add('spinning');
+  const label = els.syncAll?.querySelector('.sync-label');
+  if (label) label.textContent = 'Syncing...';
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
       toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
@@ -862,7 +866,9 @@ function wireUI() {
       console.error(e);
       toast('Sync failed');
     } finally {
-      setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">', false);
+  // Remove spinning class and restore text
+  if (svg) svg.classList.remove('spinning');
+  if (label) label.textContent = 'Sync All';
     }
   });
 

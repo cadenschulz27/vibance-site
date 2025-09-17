@@ -15,14 +15,19 @@
 
   <style>
     :root { color-scheme: dark; --neon:#CCFF00; --vb-border:#222226; --vb-border-2:#2d2f33; --vb-panel-2:#0b0b0c; }
-    html, body {
-      background: #000;
-      color: #fff;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-    }
-    .font-headline { font-family: 'Lora', serif; }
-    .container { max-width: 1120px; }
+  html, body {
+    background: #000;
+    color: #fff;
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+    -webkit-font-smoothing: antialiased; 
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .font-headline { font-family: 'Lora', serif; }
+  .container {
+    max-width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 
     /* thin scrollbars */
     * { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
@@ -218,23 +223,23 @@
       filter: drop-shadow(0 2px 4px #222) brightness(1.2);
     }
     .archive-logo-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.35rem 0.7rem;
-      border-radius: 999px;
-      border: 1.5px solid rgba(148,163,184,0.22);
-      background: linear-gradient(90deg, #23272f 60%, #18181b 100%);
-      color: #e2e8f0;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      cursor: pointer;
-      transition: border-color .2s, background .2s, box-shadow .2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(148,163,184,0.22);
+  background: linear-gradient(90deg, #23272f 60%, #18181b 100%);
+  color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s;
     }
     .archive-logo-btn:hover {
       border-color: #a3e635;
       background: linear-gradient(90deg, #23272f 40%, #23272f 100%);
       box-shadow: 0 4px 12px rgba(163,230,53,0.08);
-    }
     }
     .archive-toggle:hover { transform: translateY(-1px); border-color: rgba(148,163,184,0.5); background: rgba(17,17,21,0.9); }
     .archive-toggle[aria-pressed="true"] { border-color: rgba(204,255,0,0.45); color: rgba(204,255,0,0.95); }
@@ -246,8 +251,9 @@
       font-weight: 600;
       letter-spacing: 0.03em;
       font-size: 0.95rem;
-      padding: 0.35rem 0.9rem;
-      border-radius: 999px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
       border: 1.5px solid rgba(148,163,184,0.22);
       background: linear-gradient(90deg, #23272f 60%, #18181b 100%);
       color: #a3e635;
@@ -256,13 +262,18 @@
       margin-left: 0.5rem;
       transition: border-color .2s, background .2s, box-shadow .2s;
     }
+    .sync-icon {
+      stroke: #fff !important;
+      color: #fff !important;
+      filter: drop-shadow(0 1px 2px #222);
+    }
     .sync-all-btn:hover {
       border-color: #a3e635;
       background: linear-gradient(90deg, #23272f 40%, #23272f 100%);
       color: #e2e8f0;
       box-shadow: 0 4px 12px rgba(163,230,53,0.08);
   /* Removed stray closing brace and duplicate/invalid rules */
-
+    }
     .vb-badge {
       display: inline-flex;
       align-items: center;
@@ -314,9 +325,9 @@
   <!-- Header mount -->
   <div id="site-header"></div>
 
-  <main class="container mx-auto px-4 py-6 md:py-10">
+  <main class="mx-auto max-w-7xl px-4 pt-24 pb-20">
     <!-- Page intro -->
-    <header class="mb-6 md:mb-8">
+  <header class="mb-6 md:mb-10">
       <div class="flex items-end justify-between gap-3">
         <div>
           <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Expenses</p>
@@ -340,22 +351,28 @@
             <img src="/images/archive-logo.svg" alt="Archive" style="width:22px;height:22px;filter:drop-shadow(0 1px 2px #222);vertical-align:middle;">
           </button>
           <button id="sync-all-expenses" class="archive-logo-btn sync-all-btn" title="Sync all accounts" aria-label="Sync all accounts">
-            Sync All
+            <svg class="sync-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:0.5em;">
+              <circle cx="11" cy="11" r="10" stroke="#fff" stroke-width="2" fill="none"/>
+              <path d="M7 11a4 4 0 0 1 8 0" stroke="#fff" stroke-width="2" fill="none"/>
+              <path d="M11 7v-2m0 2l2-2m-2 2l-2-2" stroke="#fff" stroke-width="2" fill="none"/>
+              <path d="M11 15v2m0-2l2 2m-2-2l-2 2" stroke="#fff" stroke-width="2" fill="none"/>
+            </svg>
+            <span class="sync-label">Sync All</span>
           </button>
         </div>
       </div>
     </header>
 
     <!-- Summary tiles (expenses only) -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-5">
-      <div class="card p-4">
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+      <div class="glass p-4 md:p-5 vb-anim-card">
         <div class="text-xs uppercase tracking-wider text-neutral-400">Expenses</div>
         <div id="totals-expense" class="mt-1 text-xl md:text-2xl font-semibold text-red-400">—</div>
       </div>
     </section>
 
-    <!-- Category mix -->
-    <section class="card p-4 md:p-5 mb-5 vb-anim-card">
+  <!-- Category mix -->
+  <section class="glass p-4 md:p-5 mb-5 vb-anim-card">
       <h2 class="font-medium">Category mix</h2>
       <div class="mt-3 flex items-center gap-4 flex-wrap" id="cat-mix-exp">
         <div id="exp-cat-donut" class="h-28 w-28 rounded-full border border-neutral-800" aria-label="Category mix chart"></div>
