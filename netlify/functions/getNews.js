@@ -47,6 +47,13 @@ const WORD_SUBSTITUTIONS = new Map([
   ['faces', 'confronts'],
 ]);
 
+const INCOMPLETE_ENDINGS = new Set([
+  'and', 'or', 'but', 'if', 'while', 'because', 'although', 'though', 'since', 'as',
+  'to', 'at', 'from', 'of', 'for', 'with', 'into', 'onto', 'than', 'versus', 'vs',
+  'via', 'toward', 'towards', 'per', 'amid', 'despite', 'before', 'after', 'during',
+  'including', 'according', 'accordingto', 'where', 'when', 'who', 'which', 'that'
+]);
+
 function splitSentences(text = '') {
   const raw = (text || '')
     .replace(/\s+/g, ' ')
@@ -65,6 +72,7 @@ function sanitizeFragment(text = '') {
   return (text || '')
     .replace(/\s*\[\+\d+\s*chars?\]/gi, '')
     .replace(/\s*\(\+\d+\s*chars?\)/gi, '')
+    .replace(/[.…]+/g, '.')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -130,14 +138,62 @@ function rewriteHeadline(rawTitle = '', fallbackFocus = 'Market update') {
   return toSentenceCase(cleaned);
 }
 
-function buildPerspective(sentiment) {
-  if (sentiment === 'positive') {
-    return 'Coverage highlights improving momentum; monitor upcoming data releases to confirm durability.';
+function ensureTerminal(text = '') {
+  const trimmed = text.trim();
+  if (!trimmed) return '';
+  if (/[.!?]$/.test(trimmed)) return trimmed;
+  return `${trimmed}.`;
+}
+
+function isIncompleteSentence(text = '') {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+  if (!/[.!?]$/.test(trimmed)) return true;
+  const body = trimmed.replace(/[.!?]$/, '');
+  const words = body.split(/\s+/).filter(Boolean);
+  if (words.length < 7) return true;
+  const lastWord = words[words.length - 1].toLowerCase();
+  if (INCOMPLETE_ENDINGS.has(lastWord)) return true;
+  return false;
+}
+
+function buildBulletPoints(candidates = [], summaryLowerSet = new Set(), limit = 3) {
+  const bullets = [];
+  const seen = new Set();
+  for (const raw of candidates) {
+    const sanitized = ensureTerminal(toSentenceCase(substituteWords(sanitizeFragment(raw))));
+    if (!sanitized) continue;
+    const lower = sanitized.toLowerCase();
+    if (summaryLowerSet.has(lower)) continue;
+    if (seen.has(lower)) continue;
+    if (isIncompleteSentence(sanitized)) continue;
+    bullets.push(sanitized);
+    seen.add(lower);
+    if (bullets.length >= limit) break;
   }
-  if (sentiment === 'negative') {
-    return 'Coverage notes mounting headwinds; watch follow-up metrics to gauge how persistent the pressure becomes.';
+  return bullets;
+}
+
+function buildPerspective(sentiment, summary = '') {
+  const trimmed = sanitizeFragment(summary).replace(/\r?\n/g, ' ').trim();
+  const contextLine = trimmed
+    ? `Keep in mind that ${trimmed.charAt(0).toLowerCase() + trimmed.slice(1)}.`
+    : 'Keep in mind that conditions remain fluid and may shift quickly.';
+
+  let outlookLine;
+  switch (sentiment) {
+    case 'positive':
+      outlookLine = 'Treat the setup as constructive, but rely on upcoming catalysts to confirm that momentum deserves additional exposure.';
+      break;
+    case 'negative':
+      outlookLine = 'Treat the setup as fragile, protect the downside, and track whether policy or demand responses begin to stabilize the pressure.';
+      break;
+    default:
+      outlookLine = 'Treat the setup as mixed, stay flexible, and wait for clearer signals before leaning into a decisive stance.';
+      break;
   }
-  return 'Coverage lays out mixed dynamics; stay attentive to new information that could shift the balance.';
+
+  return `${contextLine} ${outlookLine}`.trim();
 }
 
 function dedupeArticles(articles = []) {
@@ -193,24 +249,31 @@ function fallbackRewrite(article) {
     .join(' ');
 
   const sentences = splitSentences(context);
-  const sanitizedSentences = uniqueByLower(sentences.map(sanitizeFragment));
+  const sanitizedTitle = sanitizeFragment(article.title || '').toLowerCase();
+  const sanitizedSentences = uniqueByLower(
+    sentences
+      .map((s) => sanitizeFragment(s))
+      .filter((s) => s && s.length >= 35)
+      .filter((s) => {
+        if (!sanitizedTitle) return true;
+        return !s.toLowerCase().includes(sanitizedTitle);
+      })
+  )
+    .map((s) => ensureTerminal(toSentenceCase(substituteWords(s))));
 
   const summarySentences = sanitizedSentences.slice(0, 2);
   let summary = summarySentences.join(' ');
   if (!summary) {
     const fallback = sanitizeFragment(context);
-    summary = fallback ? toSentenceCase(fallback.slice(0, 240)) : 'Summary unavailable.';
+    summary = fallback ? toSentenceCase(substituteWords(fallback.slice(0, 240))) : 'Summary unavailable.';
   }
-  summary = sanitizeFragment(summary);
-  summary = toSentenceCase(substituteWords(summary));
 
-  const remainder = sanitizedSentences.slice(summarySentences.length);
   const summaryLowerSet = new Set(summarySentences.map((s) => s.toLowerCase()));
-  const keyTakeaways = uniqueByLower(
-    remainder
-      .map((item) => sanitizeFragment(item))
-      .filter((item) => item && !summaryLowerSet.has(item.toLowerCase()))
-  ).map((item) => toSentenceCase(substituteWords(item))).slice(0, 3);
+  const remainder = sanitizedSentences.slice(summarySentences.length);
+  let keyTakeaways = buildBulletPoints(remainder, summaryLowerSet, 3);
+  if (!keyTakeaways.length) {
+    keyTakeaways = buildBulletPoints(summarySentences, new Set(), Math.min(3, summarySentences.length));
+  }
 
   const sentiment = computeSentiment(context);
   const headline = rewriteHeadline(article.title, `${sourceName} update`);
@@ -221,7 +284,7 @@ function fallbackRewrite(article) {
     keyTakeaways,
     tickers: [],
     sentiment,
-    insight: buildPerspective(sentiment),
+    insight: buildPerspective(sentiment, summary),
     method: 'heuristic',
     complianceNote: `Summary compiled by Vibance using reporting from ${sourceName}. Review the original article for complete context before making decisions.`
   };
@@ -290,23 +353,34 @@ async function rewriteWithOpenAI(article) {
 
   const takeawaysRaw = Array.isArray(parsed.keyTakeaways) ? parsed.keyTakeaways : [];
   const rawSummary = sanitizeFragment(parsed.summary);
-  const summaryLower = rawSummary.toLowerCase();
+  const sanitizedSummary = toSentenceCase(substituteWords(rawSummary));
+  const summaryLower = sanitizedSummary.toLowerCase();
   const sanitizedTakeaways = uniqueByLower(
     takeawaysRaw
       .map((item) => sanitizeFragment(String(item)))
+      .map((item) => ensureTerminal(toSentenceCase(substituteWords(item))))
       .filter((item) => item && item.toLowerCase() !== summaryLower)
-  ).map((item) => toSentenceCase(substituteWords(item))).slice(0, 3);
-  const sanitizedSummary = toSentenceCase(substituteWords(rawSummary));
+  );
+  const summarySentenceSet = new Set([summaryLower]);
+  let keyTakeaways = buildBulletPoints(sanitizedTakeaways, summarySentenceSet, 3);
+  if (!keyTakeaways.length) {
+    const summaryPieces = sanitizedSummary.split(/(?<=\.)\s+/).map((item) => ensureTerminal(item));
+    keyTakeaways = buildBulletPoints(summaryPieces, new Set(), Math.min(3, summaryPieces.length));
+  }
   const safeHeadline = rewriteHeadline(parsed.headline, `${article.sourceName || 'Market'} update`);
+  const sanitizedInsight = sanitizeFragment(parsed.insight || '');
+  const perspective = sanitizedInsight && sanitizedInsight.split(/[.!?]/).filter((s) => s.trim()).length >= 2
+    ? toSentenceCase(substituteWords(sanitizedInsight))
+    : buildPerspective(parsed.sentiment, sanitizedSummary);
 
   return {
     headline: safeHeadline,
     summary: sanitizedSummary,
-    keyTakeaways: sanitizedTakeaways,
+    keyTakeaways,
     tickers: [],
     sentiment: parsed.sentiment === 'positive' || parsed.sentiment === 'negative' ? parsed.sentiment : 'neutral',
     riskLevel: null,
-    insight: parsed.insight ? String(parsed.insight).trim() : '',
+    insight: perspective,
     method: 'llm'
   };
 }
