@@ -230,16 +230,7 @@ function closeManualModal() {
 
 // ...existing code...
 
-function closeManualModal() {
-  if (!els.manualModal) return;
-  els.manualModal.classList.remove('vb-modal--open');
-  els.manualModal.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('modal-open');
-  if (manualKeyHandler) {
-    document.removeEventListener('keydown', manualKeyHandler, true);
-    manualKeyHandler = null;
-  }
-}
+// ...existing code...
 
 async function getIdToken() { const u = auth.currentUser; if (!u) throw new Error('Not signed in'); return u.getIdToken(true); }
 async function callPlaidFn(payload) {
