@@ -1,3 +1,29 @@
+// --- Sync Button Animation & Loading State ---
+function setSyncButtonLoading(isLoading) {
+  const btn = document.getElementById('sync-all-expenses');
+  if (!btn) return;
+  if (isLoading) {
+    btn.classList.add('loading');
+    btn.setAttribute('aria-busy', 'true');
+  } else {
+    btn.classList.remove('loading');
+    btn.removeAttribute('aria-busy');
+  }
+}
+
+if (els.syncAll) {
+  els.syncAll.addEventListener('click', async () => {
+    setSyncButtonLoading(true);
+    try {
+      // Simulate sync delay (replace with actual sync logic)
+      await new Promise(r => setTimeout(r, 2000));
+      toast('Sync complete!');
+    } catch (e) {
+      toast('Sync failed.');
+    }
+    setSyncButtonLoading(false);
+  });
+}
 // public/Expenses/expenses.js
 // ----------------------------------------------------
 // Expenses page controller
