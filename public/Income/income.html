@@ -14,6 +14,32 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@500;600&display=swap" rel="stylesheet">
 
   <style>
+/* --- Modern Gray Sync Button Styles --- */
+.sync-modern-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #222;
+  border: 2px solid #888;
+  box-shadow: 0 2px 8px #0004;
+  color: #888;
+  cursor: pointer;
+  transition: box-shadow .18s, border-color .18s, background .18s;
+}
+.sync-modern-btn:hover {
+  border-color: #fff;
+  color: #fff;
+  background: #333;
+  box-shadow: 0 4px 16px #0006;
+}
+.sync-modern-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
 /* --- Advanced Sync Button Styles --- */
 .sync-animated-btn {
   display: inline-flex;
@@ -316,20 +342,17 @@
           <button id="toggle-income-archive" type="button" class="archive-toggle archive-logo-btn" aria-pressed="false" title="View archive">
             <img src="/images/archive-logo.svg" alt="Archive" style="width:22px;height:22px;filter:drop-shadow(0 1px 2px #222);vertical-align:middle;">
           </button>
-          <button id="sync-all-income" class="sync-animated-btn" title="Sync all accounts" aria-label="Sync all accounts">
-            <span class="sync-btn-content">
+          <button id="sync-all-income" class="sync-animated-btn">
+            <div class="sync-btn-content">
               <svg class="sync-animated-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle class="sync-circle" cx="16" cy="16" r="14" stroke="#CCFF00" stroke-width="3" fill="none"/>
-                <path class="sync-arrow" d="M16 8v8l6 6" stroke="#CCFF00" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle class="sync-circle" cx="16" cy="16" r="14" stroke-width="2" stroke-dasharray="88" stroke-dashoffset="66" />
+                <path class="sync-arrow" d="M16 6v10l-6 6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <!-- Removed label -->
-              <span class="sync-btn-loader" aria-hidden="true">
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="16" r="14" stroke="#CCFF00" stroke-width="3" fill="none" opacity="0.3"/>
-                  <circle class="sync-spinner" cx="16" cy="16" r="14" stroke="#CCFF00" stroke-width="3" fill="none" stroke-dasharray="88" stroke-dashoffset="66"/>
-                </svg>
-              </span>
-            </span>
+              <span class="sync-btn-label hidden md:inline">Sync All</span>
+            </div>
+            <svg class="sync-btn-loader" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle class="sync-spinner" cx="12" cy="12" r="10" stroke="#CCFF00" stroke-width="3" fill="none"/>
+            </svg>
           </button>
         </div>
       </div>

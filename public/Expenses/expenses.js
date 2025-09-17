@@ -1,13 +1,17 @@
 // --- Sync Button Animation & Loading State ---
-function setSyncButtonLoading(isLoading) {
-  const btn = document.getElementById('sync-all-expenses');
+// --- Sync Button Animation & Loading State ---
+function setBtnBusy(btn, busy = true) {
   if (!btn) return;
-  if (isLoading) {
+  if (busy) {
     btn.classList.add('loading');
     btn.setAttribute('aria-busy', 'true');
+    const label = btn.querySelector('.sync-btn-label');
+    if (label) label.textContent = 'Syncing...';
   } else {
     btn.classList.remove('loading');
     btn.removeAttribute('aria-busy');
+    const label = btn.querySelector('.sync-btn-label');
+    if (label) label.textContent = 'Sync All';
   }
 }
 
@@ -880,10 +884,7 @@ function wireUI() {
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
   // Add spinning class to the SVG icon and change text to 'Syncing...'
-  const svg = els.syncAll?.querySelector('.sync-icon');
-  if (svg) svg.classList.add('spinning');
-  const label = els.syncAll?.querySelector('.sync-label');
-  if (label) label.textContent = 'Syncing...';
+  setBtnBusy(els.syncAll, true);
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
       toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
@@ -893,8 +894,7 @@ function wireUI() {
       toast('Sync failed');
     } finally {
   // Remove spinning class and restore text
-  if (svg) svg.classList.remove('spinning');
-  if (label) label.textContent = 'Sync All';
+  setBtnBusy(els.syncAll, false);
     }
   });
 

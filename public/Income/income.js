@@ -1,13 +1,17 @@
 // --- Sync Button Animation & Loading State ---
-function setSyncButtonLoading(isLoading) {
-  const btn = document.getElementById('sync-all-income');
+// --- Sync Button Animation & Loading State ---
+function setBtnBusy(btn, busy = true) {
   if (!btn) return;
-  if (isLoading) {
+  if (busy) {
     btn.classList.add('loading');
     btn.setAttribute('aria-busy', 'true');
+    const label = btn.querySelector('.sync-btn-label');
+    if (label) label.textContent = 'Syncing...';
   } else {
     btn.classList.remove('loading');
     btn.removeAttribute('aria-busy');
+    const label = btn.querySelector('.sync-btn-label');
+    if (label) label.textContent = 'Sync All';
   }
 }
 
@@ -712,7 +716,7 @@ function wireUI() {
   if (els.syncAll && !els.syncAll.querySelector('.sync-icon')) els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">';
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
-    setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Syncing" class="sync-icon spinning">', true);
+    setBtnBusy(els.syncAll, true);
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
   toast(`Synced ${count} account${count===1?'':'s'}  +${added} ~${modified} -${removed}`);
@@ -721,7 +725,7 @@ function wireUI() {
       console.error(e);
       toast('Sync failed');
     } finally {
-      setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">', false);
+      setBtnBusy(els.syncAll, false);
     }
   });
 
