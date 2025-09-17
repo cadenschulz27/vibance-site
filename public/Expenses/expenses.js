@@ -219,25 +219,12 @@ function openManualModal(record = null) {
       els.manualAmount.value = amountVal ? amountVal.toFixed(2) : '';
     }
     if (els.manualDate) {
-      const iso = (record?.date && record.date.length >= 10) ? record.date.slice(0, 10)
-    function setBtnBusy(btn, busy = true) {
-      if (!btn) return;
-      if (busy) {
-        btn.classList.add('syncing');
-        btn.setAttribute('aria-busy', 'true');
-        const label = btn.querySelector('.sync-btn-label');
-        if (label) label.textContent = 'Syncing...';
-      } else {
-        btn.classList.remove('syncing');
-        btn.removeAttribute('aria-busy');
-        const label = btn.querySelector('.sync-btn-label');
-        if (label) label.textContent = 'Sync All';
-      }
-    }
+  const iso = (record?.date && record.date.length >= 10) ? record.date.slice(0, 10) : '';
+    // Removed duplicate setBtnBusy definition (see below for correct version)
     if (titleEl) titleEl.textContent = 'Record manual expense';
     if (subtitleEl) subtitleEl.textContent = 'Log outflows that haven’t synced yet so your spending stays complete.';
     if (submitBtn) {
-        setBtnBusy(els.syncAll, true);
+      setBtnBusy(els.syncAll, true);
       submitBtn.dataset.prevText = 'Save expense';
     }
     if (els.manualArchive) els.manualArchive.classList.add('hidden');
@@ -1108,4 +1095,6 @@ function init() {
   });
 }
 
+
 document.addEventListener('DOMContentLoaded', init);
+}
