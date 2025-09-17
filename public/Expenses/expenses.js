@@ -1041,6 +1041,8 @@ function init() {
 
       await loadAllTransactions(UID);
       await loadSavedFilters(UID);
+      console.log('DEBUG: ALL_ITEMS', ALL_ITEMS);
+      console.log('DEBUG: ALL_TX', ALL_TX);
       toast('Transactions loaded');
       // Apply last preset if present
       let applied = false;
