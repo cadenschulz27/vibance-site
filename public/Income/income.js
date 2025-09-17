@@ -1,5 +1,4 @@
 // --- Sync Button Animation & Loading State ---
-// --- Sync Button Animation & Loading State ---
 function setBtnBusy(btn, busy = true) {
   if (!btn) return;
   if (busy) {
@@ -121,15 +120,16 @@ function debounce(fn, ms) { let t; return (...a)=>{ clearTimeout(t); t=setTimeou
 function toast(msg) { if (!els.toast) return console.log('[toast]', msg); els.toast.textContent = msg; els.toast.classList.remove('opacity-0','pointer-events-none'); els.toast.classList.add('opacity-100'); setTimeout(()=>{ els.toast.classList.add('opacity-0','pointer-events-none'); }, 2000); }
 
 function setBtnBusy(btn, text, busy = true) {
+  const label = btn.querySelector('.sync-btn-label');
   if (!btn) return;
   if (busy) {
-    btn.dataset.prevHtml = btn.innerHTML;
-    btn.disabled = true;
-    if (/<[^>]+>/.test(String(text || ''))) btn.innerHTML = String(text);
-    else btn.textContent = text || 'Working…';
+    btn.classList.add('syncing');
+    btn.setAttribute('aria-busy', 'true');
+    if (label) label.textContent = 'Syncing...';
   } else {
-    btn.disabled = false;
-    btn.innerHTML = btn.dataset.prevHtml || (btn.dataset.prevText || 'Done');
+    btn.classList.remove('syncing');
+    btn.removeAttribute('aria-busy');
+    if (label) label.textContent = 'Sync All';
   }
 }
 
@@ -717,6 +717,16 @@ function wireUI() {
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
     setBtnBusy(els.syncAll, true);
+    try {
+      const { added, modified, removed, count } = await syncAllItems(UID);
+      toast(`Synced ${count} account${count===1?'':'s'}  +${added} ~${modified} -${removed}`);
+      await loadAllTransactions(UID);
+    } catch (e) {
+      console.error(e);
+      toast('Sync failed');
+    } finally {
+      setBtnBusy(els.syncAll, false);
+    }
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
   toast(`Synced ${count} account${count===1?'':'s'}  +${added} ~${modified} -${removed}`);

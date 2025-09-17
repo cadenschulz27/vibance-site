@@ -1,5 +1,4 @@
 // --- Sync Button Animation & Loading State ---
-// --- Sync Button Animation & Loading State ---
 function setBtnBusy(btn, busy = true) {
   if (!btn) return;
   if (busy) {
@@ -221,21 +220,24 @@ function openManualModal(record = null) {
     }
     if (els.manualDate) {
       const iso = (record?.date && record.date.length >= 10) ? record.date.slice(0, 10)
-        : (record?._epoch ? new Date(record._epoch).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
-      els.manualDate.value = iso;
+    function setBtnBusy(btn, busy = true) {
+      if (!btn) return;
+      if (busy) {
+        btn.classList.add('syncing');
+        btn.setAttribute('aria-busy', 'true');
+        const label = btn.querySelector('.sync-btn-label');
+        if (label) label.textContent = 'Syncing...';
+      } else {
+        btn.classList.remove('syncing');
+        btn.removeAttribute('aria-busy');
+        const label = btn.querySelector('.sync-btn-label');
+        if (label) label.textContent = 'Sync All';
+      }
     }
-    if (els.manualCategory) els.manualCategory.value = record?.categoryUser || record?.categoryAuto || '';
-    if (els.manualNotes) els.manualNotes.value = record?.notes || '';
-
-    if (els.manualArchive) {
-      els.manualArchive.classList.remove('hidden');
-      els.manualArchive.textContent = isArchived ? 'Restore expense' : 'Archive expense';
-    }
-  } else {
     if (titleEl) titleEl.textContent = 'Record manual expense';
     if (subtitleEl) subtitleEl.textContent = 'Log outflows that haven’t synced yet so your spending stays complete.';
     if (submitBtn) {
-      submitBtn.textContent = 'Save expense';
+        setBtnBusy(els.syncAll, true);
       submitBtn.dataset.prevText = 'Save expense';
     }
     if (els.manualArchive) els.manualArchive.classList.add('hidden');
@@ -243,7 +245,7 @@ function openManualModal(record = null) {
 
   els.manualModal.classList.add('vb-modal--open');
   els.manualModal.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('modal-open');
+        setBtnBusy(els.syncAll, false);
   manualKeyHandler = (event) => {
     if (event.key === 'Escape') {
       event.preventDefault();
