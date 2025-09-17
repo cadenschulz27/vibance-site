@@ -681,10 +681,17 @@ function wireUI() {
   els.next?.addEventListener('click', () => { const total = FILTERED.length; if (PAGE * PAGE_SIZE < total) { PAGE++; render(); } });
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
-    els.syncAll.disabled = true; els.syncAll.textContent = 'Syncing…';
-    try { const { added, modified, removed, count } = await syncAllItems(UID); toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`); await loadAllTransactions(UID); }
-    catch (e) { console.error(e); toast('Sync failed'); }
-    finally { els.syncAll.disabled = false; els.syncAll.textContent = 'Sync all'; }
+    setBtnBusy(els.syncAll, 'Syncing…', true);
+    try {
+      const { added, modified, removed, count } = await syncAllItems(UID);
+      toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
+      await loadAllTransactions(UID);
+    } catch (e) {
+      console.error(e);
+      toast('Sync failed');
+    } finally {
+      setBtnBusy(els.syncAll, '', false);
+    }
   });
 
   els.manualOpen?.addEventListener('click', () => openManualModal());

@@ -2,7 +2,8 @@
   "name": "vibance-site",
   "version": "1.0.0",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "npx http-server public -p 8080"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
@@ -11,6 +12,7 @@
     "plaid": "^9.0.0"
   },
   "devDependencies": {
+    "http-server": "^14.1.1",
     "jest": "^30.1.3"
   }
 }

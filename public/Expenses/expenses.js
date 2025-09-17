@@ -844,9 +844,10 @@ function wireUI() {
     applyPreset(v);
   });
 
+  els.syncAll?.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">';
   els.syncAll?.addEventListener('click', async () => {
     if (!UID) return;
-    setBtnBusy(els.syncAll, 'Syncing…', true);
+    setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Syncing" class="sync-icon spinning">', true);
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
       toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
@@ -855,7 +856,7 @@ function wireUI() {
       console.error(e);
       toast('Sync failed');
     } finally {
-      setBtnBusy(els.syncAll, '', false);
+      setBtnBusy(els.syncAll, '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">', false);
     }
   });
 
