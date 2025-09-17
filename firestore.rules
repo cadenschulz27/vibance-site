@@ -70,6 +70,28 @@ service cloud.firestore {
             request.resource.data.diff(resource.data).changedKeys().hasOnly(['categoryUser']);
         }
       }
+      
+      // Manual entries (user-created income/expense rows)
+      match /manual_entries/{entryId} {
+        // Owner may read their manual entries
+        allow read: if isOwner(uid);
+
+        // Owner may create manual entries; enforce basic field types for safety
+        allow create: if isOwner(uid) &&
+          request.resource.data.type is string &&
+          request.resource.data.amount is number &&
+          request.resource.data.date is string;
+
+        // Owner may update/delete their manual entries
+        allow update, delete: if isOwner(uid);
+      }
+
+      // Transaction overrides (user edits/overrides for transactions)
+      match /transaction_overrides/{overrideId} {
+        allow read: if isOwner(uid);
+        allow create, update, delete: if isOwner(uid) &&
+          (request.resource.data.amount is number || !('amount' in request.resource.data));
+      }
     }
 
     match /usernames/{uname} {
