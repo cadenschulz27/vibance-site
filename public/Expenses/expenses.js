@@ -860,163 +860,47 @@ function wireUI() {
     }
   });
 
-  els.manualOpen?.addEventListener('click', () => openManualModal());
-  els.manualClose?.addEventListener('click', () => closeManualModal());
-  els.manualOverlay?.addEventListener('click', () => closeManualModal());
-  els.manualForm?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!UID) {
-      showManualError('Sign in to add manual expenses.');
-      return;
-    }
-    const name = (els.manualName?.value || '').trim();
-    const amountVal = parseFloat(els.manualAmount?.value || '');
-    const dateVal = els.manualDate?.value || '';
-    const categoryVal = (els.manualCategory?.value || '').trim();
-    const notesVal = (els.manualNotes?.value || '').trim();
-
-    if (!name) {
-      showManualError('Enter a description for the expense.');
-      els.manualName?.focus();
-      return;
-    }
-    if (!Number.isFinite(amountVal) || amountVal <= 0) {
-      showManualError('Enter a positive amount.');
-      els.manualAmount?.focus();
-      return;
-    }
-    if (!dateVal) {
-      showManualError('Select a date for the expense.');
-      els.manualDate?.focus();
-      return;
-    }
-
-    showManualError('');
-    const submitBtn = document.getElementById('expense-manual-submit');
-    if (submitBtn) submitBtn.dataset.prevText = manualMode === 'create' ? 'Save expense' : 'Save changes';
-    setBtnBusy(submitBtn, manualMode === 'create' ? 'Recording…' : 'Saving…', true);
-    try {
-      const normalizedAmount = Number(Math.abs(amountVal).toFixed(2));
-      if (manualMode === 'create') {
-        const payload = {
-          type: 'expense',
-          name,
-          amount: normalizedAmount,
-          date: dateVal,
-          category: categoryVal,
-          notes: notesVal,
-          currency: 'USD',
-          archived: false,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-          account: 'Manual entry',
-        };
-        await addDoc(collection(db, 'users', UID, 'manual_entries'), payload);
-        closeManualModal();
-        toast('Expense recorded');
-      } else if (editingRecord?.manual) {
-        const ref = doc(db, 'users', UID, 'manual_entries', editingRecord.id);
-        await setDoc(ref, {
-          name,
-          amount: normalizedAmount,
-          date: dateVal,
-          category: categoryVal,
-          notes: notesVal,
-          archived: !!editingRecord.archived,
-          updatedAt: Timestamp.now(),
-        }, { merge: true });
-        closeManualModal();
-        toast('Expense updated');
-      } else if (editingRecord) {
-        const key = overrideKey(editingRecord.itemId, editingRecord.id);
-        const ref = doc(db, 'users', UID, 'transaction_overrides', key);
-        const payload = {
-          type: 'expense',
-          name,
-          amount: normalizedAmount,
-          date: dateVal,
-          category: categoryVal,
-          notes: notesVal,
-          currency: 'USD',
-          archived: !!editingRecord.archived,
-          updatedAt: Timestamp.now(),
-        };
-        if (!editingRecord.override) {
-          payload.createdAt = Timestamp.now();
-          if (!payload.category) payload.category = editingOriginal?.categoryUser || editingOriginal?.categoryAuto || '';
-          if (!payload.name) payload.name = editingOriginal?.name || '';
-          if (!payload.date) payload.date = editingOriginal?.date || (editingOriginal?._epoch ? new Date(editingOriginal._epoch).toISOString().slice(0, 10) : dateVal);
-          if (!payload.notes) payload.notes = editingOriginal?.notes || '';
-          if (!Number.isFinite(payload.amount) || !payload.amount) payload.amount = Math.abs(Number(editingOriginal?.amount || 0));
-          payload.currency = editingOriginal?.isoCurrency || payload.currency;
-        }
-        await setDoc(ref, payload, { merge: true });
-        closeManualModal();
-        toast('Expense updated');
+  if (els.manualOpen) {
+    console.log('DEBUG: Add Expense button found, wiring event');
+    els.manualOpen.addEventListener('click', () => openManualModal());
+  } else {
+    console.warn('DEBUG: Add Expense button NOT found');
+  }
+  if (els.archiveToggle) {
+    console.log('DEBUG: Archive button found, wiring event');
+    els.archiveToggle.addEventListener('click', () => {
+      VIEW_ARCHIVE = !VIEW_ARCHIVE;
+      if (els.archiveToggle) {
+        els.archiveToggle.textContent = VIEW_ARCHIVE ? 'Back to transactions' : 'View archive';
+        els.archiveToggle.setAttribute('aria-pressed', String(VIEW_ARCHIVE));
       }
-      await loadAllTransactions(UID);
-    } catch (error) {
-      console.error('Manual expense failed', error);
-      showManualError('Could not save expense. Please try again.');
-    } finally {
-      setBtnBusy(submitBtn, '', false);
-    }
-  });
-
-  els.manualArchive?.addEventListener('click', async () => {
-    if (!UID || !editingRecord) return;
-    const newArchived = !editingRecord.archived;
-    const archiveBtn = els.manualArchive;
-    if (!archiveBtn) return;
-    archiveBtn.disabled = true;
-    archiveBtn.textContent = newArchived ? 'Archiving…' : 'Restoring…';
-    try {
-      if (editingRecord.manual) {
-        const ref = doc(db, 'users', UID, 'manual_entries', editingRecord.id);
-        await setDoc(ref, { archived: newArchived, updatedAt: Timestamp.now() }, { merge: true });
-      } else {
-        const key = overrideKey(editingRecord.itemId, editingRecord.id);
-        const ref = doc(db, 'users', UID, 'transaction_overrides', key);
-        const payload = {
-          type: 'expense',
-          archived: newArchived,
-          updatedAt: Timestamp.now(),
-        };
-        if (!editingRecord.override) {
-          payload.createdAt = Timestamp.now();
-          payload.name = editingOriginal?.name || '';
-          payload.amount = Math.abs(Number(editingOriginal?.amount || 0));
-          payload.date = editingOriginal?.date || (editingOriginal?._epoch ? new Date(editingOriginal._epoch).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
-          payload.category = editingOriginal?.categoryUser || editingOriginal?.categoryAuto || '';
-          payload.notes = editingOriginal?.notes || '';
-          payload.currency = editingOriginal?.isoCurrency || 'USD';
-        }
-        await setDoc(ref, payload, { merge: true });
+      if (els.archiveIndicator) {
+        els.archiveIndicator.classList.toggle('hidden', !VIEW_ARCHIVE);
+        els.archiveIndicator.textContent = VIEW_ARCHIVE ? 'Viewing archived expenses' : '';
       }
-      closeManualModal();
-      toast(newArchived ? 'Expense archived' : 'Expense restored');
-      await loadAllTransactions(UID);
-    } catch (error) {
-      console.error('Archive toggle failed', error);
-      showManualError('Unable to update archive state.');
-      archiveBtn.disabled = false;
-      archiveBtn.textContent = newArchived ? 'Archive expense' : 'Restore expense';
-      return;
-    }
-  });
-
-  els.archiveToggle?.addEventListener('click', () => {
-    VIEW_ARCHIVE = !VIEW_ARCHIVE;
-    if (els.archiveToggle) {
-      els.archiveToggle.textContent = VIEW_ARCHIVE ? 'Back to transactions' : 'View archive';
-      els.archiveToggle.setAttribute('aria-pressed', String(VIEW_ARCHIVE));
-    }
-    if (els.archiveIndicator) {
-      els.archiveIndicator.classList.toggle('hidden', !VIEW_ARCHIVE);
-      els.archiveIndicator.textContent = VIEW_ARCHIVE ? 'Viewing archived expenses' : '';
-    }
-    applyFilters();
-  });
+      applyFilters();
+    });
+  } else {
+    console.warn('DEBUG: Archive button NOT found');
+  }
+  if (els.syncAll) {
+    console.log('DEBUG: Sync All button found, wiring event');
+    els.syncAll.addEventListener('click', async () => {
+      setBtnBusy(els.syncAll, true);
+      try {
+        const { added, modified, removed, count } = await syncAllItems(UID);
+        toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
+        await loadAllTransactions(UID);
+      } catch (e) {
+        console.error(e);
+        toast('Sync failed');
+      } finally {
+        setBtnBusy(els.syncAll, false);
+      }
+    });
+  } else {
+    console.warn('DEBUG: Sync All button NOT found');
+  }
 }
 
 // -------------------- Init --------------------
