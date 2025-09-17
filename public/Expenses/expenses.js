@@ -10,8 +10,8 @@
 import { auth, db } from '../api/firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
-  collection, getDocs, doc, getDoc, setDoc,
-  query, orderBy, limit
+  collection, getDocs, doc, getDoc, setDoc, addDoc,
+  query, orderBy, limit, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // -------------------- Config --------------------
@@ -27,6 +27,18 @@ const COMMON_CATEGORIES = [
 // -------------------- DOM --------------------
 const els = {
   syncAll: document.getElementById('sync-all-expenses'),
+  manualOpen: document.getElementById('open-manual-expense'),
+  manualModal: document.getElementById('expense-manual-modal'),
+  manualOverlay: document.getElementById('expense-manual-overlay'),
+  manualClose: document.getElementById('expense-manual-close'),
+  manualForm: document.getElementById('expense-manual-form'),
+  manualError: document.getElementById('expense-manual-error'),
+  manualDate: document.getElementById('expense-manual-date'),
+  manualName: document.getElementById('expense-manual-name'),
+  manualAmount: document.getElementById('expense-manual-amount'),
+  manualCategory: document.getElementById('expense-manual-category'),
+  manualNotes: document.getElementById('expense-manual-notes'),
+  manualArchive: document.getElementById('expense-manual-archive'),
 
   account: document.getElementById('account-filter'),
   start: document.getElementById('start-date'),
@@ -58,6 +70,8 @@ const els = {
   pageLabel: document.getElementById('pagination-label'),
 
   toast: document.getElementById('toast'),
+  archiveToggle: document.getElementById('toggle-expense-archive'),
+  archiveIndicator: document.getElementById('expense-archive-indicator'),
 };
 
 // -------------------- State --------------------
@@ -66,6 +80,11 @@ let ALL_ITEMS = [];
 let ALL_TX = [];
 let FILTERED = [];
 let PAGE = 1;
+let VIEW_ARCHIVE = false;
+let OVERRIDES = new Map();
+let manualMode = 'create';
+let editingRecord = null;
+let editingOriginal = null;
 
 // -------------------- Utils --------------------
 function parseLocalDateEpoch(str) {
@@ -117,6 +136,109 @@ function setBtnBusy(btn, text, busy = true) {
   }
 }
 
+function showManualError(message) {
+  if (!els.manualError) return;
+  if (!message) {
+    els.manualError.textContent = '';
+    els.manualError.classList.add('hidden');
+  } else {
+    els.manualError.textContent = message;
+    els.manualError.classList.remove('hidden');
+  }
+}
+
+function resetManualForm() {
+  if (!els.manualForm) return;
+  els.manualForm.reset();
+  const today = new Date().toISOString().slice(0, 10);
+  if (els.manualDate) els.manualDate.value = today;
+  if (els.manualCategory) els.manualCategory.value = '';
+  showManualError('');
+}
+
+let manualKeyHandler = null;
+
+function openManualModal(record = null) {
+  if (!els.manualModal) return;
+
+  manualMode = record ? 'edit' : 'create';
+  editingRecord = record ? { ...record } : null;
+  editingOriginal = record ? { ...record } : null;
+  resetManualForm();
+
+  const titleEl = document.getElementById('expense-manual-title');
+  const subtitleEl = document.getElementById('expense-manual-subtitle');
+  const submitBtn = document.getElementById('expense-manual-submit');
+
+  if (manualMode === 'edit') {
+    const isManual = !!record?.manual;
+    const isArchived = !!record?.archived;
+    if (titleEl) titleEl.textContent = isManual ? 'Edit manual expense' : 'Edit expense';
+    if (subtitleEl) subtitleEl.textContent = isManual
+      ? 'Update details or archive this manual entry.'
+      : 'Refine the synced transaction or archive it from your active view.';
+    if (submitBtn) {
+      submitBtn.textContent = 'Save changes';
+      submitBtn.dataset.prevText = 'Save changes';
+    }
+
+    if (els.manualName) els.manualName.value = record?.name || '';
+    if (els.manualAmount) {
+      const amountVal = Math.abs(Number(record?.amount || 0));
+      els.manualAmount.value = amountVal ? amountVal.toFixed(2) : '';
+    }
+    if (els.manualDate) {
+      const iso = (record?.date && record.date.length >= 10) ? record.date.slice(0, 10)
+        : (record?._epoch ? new Date(record._epoch).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
+      els.manualDate.value = iso;
+    }
+    if (els.manualCategory) els.manualCategory.value = record?.categoryUser || record?.categoryAuto || '';
+    if (els.manualNotes) els.manualNotes.value = record?.notes || '';
+
+    if (els.manualArchive) {
+      els.manualArchive.classList.remove('hidden');
+      els.manualArchive.textContent = isArchived ? 'Restore expense' : 'Archive expense';
+    }
+  } else {
+    if (titleEl) titleEl.textContent = 'Record manual expense';
+    if (subtitleEl) subtitleEl.textContent = 'Log outflows that haven’t synced yet so your spending stays complete.';
+    if (submitBtn) {
+      submitBtn.textContent = 'Save expense';
+      submitBtn.dataset.prevText = 'Save expense';
+    }
+    if (els.manualArchive) els.manualArchive.classList.add('hidden');
+  }
+
+  els.manualModal.classList.add('vb-modal--open');
+  els.manualModal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  manualKeyHandler = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeManualModal();
+    }
+  };
+  document.addEventListener('keydown', manualKeyHandler, true);
+  setTimeout(() => {
+    els.manualName?.focus();
+  }, 20);
+}
+
+function closeManualModal() {
+  if (!els.manualModal) return;
+  els.manualModal.classList.remove('vb-modal--open');
+  els.manualModal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  manualMode = 'create';
+  editingRecord = null;
+  editingOriginal = null;
+  showManualError('');
+  if (manualKeyHandler) {
+    document.removeEventListener('keydown', manualKeyHandler, true);
+    manualKeyHandler = null;
+  }
+}
+
 function fmtMoney(n, currency = 'USD') {
   if (typeof n !== 'number' || Number.isNaN(n)) return '—';
   try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n); }
@@ -129,6 +251,30 @@ function escapeHtml(s) {
 }
 function escapeAttr(s) { return escapeHtml(s).replace(/\n/g,' '); }
 function debounce(fn, ms) { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+
+function overrideKey(itemId, txId) {
+  return `${itemId}__${txId}`;
+}
+
+function applyOverrideToExpenseRow(row, override) {
+  if (!override) return;
+  if (override.name) row.name = override.name;
+  if (override.date) {
+    row.date = override.date;
+    row._epoch = parseLocalDateEpoch(override.date);
+  }
+  if (typeof override.amount === 'number' && !Number.isNaN(override.amount)) {
+    row.amount = Math.abs(override.amount);
+  }
+  if (override.category) row.categoryUser = override.category;
+  if (override.notes) row.notes = override.notes;
+  row.isoCurrency = override.currency || row.isoCurrency;
+  row.archived = !!override.archived;
+  row.override = true;
+  row.overrideDocId = override.id;
+  row.overrideCreatedAt = override.createdAt || null;
+  row.overrideUpdatedAt = override.updatedAt || null;
+}
 
 // -------------------- Firestore & Functions --------------------
 async function getIdToken() {
@@ -212,9 +358,88 @@ async function fetchItemTransactions(uid, itemId, perItemLimit = PER_ITEM_LIMIT)
   return rows;
 }
 
+async function fetchManualTransactions(uid, type = 'expense') {
+  try {
+    const baseRef = collection(db, 'users', uid, 'manual_entries');
+    const qManual = query(baseRef, orderBy('createdAt', 'desc'), limit(PER_ITEM_LIMIT));
+    const snap = await getDocs(qManual);
+    const rows = [];
+    snap.forEach(docSnap => {
+      const data = docSnap.data() || {};
+      if ((data.type || 'expense') !== type) return;
+      const iso = data.date || new Date().toISOString().slice(0, 10);
+      const epoch = parseLocalDateEpoch(iso);
+      const amtRaw = Number(data.amount || 0);
+      const amount = Math.abs(amtRaw);
+      rows.push({
+        id: docSnap.id,
+        itemId: 'manual',
+        institution_name: data.account || 'Manual entry',
+        date: iso,
+        _epoch: epoch,
+        name: data.name || data.description || 'Manual expense',
+        amount,
+        isoCurrency: data.currency || 'USD',
+        pending: false,
+        categoryAuto: '',
+        categoryUser: data.category || '',
+        merchant: '',
+        raw: data,
+        manual: true,
+        archived: !!data.archived,
+        notes: data.notes || '',
+      });
+    });
+    return rows;
+  } catch (e) {
+    console.error('Failed to load manual expenses', e);
+    return [];
+  }
+}
+
+async function fetchOverrides(uid, type = 'expense') {
+  try {
+    const ref = collection(db, 'users', uid, 'transaction_overrides');
+    const snap = await getDocs(ref);
+    const rows = [];
+    snap.forEach(docSnap => {
+      const data = docSnap.data() || {};
+      if ((data.type || 'expense') !== type) return;
+      const id = docSnap.id || '';
+      if (!id.includes('__')) return;
+      const [itemId, txId] = id.split('__');
+      if (!itemId || !txId) return;
+      const amount = Number(data.amount);
+      rows.push({
+        id,
+        itemId,
+        txId,
+        name: data.name || '',
+        amount: Number.isFinite(amount) ? Math.abs(amount) : null,
+        date: data.date || '',
+        category: data.category || '',
+        notes: data.notes || '',
+        archived: !!data.archived,
+        currency: data.currency || 'USD',
+        updatedAt: data.updatedAt || null,
+        createdAt: data.createdAt || null,
+      });
+    });
+    return rows;
+  } catch (error) {
+    console.error('Failed to load overrides', error);
+    return [];
+  }
+}
+
 async function saveCategory(uid, itemId, txId, categoryUser) {
-  const txRef = doc(db, 'users', uid, 'plaid_items', itemId, 'transactions', txId);
-  await setDoc(txRef, { categoryUser: categoryUser || '' }, { merge: true });
+  if (itemId === 'manual') {
+    const ref = doc(db, 'users', uid, 'manual_entries', txId);
+    await setDoc(ref, { category: categoryUser || '' }, { merge: true });
+  } else {
+    const txRef = doc(db, 'users', uid, 'plaid_items', itemId, 'transactions', txId);
+    await setDoc(txRef, { categoryUser: categoryUser || '' }, { merge: true });
+  }
 }
 
 // -------------------- Load & Render --------------------
@@ -224,6 +449,10 @@ async function loadAllTransactions(uid) {
     els.account.innerHTML =
       '<option value="">All accounts</option>' +
       ALL_ITEMS.map(it => `<option value="${it.id}">${escapeHtml(it.institution_name)}</option>`).join('');
+    const manualOpt = document.createElement('option');
+    manualOpt.value = 'manual';
+    manualOpt.textContent = 'Manual entries';
+    els.account.appendChild(manualOpt);
   }
 
   let all = [];
@@ -232,6 +461,24 @@ async function loadAllTransactions(uid) {
     rows.forEach(r => r.institution_name = it.institution_name);
     all = all.concat(rows);
   }
+  const manual = await fetchManualTransactions(uid, 'expense');
+  all = all.concat(manual);
+  const overrides = await fetchOverrides(uid, 'expense');
+  OVERRIDES = new Map(overrides.map(o => [overrideKey(o.itemId, o.txId), o]));
+  all.forEach(row => {
+    if (typeof row.archived !== 'boolean') row.archived = false;
+    if (typeof row.notes !== 'string') row.notes = '';
+    row.override = !!row.override;
+    row.manual = !!row.manual;
+    if (!row.manual) {
+      const key = overrideKey(row.itemId, row.id);
+      const override = OVERRIDES.get(key);
+      if (override) {
+        applyOverrideToExpenseRow(row, override);
+        row.notes = override.notes || row.notes;
+      }
+    }
+  });
   all.sort((a, b) => b._epoch - a._epoch);
   ALL_TX = all;
   applyFilters();
@@ -378,6 +625,9 @@ function applyFilters() {
   // Expenses tab: show only outflows (positive amounts in Plaid polarity)
   out = out.filter(r => r.amount > 0);
 
+  if (VIEW_ARCHIVE) out = out.filter(r => r.archived);
+  else out = out.filter(r => !r.archived);
+
   FILTERED = out;
   PAGE = 1;
   render();
@@ -462,39 +712,39 @@ function render() {
 function renderRow(r) {
   const tr = document.createElement('tr');
   tr.className = 'border-b border-neutral-800 hover:bg-neutral-900';
-  const amountCls = r.amount < 0 ? 'text-emerald-400' : 'text-red-400';
+
+  const badges = [];
+  if (r.manual) badges.push('<span class="vb-badge vb-badge--manual">Manual</span>');
+  if (!r.manual && r.override) badges.push('<span class="vb-badge vb-badge--edit">Edited</span>');
+  if (r.archived) badges.push('<span class="vb-badge vb-badge--archived">Archived</span>');
+  const badgeHtml = badges.length ? `<div class="mt-1 flex flex-wrap gap-1">${badges.join('')}</div>` : '';
+  const accountHtml = `<div class="flex flex-col gap-1"><span>${escapeHtml(r.institution_name || '')}</span>${badgeHtml}</div>`;
+
+  const amountCls = 'text-red-400';
   const categoryText = r.categoryUser || r.categoryAuto || '';
+  const merchantHtml = r.merchant
+    ? `<a class="hover:underline" href="/Merchants/merchant.html?name=${encodeURIComponent(r.merchant)}">${escapeHtml(r.merchant)}</a>`
+    : '';
+
+  const notesHtml = r.notes ? `<div class="text-xs text-neutral-500 mt-1">${escapeHtml(r.notes)}</div>` : '';
+  const dateLabel = escapeHtml(formatLocalDate(r._epoch));
 
   tr.innerHTML = `
-    <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${escapeHtml(r.institution_name || '')}</td>
-    <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${escapeHtml(formatLocalDate(r._epoch))}</td>
-    <td class="px-4 py-3 text-sm font-medium text-neutral-100">${escapeHtml(r.name || '')}</td>
-    <td class="px-4 py-3 whitespace-nowrap text-sm ${amountCls} text-right">${escapeHtml(fmtMoney(Math.abs(r.amount), r.isoCurrency))}</td>
-    <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-300">${r.merchant ? `<a class=\"hover:underline\" href=\"/Merchants/merchant.html?name=${encodeURIComponent(r.merchant)}\">${escapeHtml(r.merchant)}</a>` : ''}</td>
-    <td class="px-4 py-3 text-sm">
-      <div class="flex items-center gap-2">
-        <input type="text" class="cat-input bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-sm w-44"
-               value="${escapeAttr(categoryText)}" placeholder="Category…" list="category-list"/>
-        <button class="save-cat px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs">Save</button>
-      </div>
+    <td class="px-4 py-3 align-top text-sm text-neutral-300">${accountHtml}</td>
+    <td class="px-4 py-3 align-top whitespace-nowrap text-sm text-neutral-300">${dateLabel}</td>
+    <td class="px-4 py-3 align-top text-sm font-medium text-neutral-100">${escapeHtml(r.name || '')}${notesHtml}</td>
+    <td class="px-4 py-3 align-top whitespace-nowrap text-sm ${amountCls} text-right">${escapeHtml(fmtMoney(Math.abs(r.amount), r.isoCurrency))}</td>
+    <td class="px-4 py-3 align-top whitespace-nowrap text-sm text-neutral-300">${merchantHtml}</td>
+    <td class="px-4 py-3 align-top text-sm text-neutral-300">${escapeHtml(categoryText)}</td>
+    <td class="px-4 py-3 align-top text-right">
+      <button class="btn-edit px-3 py-1.5 rounded-lg border border-neutral-700 text-xs text-neutral-200 hover:bg-neutral-900">Edit</button>
     </td>
   `;
 
-  const input = tr.querySelector('.cat-input');
-  const saveBtn = tr.querySelector('.save-cat');
-  const doSave = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-    const newCat = input.value.trim();
-    r.categoryUser = newCat;
-    await saveCategory(user.uid, r.itemId, r.id, newCat);
-    saveBtn.textContent = 'Saved';
-    saveBtn.disabled = true;
-    setTimeout(() => { saveBtn.textContent = 'Save'; saveBtn.disabled = false; }, 700);
-  };
-  saveBtn.addEventListener('click', () => doSave().catch(console.error));
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSave().catch(console.error); });
-  input.addEventListener('blur', () => { if (input.dataset.last !== input.value) doSave().catch(console.error); input.dataset.last = input.value; });
+  const editBtn = tr.querySelector('.btn-edit');
+  if (editBtn) {
+    editBtn.addEventListener('click', () => openManualModal({ ...r }));
+  }
 
   return tr;
 }
@@ -607,6 +857,164 @@ function wireUI() {
     } finally {
       setBtnBusy(els.syncAll, '', false);
     }
+  });
+
+  els.manualOpen?.addEventListener('click', () => openManualModal());
+  els.manualClose?.addEventListener('click', () => closeManualModal());
+  els.manualOverlay?.addEventListener('click', () => closeManualModal());
+  els.manualForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!UID) {
+      showManualError('Sign in to add manual expenses.');
+      return;
+    }
+    const name = (els.manualName?.value || '').trim();
+    const amountVal = parseFloat(els.manualAmount?.value || '');
+    const dateVal = els.manualDate?.value || '';
+    const categoryVal = (els.manualCategory?.value || '').trim();
+    const notesVal = (els.manualNotes?.value || '').trim();
+
+    if (!name) {
+      showManualError('Enter a description for the expense.');
+      els.manualName?.focus();
+      return;
+    }
+    if (!Number.isFinite(amountVal) || amountVal <= 0) {
+      showManualError('Enter a positive amount.');
+      els.manualAmount?.focus();
+      return;
+    }
+    if (!dateVal) {
+      showManualError('Select a date for the expense.');
+      els.manualDate?.focus();
+      return;
+    }
+
+    showManualError('');
+    const submitBtn = document.getElementById('expense-manual-submit');
+    if (submitBtn) submitBtn.dataset.prevText = manualMode === 'create' ? 'Save expense' : 'Save changes';
+    setBtnBusy(submitBtn, manualMode === 'create' ? 'Recording…' : 'Saving…', true);
+    try {
+      const normalizedAmount = Number(Math.abs(amountVal).toFixed(2));
+      if (manualMode === 'create') {
+        const payload = {
+          type: 'expense',
+          name,
+          amount: normalizedAmount,
+          date: dateVal,
+          category: categoryVal,
+          notes: notesVal,
+          currency: 'USD',
+          archived: false,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          account: 'Manual entry',
+        };
+        await addDoc(collection(db, 'users', UID, 'manual_entries'), payload);
+        closeManualModal();
+        toast('Expense recorded');
+      } else if (editingRecord?.manual) {
+        const ref = doc(db, 'users', UID, 'manual_entries', editingRecord.id);
+        await setDoc(ref, {
+          name,
+          amount: normalizedAmount,
+          date: dateVal,
+          category: categoryVal,
+          notes: notesVal,
+          archived: !!editingRecord.archived,
+          updatedAt: Timestamp.now(),
+        }, { merge: true });
+        closeManualModal();
+        toast('Expense updated');
+      } else if (editingRecord) {
+        const key = overrideKey(editingRecord.itemId, editingRecord.id);
+        const ref = doc(db, 'users', UID, 'transaction_overrides', key);
+        const payload = {
+          type: 'expense',
+          name,
+          amount: normalizedAmount,
+          date: dateVal,
+          category: categoryVal,
+          notes: notesVal,
+          currency: 'USD',
+          archived: !!editingRecord.archived,
+          updatedAt: Timestamp.now(),
+        };
+        if (!editingRecord.override) {
+          payload.createdAt = Timestamp.now();
+          if (!payload.category) payload.category = editingOriginal?.categoryUser || editingOriginal?.categoryAuto || '';
+          if (!payload.name) payload.name = editingOriginal?.name || '';
+          if (!payload.date) payload.date = editingOriginal?.date || (editingOriginal?._epoch ? new Date(editingOriginal._epoch).toISOString().slice(0, 10) : dateVal);
+          if (!payload.notes) payload.notes = editingOriginal?.notes || '';
+          if (!Number.isFinite(payload.amount) || !payload.amount) payload.amount = Math.abs(Number(editingOriginal?.amount || 0));
+          payload.currency = editingOriginal?.isoCurrency || payload.currency;
+        }
+        await setDoc(ref, payload, { merge: true });
+        closeManualModal();
+        toast('Expense updated');
+      }
+      await loadAllTransactions(UID);
+    } catch (error) {
+      console.error('Manual expense failed', error);
+      showManualError('Could not save expense. Please try again.');
+    } finally {
+      setBtnBusy(submitBtn, '', false);
+    }
+  });
+
+  els.manualArchive?.addEventListener('click', async () => {
+    if (!UID || !editingRecord) return;
+    const newArchived = !editingRecord.archived;
+    const archiveBtn = els.manualArchive;
+    if (!archiveBtn) return;
+    archiveBtn.disabled = true;
+    archiveBtn.textContent = newArchived ? 'Archiving…' : 'Restoring…';
+    try {
+      if (editingRecord.manual) {
+        const ref = doc(db, 'users', UID, 'manual_entries', editingRecord.id);
+        await setDoc(ref, { archived: newArchived, updatedAt: Timestamp.now() }, { merge: true });
+      } else {
+        const key = overrideKey(editingRecord.itemId, editingRecord.id);
+        const ref = doc(db, 'users', UID, 'transaction_overrides', key);
+        const payload = {
+          type: 'expense',
+          archived: newArchived,
+          updatedAt: Timestamp.now(),
+        };
+        if (!editingRecord.override) {
+          payload.createdAt = Timestamp.now();
+          payload.name = editingOriginal?.name || '';
+          payload.amount = Math.abs(Number(editingOriginal?.amount || 0));
+          payload.date = editingOriginal?.date || (editingOriginal?._epoch ? new Date(editingOriginal._epoch).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
+          payload.category = editingOriginal?.categoryUser || editingOriginal?.categoryAuto || '';
+          payload.notes = editingOriginal?.notes || '';
+          payload.currency = editingOriginal?.isoCurrency || 'USD';
+        }
+        await setDoc(ref, payload, { merge: true });
+      }
+      closeManualModal();
+      toast(newArchived ? 'Expense archived' : 'Expense restored');
+      await loadAllTransactions(UID);
+    } catch (error) {
+      console.error('Archive toggle failed', error);
+      showManualError('Unable to update archive state.');
+      archiveBtn.disabled = false;
+      archiveBtn.textContent = newArchived ? 'Archive expense' : 'Restore expense';
+      return;
+    }
+  });
+
+  els.archiveToggle?.addEventListener('click', () => {
+    VIEW_ARCHIVE = !VIEW_ARCHIVE;
+    if (els.archiveToggle) {
+      els.archiveToggle.textContent = VIEW_ARCHIVE ? 'Back to transactions' : 'View archive';
+      els.archiveToggle.setAttribute('aria-pressed', String(VIEW_ARCHIVE));
+    }
+    if (els.archiveIndicator) {
+      els.archiveIndicator.classList.toggle('hidden', !VIEW_ARCHIVE);
+      els.archiveIndicator.textContent = VIEW_ARCHIVE ? 'Viewing archived expenses' : '';
+    }
+    applyFilters();
   });
 }
 

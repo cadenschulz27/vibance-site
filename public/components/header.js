@@ -31,7 +31,6 @@ function setActiveNav(root) {
     [/\/expenses\//,  '#nav-expenses'],
     [/\/income\//,    '#nav-income'],
     [/\/budgeting\//, '#nav-budgeting'],
-    [/\/net\//,       '#nav-net'],
     [/\/social\//,    '#nav-community'],
     [/\/literacy\//,  '#nav-literacy'],
     [/\/admin\//,     '#nav-admin'],
@@ -170,22 +169,7 @@ function wireMobileMenu(root, auth) {
 }
 
 // Admin link visibility based on custom claims OR email allow-list
-async function applyAdminVisibility(root, user) {
-  try {
-    if (!user) return;
-    await user.reload();
-    const tok = await user.getIdTokenResult(true);
-    const hasClaim = !!(tok?.claims?.roles && tok.claims.roles.admin === true);
-    const isAllowList = (user.email || '').toLowerCase() === ADMIN_EMAIL_FALLBACK;
-    const show = hasClaim || isAllowList;
-    const adminDesktop = $('#nav-admin', root);
-    const adminMobile  = $('#m-admin-link', root);
-    if (show) { adminDesktop?.classList.remove('hidden'); adminMobile?.classList.remove('hidden'); }
-    else      { adminDesktop?.classList.add('hidden');    adminMobile?.classList.add('hidden');    }
-  } catch (e) {
-    console.warn('[header] admin visibility check failed', e?.message || e);
-  }
-}
+// Admin link visibility logic removed: Admin links are no longer present in header
 
 // Apply user identity (avatar + First L.)
 function paintIdentity(root, { firstName, lastInitial, photoURL }) {
@@ -266,8 +250,7 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
     const photoURL    = profile.photoURL || user.photoURL || '/images/logo_white.png';
 
     paintIdentity(root, { firstName, lastInitial, photoURL });
-    showSignedIn(root);
-    await applyAdminVisibility(root, user);
-    setActiveNav(root); // re-evaluate now that admin link may be visible
+  showSignedIn(root);
+  setActiveNav(root); // re-evaluate now that admin link may be visible
   });
 })();

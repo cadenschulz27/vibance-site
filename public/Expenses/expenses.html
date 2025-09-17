@@ -82,6 +82,190 @@
     .btn-neon:active { transform: translateY(0); }
     .btn-neon:disabled { opacity:.6; cursor:not-allowed; box-shadow:none; transform:none; }
 
+    .btn-net {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.15rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #051305;
+      background: linear-gradient(135deg, #ccff00 0%, #8bffdf 100%);
+      box-shadow: 0 14px 30px rgba(204, 255, 0, 0.22);
+      transition: transform .18s ease, box-shadow .22s ease, opacity .18s ease;
+    }
+    .btn-net:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 34px rgba(204, 255, 0, 0.28);
+    }
+    .btn-net:active { transform: translateY(0); }
+    .btn-net svg { height: 0.9rem; width: 0.9rem; }
+
+    .btn-manual {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.1rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #0b0513;
+      background: linear-gradient(135deg, #f472b6 0%, #a855f7 55%, #60a5fa 100%);
+      box-shadow: 0 16px 34px rgba(96, 165, 250, 0.28);
+      transition: transform .18s ease, box-shadow .22s ease, opacity .18s ease;
+    }
+    .btn-manual:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 20px 38px rgba(96, 165, 250, 0.34);
+    }
+    .btn-manual:active { transform: translateY(0); }
+    .btn-manual svg { height: 0.9rem; width: 0.9rem; }
+
+    .vb-modal { position: fixed; inset: 0; z-index: 60; display: none; }
+    .vb-modal--open { display: block; }
+    .vb-modal__overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(4px); }
+    .vb-modal__panel {
+      position: relative;
+      margin: 4rem auto;
+      max-width: 520px;
+      background: linear-gradient(160deg, rgba(18,18,22,0.92), rgba(8,8,10,0.94));
+      border: 1px solid rgba(204,255,0,0.18);
+      border-radius: 1.25rem;
+      padding: 2.2rem;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.45);
+      overflow: hidden;
+    }
+    .vb-modal__close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 999px;
+      border: 1px solid rgba(204,255,0,0.25);
+      background: rgba(204,255,0,0.12);
+      color: rgba(204,255,0,0.9);
+      display: grid;
+      place-items: center;
+      font-size: 1.35rem;
+      line-height: 1;
+      transition: transform .15s ease, border-color .2s ease, background .2s ease;
+    }
+    .vb-modal__close:hover { transform: translateY(-1px); border-color: rgba(204,255,0,0.6); background: rgba(204,255,0,0.2); }
+    .vb-modal__close:active { transform: translateY(0); }
+    .vb-modal__title { font-family: 'Lora', serif; font-size: 1.7rem; margin-bottom: 0.5rem; }
+    .vb-modal__subtitle { font-size: 0.9rem; color: #a3a3ad; margin-bottom: 1.4rem; }
+    .vb-modal__grid { display: grid; gap: 1rem; }
+    .vb-modal__grid label { display: grid; gap: 0.35rem; font-size: 0.85rem; color: #d6d6df; }
+    .vb-modal__grid input,
+    .vb-modal__grid textarea,
+    .vb-modal__grid select {
+      background: rgba(15,15,20,0.88);
+      border: 1px solid rgba(204,255,0,0.16);
+      border-radius: 0.9rem;
+      padding: 0.65rem 0.85rem;
+      color: #f5f5f5;
+      font-size: 0.95rem;
+    }
+    .vb-modal__grid input:focus,
+    .vb-modal__grid textarea:focus,
+    .vb-modal__grid select:focus {
+      outline: none;
+      border-color: rgba(204,255,0,0.55);
+      box-shadow: 0 0 0 2px rgba(204,255,0,0.18);
+    }
+    .vb-modal__grid textarea { min-height: 80px; resize: vertical; }
+    .vb-modal__actions { margin-top: 1.5rem; display: flex; gap: 0.75rem; }
+    .vb-modal__actions button { flex: 1 1 auto; }
+    .vb-modal__secondary { margin-top: 0.75rem; display: flex; justify-content: flex-end; }
+    .vb-modal__secondary .btn-ghost { flex: 0 0 auto; }
+    .vb-modal__error { margin-top: 0.75rem; font-size: 0.85rem; color: #fca5a5; }
+
+    body.modal-open { overflow: hidden; }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: transparent;
+      color: rgba(248, 113, 113, 0.9);
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: transform .12s ease, border-color .22s ease, background .22s ease;
+    }
+    .btn-ghost:hover { transform: translateY(-1px); border-color: rgba(248,113,113,0.55); background: rgba(248,113,113,0.08); }
+    .btn-ghost:active { transform: translateY(0); }
+
+    .archive-toggle {
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1.5px solid rgba(148,163,184,0.22);
+      background: linear-gradient(90deg, #23272f 60%, #18181b 100%);
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: border-color .2s ease, background .2s ease, transform .12s ease;
+    }
+    .archive-logo-btn img {
+      filter: drop-shadow(0 1px 2px #222);
+      transition: filter .2s;
+    }
+    .archive-logo-btn:hover img {
+      filter: drop-shadow(0 2px 4px #222) brightness(1.2);
+    }
+    .archive-logo-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1.5px solid rgba(148,163,184,0.22);
+      background: linear-gradient(90deg, #23272f 60%, #18181b 100%);
+      color: #e2e8f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+    }
+    .archive-logo-btn:hover {
+      border-color: #a3e635;
+      background: linear-gradient(90deg, #23272f 40%, #23272f 100%);
+      box-shadow: 0 4px 12px rgba(163,230,53,0.08);
+    }
+    }
+    .archive-toggle:hover { transform: translateY(-1px); border-color: rgba(148,163,184,0.5); background: rgba(17,17,21,0.9); }
+    .archive-toggle[aria-pressed="true"] { border-color: rgba(204,255,0,0.45); color: rgba(204,255,0,0.95); }
+
+    .archive-indicator {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(204,255,0,0.28);
+      background: rgba(204,255,0,0.12);
+      color: rgba(204,255,0,0.92);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .vb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+    .vb-badge--manual { background: rgba(59, 130, 246, 0.18); color: #bfdbfe; }
+    .vb-badge--edit { background: rgba(236, 72, 153, 0.18); color: #fbcfe8; }
+    .vb-badge--archived { background: rgba(148, 163, 184, 0.18); color: #e2e8f0; }
+
     /* Sticky toolbar under the header */
     .toolbar-sticky { position: sticky; top: 64px; z-index: 30; backdrop-filter: blur(6px); }
     @supports (top: var(--vb-header-offset)) {
@@ -127,10 +311,23 @@
           <p class="text-[13px] tracking-wide text-[var(--neon)] font-semibold">Vibance Expenses</p>
           <h1 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mt-1">Your Spending</h1>
           <p class="text-sm md:text-base text-neutral-400 mt-2">Review, search, and categorize your recent transactions.</p>
+          <span id="expense-archive-indicator" class="archive-indicator hidden">Viewing archived expenses</span>
         </div>
-        <div class="flex items-center gap-2">
-          <a href="/Income/income.html" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">View Income</a>
-          <a href="/Net/net.html" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Net</a>
+        <div class="flex items-center gap-2 flex-wrap justify-end">
+          <button id="open-manual-expense" type="button" class="btn-manual">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M10 4.5a.75.75 0 0 1 .75.75v4h4a.75.75 0 0 1 0 1.5h-4v4a.75.75 0 0 1-1.5 0v-4h-4a.75.75 0 0 1 0-1.5h4v-4A.75.75 0 0 1 10 4.5Z"/>
+            </svg>
+            <span>Add Expense</span>
+          </button>
+          <a href="/Net/net.html?from=expenses" class="btn-net">Net Insight
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M4.5 10.75a.75.75 0 0 1 0-1.5h7.69l-2.72-2.72a.75.75 0 1 1 1.06-1.06l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06l2.72-2.72H4.5z"/>
+            </svg>
+          </a>
+          <button id="toggle-expense-archive" type="button" class="archive-toggle archive-logo-btn" aria-pressed="false" title="View archive">
+            <img src="/images/archive-logo.svg" alt="Archive" style="width:22px;height:22px;filter:drop-shadow(0 1px 2px #222);vertical-align:middle;">
+          </button>
           <button id="sync-all-expenses" class="px-4 py-2 rounded-xl btn-neon text-sm font-semibold">Sync all</button>
         </div>
       </div>
@@ -254,6 +451,7 @@
               <th class="px-4 py-3 text-right font-medium">Amount</th>
               <th class="px-4 py-3 text-left font-medium">Merchant</th>
               <th class="px-4 py-3 text-left font-medium">Category</th>
+              <th class="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody id="tx-table-body" class="divide-y divide-neutral-900">
@@ -267,7 +465,7 @@
     <section class="mt-4 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <button id="pagination-prev" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white disabled:opacity-50">Prev</button>
-        <a href="/Net/net.html" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Net</a>
+          <a href="/Net/net.html?from=expenses" class="px-3 py-2 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-sm">Net</a>
       </div>
       <span id="pagination-label" class="text-neutral-400 text-sm">0 of 0</span>
       <button id="pagination-next" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-white disabled:opacity-50">Next</button>
@@ -303,6 +501,44 @@
     <option value="Interest"></option>
     <option value="Other"></option>
   </datalist>
+
+  <div id="expense-manual-modal" class="vb-modal" aria-hidden="true">
+    <div id="expense-manual-overlay" class="vb-modal__overlay" tabindex="-1"></div>
+    <div class="vb-modal__panel" role="dialog" aria-modal="true" aria-labelledby="expense-manual-title">
+      <button id="expense-manual-close" type="button" class="vb-modal__close" aria-label="Close">×</button>
+      <h2 id="expense-manual-title" class="vb-modal__title">Record manual expense</h2>
+      <p id="expense-manual-subtitle" class="vb-modal__subtitle">Log outflows that haven’t synced yet so your spending stays complete.</p>
+      <form id="expense-manual-form" class="vb-modal__grid">
+        <label>
+          Description
+          <input id="expense-manual-name" name="name" type="text" placeholder="e.g. Reimbursed team lunch" required />
+        </label>
+        <label>
+          Amount
+          <input id="expense-manual-amount" name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required />
+        </label>
+        <label>
+          Date
+          <input id="expense-manual-date" name="date" type="date" required />
+        </label>
+        <label>
+          Category
+          <input id="expense-manual-category" name="category" type="text" placeholder="Select or type" list="category-list" />
+        </label>
+        <label>
+          Notes (optional)
+          <textarea id="expense-manual-notes" name="notes" placeholder="Extra context for this expense"></textarea>
+        </label>
+        <div class="vb-modal__actions">
+          <button type="submit" id="expense-manual-submit" class="btn-neon">Save expense</button>
+        </div>
+        <div class="vb-modal__secondary">
+          <button type="button" id="expense-manual-archive" class="btn-ghost hidden">Archive expense</button>
+        </div>
+        <p id="expense-manual-error" class="vb-modal__error hidden"></p>
+      </form>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script type="module" src="/api/firebase.js"></script>

@@ -11,6 +11,8 @@ const els = {
   range: document.getElementById('range-select'),
   bars: document.getElementById('bars'),
   summary: document.getElementById('summary'),
+  backBtn: document.getElementById('net-back'),
+  backLabel: document.querySelector('#net-back span'),
 };
 
 let UID = null;
@@ -109,6 +111,28 @@ function render(rows) {
 function fmt(n) { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(n); } catch { return '$' + (n || 0).toFixed(2); } }
 
 function init() {
+  if (els.backBtn) {
+    const params = new URLSearchParams(location.search);
+    const fromParam = (params.get('from') || '').toLowerCase();
+    const fallback = fromParam === 'income' ? '/Income/income.html' : '/Expenses/expenses.html';
+    const ref = document.referrer || '';
+    const refLower = ref.toLowerCase();
+    const cameFromKnown = /\/income\//.test(refLower) || /\/expenses\//.test(refLower);
+
+    if (els.backLabel) {
+      els.backLabel.textContent = fromParam === 'income' ? 'Back to Income' : 'Back to Expenses';
+    }
+
+    els.backBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (cameFromKnown && history.length > 1) {
+        history.back();
+      } else {
+        location.href = fallback;
+      }
+    });
+  }
+
   els.range?.addEventListener('change', () => {
     if (UID) loadMonthly(Number(els.range.value)).catch(console.error);
   });
@@ -121,4 +145,3 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-

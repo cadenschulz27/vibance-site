@@ -7,7 +7,7 @@ const NEWS_COUNTRY = process.env.NEWS_COUNTRY || 'us';
 const NEWS_CATEGORY = process.env.NEWS_CATEGORY || 'business';
 const MAX_CANDIDATES = Number(process.env.NEWS_CANDIDATE_LIMIT || 15);
 const MAX_STORIES = Number(process.env.NEWS_STORY_LIMIT || 6);
-const MIN_SENTENCE_LENGTH = 35;
+const MIN_SENTENCE_LENGTH = 25;
 const CACHE_TTL_MS = Number(process.env.NEWS_CACHE_TTL_MS || 15 * 60 * 1000);
 const DEFAULT_DISCLAIMER = process.env.NEWS_GLOBAL_DISCLAIMER
   || 'Vibance Briefs summarize third-party reporting. Verify details with the original source before making financial decisions.';
@@ -109,33 +109,40 @@ function substituteWords(line = '') {
     .join(' ');
 }
 
-function rewriteHeadline(rawTitle = '', fallbackFocus = 'Market update') {
-  let cleaned = sanitizeFragment(rawTitle);
-  if (!cleaned) return fallbackFocus;
+const SMALL_WORDS = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'into', 'of', 'on', 'or', 'per', 'the', 'to', 'vs', 'via', 'with']);
 
-  cleaned = cleaned.replace(/\s*-\s*[A-Za-z0-9. ]+$/, '');
-  cleaned = substituteWords(cleaned);
+function toHeadlineCase(text = '') {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (!words.length) return '';
+  return words
+    .map((word, idx) => {
+      const stripped = word.replace(/[^A-Za-z0-9'-]/g, '');
+      const lower = stripped.toLowerCase();
+      if (idx !== 0 && SMALL_WORDS.has(lower)) return lower;
+      if (!stripped) return word;
+      const capitalized = lower.charAt(0).toUpperCase() + lower.slice(1);
+      return word.replace(stripped, capitalized);
+    })
+    .join(' ');
+}
 
-  const commaParts = cleaned.split(',');
-  if (commaParts.length > 1) {
-    const first = sanitizeFragment(commaParts[0] || '');
-    const rest = sanitizeFragment(commaParts.slice(1).join(',') || '');
-    if (first && rest) {
-      return toSentenceCase(`${rest} as ${first.toLowerCase()}`);
-    }
+function deriveHeadline(summary = '', bullets = [], fallbackFocus = 'Market update') {
+  const primarySource = Array.isArray(bullets) && bullets.length
+    ? bullets[0]
+    : summary;
+
+  let candidate = sanitizeFragment(primarySource || '')
+    || sanitizeFragment(summary || '')
+    || fallbackFocus;
+
+  candidate = candidate.replace(/[\s]+/g, ' ').trim();
+  candidate = candidate.replace(/[.!?]+$/, '');
+
+  if (candidate.length < 6) {
+    candidate = fallbackFocus;
   }
 
-  const dashParts = cleaned.split(/[-–—:]/);
-  if (dashParts.length > 1) {
-    const primary = sanitizeFragment(dashParts[0] || '');
-    const secondary = sanitizeFragment(dashParts.slice(1).join(' ') || '');
-    if (primary && secondary) {
-      return toSentenceCase(`${secondary} while ${primary.toLowerCase()}`);
-    }
-  }
-
-  if (cleaned.length < 4) return fallbackFocus;
-  return toSentenceCase(cleaned);
+  return toHeadlineCase(candidate);
 }
 
 function ensureTerminal(text = '') {
@@ -174,11 +181,12 @@ function buildBulletPoints(candidates = [], summaryLowerSet = new Set(), limit =
   return bullets;
 }
 
-function buildPerspective(sentiment, summary = '') {
+function buildPerspective(sentiment, summary = '', bullets = []) {
   const trimmed = sanitizeFragment(summary).replace(/\r?\n/g, ' ').trim();
-  const contextLine = trimmed
-    ? `Keep in mind that ${trimmed.charAt(0).toLowerCase() + trimmed.slice(1)}.`
-    : 'Keep in mind that conditions remain fluid and may shift quickly.';
+  const focus = Array.isArray(bullets) && bullets.length ? sanitizeFragment(bullets[0]) : trimmed;
+  const focusClause = focus
+    ? `Coverage notes that ${focus.charAt(0).toLowerCase() + focus.slice(1).replace(/[.!?]+$/, '')}.`
+    : 'Coverage notes that conditions remain fluid.';
 
   let outlookLine;
   switch (sentiment) {
@@ -193,7 +201,7 @@ function buildPerspective(sentiment, summary = '') {
       break;
   }
 
-  return `${contextLine} ${outlookLine}`.trim();
+  return `${focusClause} ${outlookLine}`.trim();
 }
 
 function dedupeArticles(articles = []) {
@@ -259,9 +267,16 @@ function fallbackRewrite(article) {
         return !s.toLowerCase().includes(sanitizedTitle);
       })
   )
-    .map((s) => ensureTerminal(toSentenceCase(substituteWords(s))));
+    .map((s) => ensureTerminal(toSentenceCase(substituteWords(s))))
+    .filter((s) => !isIncompleteSentence(s));
 
-  const summarySentences = sanitizedSentences.slice(0, 2);
+  let summarySentences = sanitizedSentences.slice(0, 2);
+  if (!summarySentences.length) {
+    summarySentences = sentences
+      .map((s) => ensureTerminal(toSentenceCase(substituteWords(sanitizeFragment(s)))))
+      .filter((s) => !isIncompleteSentence(s))
+      .slice(0, 2);
+  }
   let summary = summarySentences.join(' ');
   if (!summary) {
     const fallback = sanitizeFragment(context);
@@ -272,11 +287,12 @@ function fallbackRewrite(article) {
   const remainder = sanitizedSentences.slice(summarySentences.length);
   let keyTakeaways = buildBulletPoints(remainder, summaryLowerSet, 3);
   if (!keyTakeaways.length) {
-    keyTakeaways = buildBulletPoints(summarySentences, new Set(), Math.min(3, summarySentences.length));
+    const summaryPieces = summary.split(/(?<=\.)\s+/).map((item) => ensureTerminal(item));
+    keyTakeaways = buildBulletPoints(summaryPieces, new Set(), Math.min(3, summaryPieces.length));
   }
 
   const sentiment = computeSentiment(context);
-  const headline = rewriteHeadline(article.title, `${sourceName} update`);
+  const headline = deriveHeadline(summary, keyTakeaways, `${sourceName} Update`);
 
   return {
     headline,
@@ -284,7 +300,7 @@ function fallbackRewrite(article) {
     keyTakeaways,
     tickers: [],
     sentiment,
-    insight: buildPerspective(sentiment, summary),
+    insight: buildPerspective(sentiment, summary, keyTakeaways),
     method: 'heuristic',
     complianceNote: `Summary compiled by Vibance using reporting from ${sourceName}. Review the original article for complete context before making decisions.`
   };
@@ -367,11 +383,11 @@ async function rewriteWithOpenAI(article) {
     const summaryPieces = sanitizedSummary.split(/(?<=\.)\s+/).map((item) => ensureTerminal(item));
     keyTakeaways = buildBulletPoints(summaryPieces, new Set(), Math.min(3, summaryPieces.length));
   }
-  const safeHeadline = rewriteHeadline(parsed.headline, `${article.sourceName || 'Market'} update`);
+  const safeHeadline = deriveHeadline(sanitizedSummary, keyTakeaways, `${article.sourceName || 'Market'} Update`);
   const sanitizedInsight = sanitizeFragment(parsed.insight || '');
   const perspective = sanitizedInsight && sanitizedInsight.split(/[.!?]/).filter((s) => s.trim()).length >= 2
     ? toSentenceCase(substituteWords(sanitizedInsight))
-    : buildPerspective(parsed.sentiment, sanitizedSummary);
+    : buildPerspective(parsed.sentiment, sanitizedSummary, keyTakeaways);
 
   return {
     headline: safeHeadline,

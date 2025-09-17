@@ -1,0 +1,129 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.roles != null && request.auth.token.roles.admin == true) ||
+        (request.auth.token.email == "cadenschulz@gmail.com")
+      );
+    }
+
+    match /users_index/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow create, update: if isOwner(uid) &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['presence', 'lastSeenAt']) &&
+        (!('presence' in request.resource.data) ||
+          request.resource.data.presence.keys().hasOnly(['online'])
+        );
+      allow delete: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid) &&
+        request.resource.data.username is string;
+
+      // allow username change if caller owns /usernames/{new}
+      allow update: if isOwner(uid) &&
+        (!('createdAt' in request.resource.data) ||
+          !('createdAt' in resource.data) ||
+          request.resource.data.createdAt == resource.data.createdAt
+        ) &&
+        (!('username' in request.resource.data) ||
+          request.resource.data.username == resource.data.username ||
+          (
+            get(/databases/$(database)/documents/usernames/$(request.resource.data.username)).exists() &&
+            get(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == request.auth.uid
+          )
+        );
+
+      match /settings/{docId=**} {
+        allow read, write: if isOwner(uid);
+      }
+      match /budgets/{docId=**} {
+        allow read, write: if isOwner(uid);
+      }
+      match /notifications/{d=**} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /plaid_items/{itemId} {
+        allow read: if isOwner(uid);
+        allow create, delete: if false;
+        allow update: if isOwner(uid) &&
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['last_synced']);
+        match /transactions/{txId} {
+          allow read: if isOwner(uid);
+          allow create, delete: if false;
+          allow update: if isOwner(uid) &&
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['categoryUser']);
+        }
+      }
+    }
+
+    match /usernames/{uname} {
+      allow get, list: if true;
+
+      // create if not taken, owned by caller (reservedAt set via transform)
+      allow create: if isSignedIn() &&
+        !exists(/databases/$(database)/documents/usernames/$(uname)) &&
+        request.resource.data.uid == request.auth.uid;
+
+      // optional: allow owner to delete old handle
+      allow delete: if isSignedIn() &&
+        resource.data.uid == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    match /siteContent/{docId=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /applications/{appId} {
+      allow read: if false;
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.displayName is string &&
+        request.resource.data.createdAt is timestamp;
+
+      // allow backfilling identity on posts you own
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid &&
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['description', 'displayName', 'photoURL'])) ||
+        (request.resource.data.diff(resource.data).changedKeys().hasOnly(['likes']) && request.resource.data.likes is list) ||
+        (request.resource.data.diff(resource.data).changedKeys().hasOnly(['commentCount']))
+      );
+
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.displayName is string &&
+          request.resource.data.createdAt is timestamp;
+        allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      }
+    }
+  }
+}
