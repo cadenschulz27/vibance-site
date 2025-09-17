@@ -296,6 +296,7 @@ async function fetchItemTransactions(uid, itemId, perItemLimit = PER_ITEM_LIMIT)
       _epoch: parseLocalDateEpoch(x.date),
       categoryAuto: (Array.isArray(x.category) ? x.category.join(' / ') : (x.personal_finance_category?.primary || '')) || '',
       categoryUser: x.categoryUser || '',
+  raw: x,
     });
   });
   return rows;
@@ -389,6 +390,24 @@ async function loadAllTransactions(uid) {
     rows.forEach(r => r.institution_name = it.institution_name);
     all = all.concat(rows);
   }
+  // Detect likely income transactions (deposits/credits) and flag them
+  try {
+    const incomeRe = /deposit|payroll|paycheck|direct deposit|salary|refund|interest|ach credit|credited|deposit -|deposit:|payroll deposit|paycheck/i;
+    all = all.map(r => {
+      r.isLikelyIncome = false;
+      try {
+        const txt = `${r.name||''} ${r.merchant||''} ${r.categoryAuto||''} ${r.categoryUser||''}`.toLowerCase();
+        if (incomeRe.test(txt)) r.isLikelyIncome = true;
+        // Plaid may include metadata indicating a credit; check common fields
+        const raw = r.raw || {};
+        const txnType = (raw.transaction_type || '').toString().toLowerCase();
+        if (txnType.includes('credit') || (raw.payment_meta && Object.values(raw.payment_meta).join(' ').toLowerCase().includes('credit'))) r.isLikelyIncome = true;
+        // Some banks use positive amounts for inflows; detect amount polarity heuristically
+        if (!r.isLikelyIncome && Number(r.amount) > 0 && /(deposit|credit|payroll|direct)/i.test(txt)) r.isLikelyIncome = true;
+      } catch (e) { /* ignore */ }
+      return r;
+    });
+  } catch (e) { console.warn('Income detection failed', e); }
   const manual = await fetchManualTransactions(uid, 'income');
   all = all.concat(manual);
   const overrides = await fetchOverrides(uid, 'income');
@@ -532,8 +551,8 @@ function applyFilters() {
   if (q) out = out.filter(r => `${(r.name||'').toLowerCase()} ${(r.merchant||'').toLowerCase()} ${(r.categoryAuto||'').toLowerCase()} ${(r.categoryUser||'').toLowerCase()} ${(r.institution_name||'').toLowerCase()}`.includes(q));
   if (minAmt != null && !Number.isNaN(minAmt)) out = out.filter(r => Math.abs(r.amount) >= minAmt);
   if (maxAmt != null && !Number.isNaN(maxAmt)) out = out.filter(r => Math.abs(r.amount) <= maxAmt);
-  // Income: only inflows (negative amounts in Plaid polarity)
-  out = out.filter(r => r.amount < 0);
+  // Income: include inflows (negative amounts) OR transactions detected as likely income
+  out = out.filter(r => (typeof r.amount === 'number' && r.amount < 0) || r.isLikelyIncome === true);
   if (VIEW_ARCHIVE) out = out.filter(r => r.archived);
   else out = out.filter(r => !r.archived);
   FILTERED = out;
