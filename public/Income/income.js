@@ -230,26 +230,6 @@ function closeManualModal() {
 
 // ...existing code...
 
-// ...existing code...
-
-// ...existing code...
-
-function openManualModal() {
-  if (!els.manualModal) return;
-  resetManualForm();
-  els.manualModal.classList.add('vb-modal--open');
-  els.manualModal.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('modal-open');
-  manualKeyHandler = (event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeManualModal();
-    }
-  };
-  document.addEventListener('keydown', manualKeyHandler, true);
-  setTimeout(() => { els.manualName?.focus(); }, 20);
-}
-
 function closeManualModal() {
   if (!els.manualModal) return;
   els.manualModal.classList.remove('vb-modal--open');
