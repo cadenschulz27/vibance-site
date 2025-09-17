@@ -1,18 +1,5 @@
 // --- Sync Button Animation & Loading State ---
-function setBtnBusy(btn, busy = true) {
-  if (!btn) return;
-  if (busy) {
-    btn.classList.add('loading');
-    btn.setAttribute('aria-busy', 'true');
-    const label = btn.querySelector('.sync-btn-label');
-    if (label) label.textContent = 'Syncing...';
-  } else {
-    btn.classList.remove('loading');
-    btn.removeAttribute('aria-busy');
-    const label = btn.querySelector('.sync-btn-label');
-    if (label) label.textContent = 'Sync All';
-  }
-}
+// Removed duplicate setBtnBusy definition (see below for correct version)
 
 if (els.syncAll) {
   els.syncAll.addEventListener('click', async () => {

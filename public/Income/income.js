@@ -1,5 +1,4 @@
 // --- Sync Button Animation & Loading State ---
-// Removed duplicate setBtnBusy definition (see below for correct version)
 
 if (els.syncAll) {
   els.syncAll.addEventListener('click', async () => {
