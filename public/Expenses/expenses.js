@@ -1,19 +1,8 @@
 // --- Sync Button Animation & Loading State ---
 // Removed duplicate setBtnBusy definition (see below for correct version)
 
-if (els.syncAll) {
-  els.syncAll.addEventListener('click', async () => {
-    setSyncButtonLoading(true);
-    try {
-      // Simulate sync delay (replace with actual sync logic)
-      await new Promise(r => setTimeout(r, 2000));
-      toast('Sync complete!');
-    } catch (e) {
-      toast('Sync failed.');
-    }
-    setSyncButtonLoading(false);
-  });
-}
+// --- Sync Button Animation & Loading State ---
+// (syncAll event listener moved below els initialization)
 // public/Expenses/expenses.js
 // ----------------------------------------------------
 // Expenses page controller
@@ -858,9 +847,7 @@ function wireUI() {
   // ensure starting icon
   // Do not overwrite the button's HTML; let the markup in expenses.html control the icon and text.
   els.syncAll?.addEventListener('click', async () => {
-    if (!UID) return;
-  // Add spinning class to the SVG icon and change text to 'Syncing...'
-  setBtnBusy(els.syncAll, true);
+    setBtnBusy(els.syncAll, true);
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
       toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
@@ -869,8 +856,7 @@ function wireUI() {
       console.error(e);
       toast('Sync failed');
     } finally {
-  // Remove spinning class and restore text
-  setBtnBusy(els.syncAll, false);
+      setBtnBusy(els.syncAll, false);
     }
   });
 

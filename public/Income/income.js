@@ -1,18 +1,7 @@
 // --- Sync Button Animation & Loading State ---
 
-if (els.syncAll) {
-  els.syncAll.addEventListener('click', async () => {
-    setSyncButtonLoading(true);
-    try {
-      // Simulate sync delay (replace with actual sync logic)
-      await new Promise(r => setTimeout(r, 2000));
-      toast('Sync complete!');
-    } catch (e) {
-      toast('Sync failed.');
-    }
-    setSyncButtonLoading(false);
-  });
-}
+// --- Sync Button Animation & Loading State ---
+// (syncAll event listener moved below els initialization)
 // public/Income/income.js
 // ----------------------------------------------------
 // Income page controller
@@ -701,21 +690,10 @@ function wireUI() {
   els.syncAll.classList.add('sync-btn');
   if (els.syncAll && !els.syncAll.querySelector('.sync-icon')) els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">';
   els.syncAll?.addEventListener('click', async () => {
-    if (!UID) return;
     setBtnBusy(els.syncAll, true);
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
       toast(`Synced ${count} account${count===1?'':'s'}  +${added} ~${modified} -${removed}`);
-      await loadAllTransactions(UID);
-    } catch (e) {
-      console.error(e);
-      toast('Sync failed');
-    } finally {
-      setBtnBusy(els.syncAll, false);
-    }
-    try {
-      const { added, modified, removed, count } = await syncAllItems(UID);
-  toast(`Synced ${count} account${count===1?'':'s'}  +${added} ~${modified} -${removed}`);
       await loadAllTransactions(UID);
     } catch (e) {
       console.error(e);
