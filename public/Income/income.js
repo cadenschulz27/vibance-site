@@ -871,7 +871,16 @@ function init() {
   onAuthStateChanged(auth, async (user) => {
     if (!user) return; UID = user.uid;
     try {
-      if (AUTO_FIRST_SYNC) { if (els.syncAll) { els.syncAll.disabled = true; els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Syncing" class="sync-icon spinning">'; } try { await syncAllItems(UID); } catch(e){ console.warn('Auto first sync failed', e); } finally { if (els.syncAll) { els.syncAll.disabled = false; els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">'; } } }
+      if (AUTO_FIRST_SYNC && els.syncAll) {
+        els.syncAll.textContent = 'Syncing...';
+        els.syncAll.disabled = true;
+        try { await syncAllItems(UID); }
+        catch(e) { console.warn('Auto first sync failed', e); }
+        finally {
+          els.syncAll.textContent = 'Sync All';
+          els.syncAll.disabled = false;
+        }
+      }
       await loadAllTransactions(UID);
       await loadSavedFilters(UID);
       toast('Income loaded');
