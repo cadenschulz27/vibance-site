@@ -23,7 +23,7 @@ const PAGE_SIZE = 25;
 const AUTO_FIRST_SYNC = true;
 
 const els = {
-  syncAll: document.getElementById('sync-all-income'),
+  syncAll: document.getElementById('sync-all'),
   manualOpen: document.getElementById('open-manual-income'),
   manualModal: document.getElementById('income-manual-modal'),
   manualOverlay: document.getElementById('income-manual-overlay'),
@@ -687,8 +687,24 @@ function wireUI() {
   els.next?.addEventListener('click', () => { const total = FILTERED.length; if (PAGE * PAGE_SIZE < total) { PAGE++; render(); } });
   els.syncAll?.setAttribute('title', 'Sync accounts');
   els.syncAll?.setAttribute('aria-label', 'Sync accounts');
-  els.syncAll.classList.add('sync-btn');
-  if (els.syncAll && !els.syncAll.querySelector('.sync-icon')) els.syncAll.innerHTML = '<img src="/images/sync-icon.svg" alt="Sync" class="sync-icon">';
+  if (els.syncAll) {
+    els.syncAll.addEventListener('click', async () => {
+      els.syncAll.textContent = 'Syncing...';
+      els.syncAll.disabled = true;
+
+      try {
+        const { added, modified, removed, count } = await syncAllItems(UID);
+        toast(`Synced ${count} income source${count === 1 ? '' : 's'}  +${added} • ~${modified} • –${removed}`);
+        await loadAllIncomes(UID);  // refresh the table/list
+      } catch (err) {
+        console.error('Income sync failed:', err);
+        toast('Sync failed');
+      } finally {
+        els.syncAll.textContent = 'Sync All';
+        els.syncAll.disabled = false;
+      }
+    });
+  }
   els.syncAll?.addEventListener('click', async () => {
     setBtnBusy(els.syncAll, true);
     try {
