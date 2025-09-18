@@ -620,7 +620,7 @@ function applyFilters() {
   if (maxAmt != null && !Number.isNaN(maxAmt)) out = out.filter(r => r.amount <= maxAmt);
 
   // Expenses tab: show only outflows (positive amounts in Plaid polarity)
-  out = out.filter(r => r.amount > 0);
+  out = out.filter(r => r.amount < 0);
 
   if (VIEW_ARCHIVE) out = out.filter(r => r.archived);
   else out = out.filter(r => !r.archived);
@@ -927,6 +927,12 @@ function init() {
       await loadSavedFilters(UID);
       console.log('DEBUG: ALL_ITEMS', ALL_ITEMS);
       console.log('DEBUG: ALL_TX', ALL_TX);
+      if (ALL_TX.length) {
+        console.log('DEBUG: First transaction', ALL_TX[0]);
+        console.log('DEBUG: Transaction fields', Object.keys(ALL_TX[0]));
+      } else {
+        console.log('DEBUG: No transactions loaded');
+      }
       toast('Transactions loaded');
       // Apply last preset if present
       let applied = false;

@@ -6,6 +6,7 @@
     "start": "npx http-server public -p 8080"
   },
   "dependencies": {
+    "@netlify/functions": "^4.2.5",
     "@sendgrid/mail": "^8.1.5",
     "firebase-admin": "^10.0.0",
     "node-fetch": "^2.7.0",
