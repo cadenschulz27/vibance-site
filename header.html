@@ -1,53 +1,62 @@
-<style>
-    /* Style for the navigation links */
-    .nav-link {
-        padding: 8px 16px;
-        border-radius: 9999px; /* pill shape */
-        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-        font-weight: 500;
-        color: #9CA3AF; /* gray-400 */
-    }
-
-    /* Style for the link of the currently active page */
-    .nav-link.active {
-        background-color: #374151; /* gray-700 */
-        color: #FFFFFF;
-    }
-
-    /* Hover effect for non-active links */
-    .nav-link:not(.active):hover {
-        background-color: #1F2937; /* gray-800 */
-        color: #D1D5DB; /* gray-300 */
-    }
-    /* Global safe areas for iPhone */
-    body { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
-</style>
-<header class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-gray-800">
-    <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-        <div class="flex items-center space-x-8">
-            <a href="../dashboard/dashboard.html" class="flex items-center space-x-3">
-                <img src="../images/logo_white.png" alt="Vibance Logo" class="h-8 w-8">
-                <span class="text-xl font-bold">Vibance</span>
+<!-- Unified header uses the same markup as public/components/header.html -->
+<!-- Include /components/header.js in pages; this file kept for legacy includes -->
+<header id="app-header" class="fixed inset-x-0 top-0 z-50 border-b border-neutral-900/70 bg-black/70 backdrop-blur supports-[backdrop-filter]:bg-black/50" role="banner">
+    <div class="mx-auto max-w-7xl px-4">
+        <div class="h-16 flex items-center justify-between gap-3">
+            <a id="brand-link" href="/dashboard/dashboard.html" class="flex items-center gap-3 shrink-0" aria-label="Vibance Home">
+                <img id="brand-logo" src="/images/logo_white.png" alt="Vibance Logo" class="h-10 w-10 rounded" />
+                <span class="text-white font-semibold tracking-tight text-2xl md:text-3xl" style="line-height:1.1">Vibance</span>
             </a>
-            <!-- FIX: Added navigation links -->
-            <nav class="hidden md:flex items-center space-x-2">
-                <a id="nav-dashboard" href="../dashboard/dashboard.html" class="nav-link">Dashboard</a>
-                <a id="nav-expenses" href="../Expenses/expenses.html" class="nav-link">Expenses</a>
-                <a id="nav-budgeting" href="../Budgeting/budgeting.html" class="nav-link">Budgeting-nig</a>
-                <a id="nav-social" href="../Social/social.html" class="nav-link">Social</a>
+            <nav id="desktop-nav" class="hidden md:flex items-center gap-1 text-sm" aria-label="Primary">
+                <a id="nav-dashboard" href="/dashboard/dashboard.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Dashboard</a>
+                <a id="nav-expenses"  href="/Expenses/expenses.html"  class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expenses</a>
+                <a id="nav-income"    href="/Income/income.html"      class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Income</a>
+                <a id="nav-budgeting" href="/Budgeting/budgeting.html" class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Budgeting</a>
+                <a id="nav-community" href="/Social/social.html"        class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Social</a>
+                <a id="nav-literacy"  href="/Literacy/literacy.html"     class="nav-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Literacy</a>
             </nav>
-        </div>
-        <div class="flex items-center space-x-4">
-            <span id="user-welcome" class="text-sm text-gray-300 hidden md:block">Welcome!</span>
-            <div class="relative">
-                <button id="profile-button" class="block">
-                    <img src="https://placehold.co/40x40/374151/FFFFFF?text=P" alt="User Profile" class="h-8 w-8 rounded-full bg-gray-700">
-                </button>
-                <div id="logout-menu" class="hidden absolute right-0 mt-2 w-48 bg-[#1C1C1E] rounded-md shadow-lg py-1 z-50">
-                    <a href="../pages/profile.html" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Profile</a>
-                    <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Log Out</a>
+            <div class="flex items-center gap-2">
+                <div id="auth-actions" class="flex items-center gap-2">
+                    <a href="/login.html"  class="px-3 py-1.5 rounded-lg text-sm text-neutral-200 hover:bg-neutral-900">Log in</a>
+                    <a href="/signup.html" class="px-3 py-1.5 rounded-lg text-sm font-medium text-black bg-[var(--neon,#CCFF00)] hover:opacity-90">Sign up</a>
                 </div>
+                <div id="user-menu" class="hidden relative">
+                    <button id="user-menu-button" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon,#CCFF00)]" aria-haspopup="menu" aria-expanded="false">
+                        <img id="user-avatar" class="h-8 w-8 rounded-full object-cover border border-neutral-800" src="/images/logo_white.png" alt="Your avatar" />
+                        <span id="user-name" class="hidden md:inline text-sm text-neutral-200 max-w-[16ch] truncate"></span>
+                        <svg class="h-4 w-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+                    </button>
+                    <div id="user-pop" class="absolute right-0 mt-2 w-56 rounded-xl border border-neutral-800 bg-neutral-950 shadow-xl p-1 hidden" role="menu" aria-labelledby="user-menu-button"></div>
+                </div>
+                <button id="btn-mobile" class="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon,#CCFF00)]" aria-label="Open menu" aria-controls="mobile-panel" aria-expanded="false">
+                    <svg class="h-5 w-5 text-neutral-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
             </div>
         </div>
     </div>
+    <div id="mobile-panel" class="md:hidden hidden border-t border-neutral-900/70 bg-black/85 backdrop-blur" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+        <nav class="p-3 space-y-1 text-sm">
+            <div id="m-auth-actions" class="space-y-1">
+                <a href="/login.html"  class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Log in</a>
+                <a href="/signup.html" class="block px-3 py-2 rounded-lg bg-[var(--neon,#CCFF00)] text-black font-medium hover:opacity-90">Sign up</a>
+            </div>
+            <div id="m-user-actions" class="hidden space-y-1">
+                <a href="/dashboard/dashboard.html" class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Dashboard</a>
+                <a href="/Expenses/expenses.html"    class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Expenses</a>
+                <a href="/Income/income.html"        class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Income</a>
+                <a href="/Budgeting/budgeting.html"  class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Budgeting</a>
+                <a href="/Social/social.html"        class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Social</a>
+                <a href="/Literacy/literacy.html"     class="mnav-link block px-3 py-2 rounded-lg hover:bg-neutral-900">Literacy</a>
+                <hr class="my-1 border-neutral-800" />
+                <a href="/Social/user-profile.html"  class="block px-3 py-2 rounded-lg hover:bg-neutral-900">My Profile</a>
+                <a href="/pages/profile.html"        class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Settings</a>
+                <button id="m-btn-signout" class="w-full text-left mt-1 px-3 py-2 rounded-lg text-red-300 hover:bg-neutral-900">Log out</button>
+            </div>
+        </nav>
+    </div>
 </header>
+<style>
+    :root { --neon:#CCFF00; }
+    .nav-link.active, .mnav-link.active { background: var(--neon); color:#0a0a0a; }
+    .nav-link.active:hover, .mnav-link.active:hover { background: var(--neon); color:#0a0a0a; }
+</style>
