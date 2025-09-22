@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Bump this to force refetch of header assets when structure changes
-const HEADER_VERSION = 'v26';
+const HEADER_VERSION = 'v27';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
@@ -27,37 +27,45 @@ function lastInitialFrom(profile, displayName) {
 
 function setActiveNav(root) {
   const path = (location.pathname || '').toLowerCase();
+  console.log(`[Header] Checking path: "${path}"`);
+
   const pairs = [
-    [/\/dashboard\//, '#nav-dashboard'],
-    [/\/expenses\//,  '#nav-expenses'],
-    [/\/income\//,    '#nav-income'],
-    [/\/budgeting\//, '#nav-budgeting'],
-    [/\/social\//,    '#nav-community'],
-    [/\/literacy\//,  '#nav-literacy'],
+    ['/dashboard', '#nav-dashboard'],
+    ['/expenses',  '#nav-expenses'],
+    ['/income',    '#nav-income'],
+    ['/budgeting', '#nav-budgeting'],
+    ['/social',    '#nav-community'],
+    ['/literacy',  '#nav-literacy'],
   ];
-  const clear = sel => $$(sel, root).forEach(a => a.classList.remove('active'));
-  clear('.nav-link');
-  clear('.mnav-link');
+
+  // Clear previous active states
+  $$('.nav-link', root).forEach(a => a.classList.remove('active'));
+  $$('.mnav-link', root).forEach(a => a.classList.remove('active'));
+
   let matched = false;
-  for (const [re, id] of pairs) {
-    if (re.test(path)) {
+  for (const [urlPart, id] of pairs) {
+    if (path.startsWith(urlPart)) {
       const el = $(id, root);
       if (el) {
+        console.log(`[Header] Match found for "${urlPart}". Activating element:`, el);
         el.classList.add('active');
+        
+        // Also activate corresponding mobile link
         const text = el.textContent?.trim();
-        if (text) $$('.mnav-link', root).find(a => a.textContent.trim() === text)?.classList.add('active');
+        if (text) {
+          const mlink = $$('.mnav-link', root).find(a => a.textContent.trim() === text);
+          if (mlink) mlink.classList.add('active');
+        }
         matched = true;
+      } else {
+        console.error(`[Header] Element with ID "${id}" not found.`);
       }
-      break;
+      break; // Stop after first match
     }
   }
+
   if (!matched) {
-    // Fallback: highlight by href segment containing last path part
-    const seg = path.split('/').filter(Boolean).pop();
-    if (seg) {
-      const anchor = Array.from($$('#desktop-nav a', root)).find(a => a.getAttribute('href')?.toLowerCase().includes(`/${seg}`));
-      if (anchor) anchor.classList.add('active');
-    }
+    console.warn('[Header] No active navigation tab found for this page.');
   }
 }
 

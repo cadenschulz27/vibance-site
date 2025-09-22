@@ -1,1 +1,1 @@
-git add -A && git commit -m "Update files" && git push origin main
+git add -A && git commit -m "Update Files" && git push origin main
