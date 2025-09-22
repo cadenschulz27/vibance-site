@@ -5,30 +5,8 @@
 // inside Netlify with proper service account (or use existing admin wrapper).
 // ------------------------------------------------------------
 
-// Switch to direct firebase-admin usage (consistent with plaid-sync) for auth verification
-const { initializeApp, cert, getApps } = require('firebase-admin/app');
-const { getAuth } = require('firebase-admin/auth');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore'); // FieldValue re-exported via getAdmin
-
-function envRequired(key) {
-  const v = process.env[key];
-  if (!v) throw new Error('Missing env var ' + key);
-  return v;
-}
-
-function getAdmin() {
-  if (!getApps().length) {
-    const privateKey = envRequired('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n');
-    initializeApp({
-      credential: cert({
-        projectId: envRequired('FIREBASE_PROJECT_ID'),
-        clientEmail: envRequired('FIREBASE_CLIENT_EMAIL'),
-        privateKey,
-      })
-    });
-  }
-  return { auth: getAuth(), db: getFirestore(), FieldValue };
-}
+// Use shared firebase-admin wrapper (supports multiple env var styles)
+const { auth: adminAuth, db, FieldValue } = require('../lib/firebase-admin');
 
 function periodKeyFromDate(dateStr, periodType = 'monthly') {
   const d = new Date(dateStr);
@@ -55,23 +33,22 @@ exports.handler = async (event) => {
   if (mutationId && typeof mutationId !== 'string') return { statusCode: 400, body: 'mutationId must be string' };
 
   // Verify Firebase ID token
-  let authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+  const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
   if (!authHeader.startsWith('Bearer ')) {
-    return { statusCode: 401, body: 'Missing Authorization Bearer token' };
+    return json(401, { ok:false, error: 'missing-authorization', detail: 'Provide Authorization: Bearer <FirebaseIDToken>' });
   }
   const idToken = authHeader.substring(7).trim();
-  let adminCtx;
+  let decoded;
   try {
-    adminCtx = getAdmin();
-    const decoded = await adminCtx.auth.verifyIdToken(idToken);
-    if (decoded.uid !== userId) {
-      return { statusCode: 403, body: 'Token user mismatch' };
-    }
+    decoded = await adminAuth.verifyIdToken(idToken, true);
   } catch (e) {
-    return { statusCode: 401, body: 'Auth failed: ' + e.message };
+    return json(401, { ok:false, error: 'auth-failed', detail: e.message });
+  }
+  if (decoded.uid !== userId) {
+    return json(403, { ok:false, error: 'token-user-mismatch', tokenUid: decoded.uid, userId });
   }
 
-  const { db, FieldValue: FV } = adminCtx;
+  const FV = FieldValue;
 
   // Idempotency (optional mutationId)
   let mutRef;
@@ -85,7 +62,7 @@ exports.handler = async (event) => {
       }
   await mutRef.set({ status: 'pending', createdAt: FV.serverTimestamp() }, { merge: true });
     } catch (e) {
-      return { statusCode: 500, body: 'Idempotency check failed: ' + e.message };
+      return json(500, { ok:false, error: 'idempotency-check-failed', detail: e.message });
     }
   }
   const results = [];
@@ -136,7 +113,7 @@ exports.handler = async (event) => {
     if (mutationId && mutRef) {
   try { await mutRef.set({ status: 'failed', error: e.message, updatedAt: FV.serverTimestamp() }, { merge: true }); } catch (_) {}
     }
-    return { statusCode: 500, body: 'Batch commit failed: ' + e.message };
+    return json(500, { ok:false, error: 'batch-commit-failed', detail: e.message });
   }
 
   // Update summary doc (best-effort)
@@ -157,5 +134,19 @@ exports.handler = async (event) => {
   if (mutationId && mutRef) {
     try { await mutRef.set({ status: 'applied', appliedAt: FieldValue.serverTimestamp(), resultCount: results.length }, { merge: true }); } catch (_) {}
   }
-  return { statusCode: 200, body: JSON.stringify({ results, mutationId, applied: true }) };
+  return json(200, { ok:true, results, mutationId, applied: true });
 };
+
+// Simple JSON helper with permissive CORS (similar to plaid-sync)
+function json(status, data) {
+  return {
+    statusCode: status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Methods': 'OPTIONS, POST'
+    },
+    body: JSON.stringify(data)
+  };
+}
