@@ -181,32 +181,6 @@
 </head>
 <body class="bg-black text-white vb-anim-page">
     <style>
-    .archive-logo-btn img {
-      filter: drop-shadow(0 1px 2px #222);
-      transition: filter .2s;
-    }
-    .archive-logo-btn:hover img {
-      filter: drop-shadow(0 2px 4px #222) brightness(1.2);
-    }
-    .archive-logo-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(148,163,184,0.22);
-  background: linear-gradient(90deg, #23272f 60%, #18181b 100%);
-  color: #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  cursor: pointer;
-  transition: border-color .2s, background .2s, box-shadow .2s;
-    }
-    .archive-logo-btn:hover {
-      border-color: #a3e635;
-      background: linear-gradient(90deg, #23272f 40%, #23272f 100%);
-      box-shadow: 0 4px 12px rgba(163,230,53,0.08);
-    }
     .sync-all-btn {
       font-weight: 600;
       letter-spacing: 0.03em;
@@ -251,9 +225,7 @@
           <button id="open-manual-income" type="button" class="btn-manual">
             + Add Income
           </button>
-          <button id="income-archive-btn" type="button" class="archive-logo-btn" title="Archive">
-            <img src="/images/archive.svg" alt="Archive" />
-          </button>
+          <button id="toggle-income-archive" type="button" class="btn-income" aria-pressed="false" title="View archive">Archive</button>
           <a href="/Net/net.html?from=income" class="btn-net">
             Net Insight
           </a>
