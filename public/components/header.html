@@ -100,3 +100,44 @@
     font-weight: 600 !important;
   }
 </style>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const path = (location.pathname || '').toLowerCase();
+    const pairs = [
+      ['/dashboard/', '#nav-dashboard'],
+      ['/expenses/',  '#nav-expenses'],
+      ['/income/',    '#nav-income'],
+      ['/budgeting/', '#nav-budgeting'],
+      ['/social/',    '#nav-community'],
+      ['/literacy/',  '#nav-literacy'],
+    ];
+    
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+    const clear = sel => $$(sel).forEach(a => a.classList.remove('active'));
+    clear('.nav-link');
+    clear('.mnav-link');
+
+    let matched = false;
+    for (const [str, id] of pairs) {
+      if (path.includes(str)) {
+        const el = document.querySelector(id);
+        if (el) {
+          el.classList.add('active');
+          const text = el.textContent?.trim();
+          if (text) $$('.mnav-link').find(a => a.textContent.trim() === text)?.classList.add('active');
+          matched = true;
+        }
+        break;
+      }
+    }
+
+    if (!matched) {
+      const seg = path.split('/').filter(Boolean).pop();
+      if (seg) {
+        const anchor = Array.from(document.querySelectorAll('#desktop-nav a')).find(a => a.getAttribute('href')?.toLowerCase().includes(`/${seg}`));
+        if (anchor) anchor.classList.add('active');
+      }
+    }
+  });
+</script>
