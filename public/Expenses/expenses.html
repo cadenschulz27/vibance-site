@@ -42,32 +42,6 @@
   color: #fee2e2;
   cursor: wait;
 }
-/* --- Unified Green Gradient Button (for Sync All & other neutral CTAs) --- */
-.btn-green {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5em;
-  padding: 0.6rem 1.15rem;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #222;
-  background: linear-gradient(135deg, #CCFF00 0%, #A3FF00 100%);
-  box-shadow: 0 14px 30px rgba(204,255,0,0.18);
-  border: none;
-  transition: transform .18s, box-shadow .22s, opacity .18s, background .18s;
-}
-.btn-green:hover {
-  transform: translateY(-1px);
-  background: linear-gradient(135deg, #E6FF66 0%, #CCFF00 100%);
-  box-shadow: 0 18px 40px rgba(204,255,0,0.22);
-}
-.btn-green:active { opacity:0.85; }
-.btn-green.syncing {
-  background: linear-gradient(135deg, #64748b 0%, #CCFF00 100%);
-  color: #222;
-  cursor: wait;
-}
     :root { color-scheme: dark; --neon:#CCFF00; --vb-border:#222226; --vb-border-2:#2d2f33; --vb-panel-2:#0b0b0c; }
   html, body {
     background: #000;
@@ -397,7 +371,7 @@
           <button id="toggle-expense-archive" type="button" class="btn-expense" aria-pressed="false" title="View archive">
             Archive
           </button>
-          <button id="sync-all-expenses" type="button" class="btn-green" title="Sync all accounts" aria-label="Sync all accounts">
+          <button id="sync-all-expenses" type="button" class="btn-expense" title="Sync all accounts" aria-label="Sync all accounts">
             <span class="sync-btn-label">Sync All</span>
           </button>
         </div>
