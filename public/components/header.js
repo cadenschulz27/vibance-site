@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Bump this to force refetch of header assets when structure changes
-const HEADER_VERSION = 'v18';
+const HEADER_VERSION = 'v19';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
@@ -121,9 +121,25 @@ function applyTheme(theme) {
   // Basic light theme overrides (ensure body + cards flip)
   if (!dark) {
     document.body.classList.add('theme-light');
+    document.body.classList.remove('bg-black','text-white');
+    document.body.classList.add('bg-white','text-neutral-900');
   } else {
     document.body.classList.remove('theme-light');
+    document.body.classList.add('bg-black','text-white');
+    document.body.classList.remove('bg-white','text-neutral-900');
   }
+  // Adjust any primary containers with explicit dark backgrounds
+  $$('.glass').forEach(el => {
+    if (!dark) {
+      el.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.82), rgba(245,246,248,0.92))';
+      el.style.borderColor = '#d1d5db';
+      el.style.color = '#111827';
+    } else {
+      el.style.background = 'linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88))';
+      el.style.borderColor = 'var(--vb-border,#222226)';
+      el.style.color = '#fff';
+    }
+  });
 }
 
 // Signed-out/signed-in UI toggles
