@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Bump this to force refetch of header assets when structure changes
-const HEADER_VERSION = 'v16';
+const HEADER_VERSION = 'v17';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
@@ -128,7 +128,6 @@ function showSignedIn(root) {
   $('#btn-mobile', root)?.classList.remove('hidden');
   $('#user-menu', root)?.classList.remove('hidden');
   $('#m-user-actions', root)?.classList.remove('hidden');
-  $('#desktop-secondary', root)?.classList.remove('hidden');
 }
 
 // Dropdown wiring

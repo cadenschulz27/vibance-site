@@ -26,13 +26,6 @@
 
       <!-- Right cluster -->
   <div class="flex items-center gap-2">
-        <!-- Quick secondary nav (visible desktop when signed in) -->
-        <nav id="desktop-secondary" class="hidden md:flex items-center gap-1 text-xs text-neutral-400 pr-2" aria-label="User">
-          <a href="/Social/user-profile.html" class="px-2 py-1 rounded-md hover:bg-neutral-900 hover:text-white">My Profile</a>
-          <a href="/pages/profile.html"        class="px-2 py-1 rounded-md hover:bg-neutral-900 hover:text-white">Settings</a>
-          <a href="/Accounts/accounts.html"    class="px-2 py-1 rounded-md hover:bg-neutral-900 hover:text-white">Account Linkage</a>
-          <a href="/pages/support.html"        class="px-2 py-1 rounded-md hover:bg-neutral-900 hover:text-white">Help & Support</a>
-        </nav>
         <!-- Theme toggle -->
         <button id="btn-theme" class="inline-flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon,#CCFF00)]" title="Toggle theme" aria-label="Toggle theme">
           <svg id="icon-sun" class="h-4 w-4 text-neutral-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 6.364-1.414-1.414M8.05 8.05 6.636 6.636m10.728 0-1.414 1.414M8.05 15.95l-1.414 1.414"/></svg>
@@ -100,11 +93,12 @@
 <style>
   :root { --neon:#CCFF00; }
   .nav-link.active, .mnav-link.active {
-    background: var(--neon);
-    color: #0a0a0a;
+    background: linear-gradient(135deg, #CCFF00 0%, #A3FF00 100%);
+    color: #0b0b0b;
+    box-shadow: 0 6px 18px rgba(204,255,0,0.25);
   }
   .nav-link.active:hover, .mnav-link.active:hover {
-    background: var(--neon);
-    color:#0a0a0a;
+    background: linear-gradient(135deg, #E6FF66 0%, #CCFF00 100%);
+    color:#050505;
   }
 </style>
