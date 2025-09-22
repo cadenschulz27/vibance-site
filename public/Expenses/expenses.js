@@ -188,19 +188,26 @@ function openManualModal(record = null) {
       submitBtn.textContent = 'Save changes';
       submitBtn.dataset.prevText = 'Save changes';
     }
-
     if (els.manualName) els.manualName.value = record?.name || '';
     if (els.manualAmount) {
       const amountVal = Math.abs(Number(record?.amount || 0));
       els.manualAmount.value = amountVal ? amountVal.toFixed(2) : '';
     }
     if (els.manualDate) {
-  const iso = (record?.date && record.date.length >= 10) ? record.date.slice(0, 10) : '';
-    // Removed duplicate setBtnBusy definition (see below for correct version)
+      const iso = (record?.date && record.date.length >= 10) ? record.date.slice(0, 10) : new Date().toISOString().slice(0,10);
+      els.manualDate.value = iso;
+    }
+    if (els.manualCategory) els.manualCategory.value = record?.categoryUser || record?.categoryAuto || '';
+    if (els.manualNotes) els.manualNotes.value = record?.notes || '';
+    if (els.manualArchive) {
+      els.manualArchive.classList.remove('hidden');
+      els.manualArchive.textContent = isArchived ? 'Restore expense' : 'Archive expense';
+    }
+  } else {
     if (titleEl) titleEl.textContent = 'Record manual expense';
     if (subtitleEl) subtitleEl.textContent = 'Log outflows that haven’t synced yet so your spending stays complete.';
     if (submitBtn) {
-      setBtnBusy(els.syncAll, true);
+      submitBtn.textContent = 'Save expense';
       submitBtn.dataset.prevText = 'Save expense';
     }
     if (els.manualArchive) els.manualArchive.classList.add('hidden');
@@ -316,9 +323,10 @@ async function syncAllItems(uid) {
   for (const it of items) {
     try {
       const res = await callPlaidFn({ action: 'sync_transactions', item_id: it.id });
-      added += res?.addedCount || 0;
-      modified += res?.modifiedCount || 0;
-      removed += res?.removedCount || 0;
+      // Netlify function returns { added, modified, removed }
+      added += Number(res?.added || res?.addedCount || 0);
+      modified += Number(res?.modified || res?.modifiedCount || 0);
+      removed += Number(res?.removed || res?.removedCount || 0);
       count++;
     } catch (e) {
       console.error('Sync failed for item', it.id, e);
@@ -620,7 +628,7 @@ function applyFilters() {
   if (maxAmt != null && !Number.isNaN(maxAmt)) out = out.filter(r => r.amount <= maxAmt);
 
   // Expenses tab: show only outflows (positive amounts in Plaid polarity)
-  out = out.filter(r => r.amount < 0);
+  out = out.filter(r => r.amount > 0);
 
   if (VIEW_ARCHIVE) out = out.filter(r => r.archived);
   else out = out.filter(r => !r.archived);
@@ -959,7 +967,4 @@ function init() {
     }
   });
 }
-
-
 document.addEventListener('DOMContentLoaded', init);
-}
