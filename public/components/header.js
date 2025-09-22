@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Bump this to force refetch of header assets when structure changes
-const HEADER_VERSION = 'v19';
+const HEADER_VERSION = 'v20';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
@@ -107,40 +107,7 @@ async function ensureHeaderMarkup({ variant }) {
   return document.body;
 }
 
-// ---------------- Theme ----------------
-function applyTheme(theme) {
-  const root = document.documentElement;
-  const dark = theme !== 'light';
-  root.setAttribute('data-theme', dark ? 'dark' : 'light');
-  try { localStorage.setItem('vb_theme', dark ? 'dark' : 'light'); } catch {}
-  const logo = document.getElementById('brand-logo');
-  if (logo) logo.src = dark ? '/images/logo_white.png' : '/images/logo_black.png';
-  const sun = document.getElementById('icon-sun');
-  const moon = document.getElementById('icon-moon');
-  if (sun && moon) { sun.classList.toggle('hidden', !dark); moon.classList.toggle('hidden', dark); }
-  // Basic light theme overrides (ensure body + cards flip)
-  if (!dark) {
-    document.body.classList.add('theme-light');
-    document.body.classList.remove('bg-black','text-white');
-    document.body.classList.add('bg-white','text-neutral-900');
-  } else {
-    document.body.classList.remove('theme-light');
-    document.body.classList.add('bg-black','text-white');
-    document.body.classList.remove('bg-white','text-neutral-900');
-  }
-  // Adjust any primary containers with explicit dark backgrounds
-  $$('.glass').forEach(el => {
-    if (!dark) {
-      el.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.82), rgba(245,246,248,0.92))';
-      el.style.borderColor = '#d1d5db';
-      el.style.color = '#111827';
-    } else {
-      el.style.background = 'linear-gradient(180deg, rgba(24,24,27,0.72), rgba(10,10,10,0.88))';
-      el.style.borderColor = 'var(--vb-border,#222226)';
-      el.style.color = '#fff';
-    }
-  });
-}
+// Theme support removed – site now uses single default dark style
 
 // Signed-out/signed-in UI toggles
 function showSignedOut(root) {
@@ -251,26 +218,7 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
   // 3) Static nav highlighting (works even before auth)
   if (variant === 'app') setActiveNav(root);
 
-  // 3b) Theme setup (CSS + initial apply + toggle)
-  try {
-    if (!document.getElementById('vb-theme-link')) {
-      const link = document.createElement('link');
-      link.id = 'vb-theme-link';
-      link.rel = 'stylesheet';
-      link.href = '/shared/theme.css';
-      document.head.appendChild(link);
-    }
-  } catch {}
-  let initTheme = 'dark';
-  try {
-    initTheme = localStorage.getItem('vb_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-  } catch {}
-  applyTheme(initTheme);
-  const themeBtn = document.getElementById('btn-theme');
-  themeBtn?.addEventListener('click', () => {
-    const next = (document.documentElement.getAttribute('data-theme') === 'light') ? 'dark' : 'light';
-    applyTheme(next);
-  });
+  // Theme toggle removed: no initialization required
 
   // 4) Firebase
   const { auth, db } = await loadFirebase();
