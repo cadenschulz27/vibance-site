@@ -1,7 +1,18 @@
 <!-- public/components/header.html -->
 <header
   id="app-header"
-  class="fixed inset-x-0 top-0 z-50 border-b border-neutral-900/70 bg-black/70 backdrop-blur supports-[backdrop-filter]:bg-black/50"
+  class="fixed inset-x-0  #app-header .nav-link.active, #app-header .mnav-link.active {
+    background: linear-gradient(135deg, #CCFF00 0%, #A3FF00 100%);
+    color: #0b0b0b;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(204,255,0,0.25);
+  }
+  #app-header .nav-link.active:hover, #app-header .mnav-link.active:hover {
+    background: linear-gradient(135deg, #CCFF00 0%, #A3FF00 100%);
+    color: #0b0b0b;
+    font-weight: 600;
+  }border-b border-neutral-900/70 bg-black/70 backdrop-blur supports-[backdrop-filter]:bg-black/50"
   role="banner"
 >
   <div class="mx-auto max-w-7xl px-4">
@@ -97,47 +108,6 @@
   #app-header .nav-link.active:hover, #app-header .mnav-link.active:hover {
     background: linear-gradient(135deg, #CCFF00 0%, #A3FF00 100%) !important;
     color: #0b0b0b !important;
-    font-weight: 600 !important;
+    font-weight: 600;
   }
 </style>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const path = (location.pathname || '').toLowerCase();
-    const pairs = [
-      ['/dashboard/', '#nav-dashboard'],
-      ['/expenses/',  '#nav-expenses'],
-      ['/income/',    '#nav-income'],
-      ['/budgeting/', '#nav-budgeting'],
-      ['/social/',    '#nav-community'],
-      ['/literacy/',  '#nav-literacy'],
-    ];
-    
-    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-
-    const clear = sel => $$(sel).forEach(a => a.classList.remove('active'));
-    clear('.nav-link');
-    clear('.mnav-link');
-
-    let matched = false;
-    for (const [str, id] of pairs) {
-      if (path.includes(str)) {
-        const el = document.querySelector(id);
-        if (el) {
-          el.classList.add('active');
-          const text = el.textContent?.trim();
-          if (text) $$('.mnav-link').find(a => a.textContent.trim() === text)?.classList.add('active');
-          matched = true;
-        }
-        break;
-      }
-    }
-
-    if (!matched) {
-      const seg = path.split('/').filter(Boolean).pop();
-      if (seg) {
-        const anchor = Array.from(document.querySelectorAll('#desktop-nav a')).find(a => a.getAttribute('href')?.toLowerCase().includes(`/${seg}`));
-        if (anchor) anchor.classList.add('active');
-      }
-    }
-  });
-</script>
