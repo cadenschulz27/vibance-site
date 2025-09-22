@@ -92,6 +92,26 @@ service cloud.firestore {
         allow create, update, delete: if isOwner(uid) &&
           (request.resource.data.amount is number || !('amount' in request.resource.data));
       }
+
+      // Rollup aggregates (read-only to client; writes done by server Admin SDK)
+      match /rollups/{rollupId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
+      // Period summary docs (expense/income/net rollups)
+      match /rollup_summaries/{summaryId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
+      // Idempotency mutation ledger (client may read & optionally create reservations)
+      match /rollup_mutations/{mutationId} {
+        allow read: if isOwner(uid);
+        // Allow create so client could pre-reserve mutationId if needed
+        allow create: if isOwner(uid);
+        allow update, delete: if false;
+      }
     }
 
     match /usernames/{uname} {

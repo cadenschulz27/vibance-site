@@ -38,6 +38,8 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
+import fetch from 'node-fetch';
+import { buildAddDeltas, buildModifiedDeltas, buildRemovedDeltas, summarize } from './lib/rollup-delta.cjs';
 
 // ---------- Helpers ----------
 const json = (status, data, moreHeaders = {}) => ({
@@ -141,14 +143,27 @@ async function syncItem({ db, plaid, uid, itemDocRef, month }) {
   // removals: Plaid gives {transaction_id}, we don't need to month-filter — apply blindly
 
   // Upsert to Firestore
-  const batch = db.batch();
   const txCol = itemDocRef.collection('transactions');
+  // Build map of previous docs for modified & removed to derive deltas
+  const prevMap = new Map();
+  if (modified.length || removed.length) {
+    const prevIds = new Set();
+    modified.forEach(m => prevIds.add(m.transaction_id));
+    removed.forEach(r => prevIds.add(r.transaction_id));
+    const chunks = Array.from(prevIds);
+    for (let i = 0; i < chunks.length; i += 400) { // Firestore per batch get limit comfortable
+      const slice = chunks.slice(i, i + 400);
+      const snaps = await db.getAll(...slice.map(id => txCol.doc(id)));
+      snaps.forEach(s => { if (s.exists) prevMap.set(s.id, s.data()); });
+    }
+  }
+
+  const batch = db.batch();
   let writeCount = 0;
   for (const t of keepAdd.concat(keepMod)) {
     const id = t.transaction_id;
     const ref = txCol.doc(id);
     batch.set(ref, {
-      // store the useful surface; you can add more fields if you use them elsewhere
       amount: t.amount,
       name: t.name,
       merchant_name: t.merchant_name || null,
@@ -165,22 +180,35 @@ async function syncItem({ db, plaid, uid, itemDocRef, month }) {
     }, { merge: true });
     writeCount++;
   }
-
   let removeCount = 0;
   for (const r of removed) {
     const ref = txCol.doc(r.transaction_id);
     batch.delete(ref);
     removeCount++;
   }
-
-  // Save cursor + last_synced at item level
-  batch.set(itemDocRef, {
-    cursor,
-    last_synced: FieldValue.serverTimestamp(),
-  }, { merge: true });
-
+  batch.set(itemDocRef, { cursor, last_synced: FieldValue.serverTimestamp() }, { merge: true });
   await batch.commit();
-  return { written: writeCount, removed: removeCount, cursor, skipped: false };
+
+  // Construct rollup deltas
+  // Wrap previous snapshots into Plaid-like shape to reuse delta builder
+  const prevAugmented = new Map();
+  prevMap.forEach((v, k) => {
+    prevAugmented.set(k, { transaction_id: k, ...v });
+  });
+  const addDeltas = buildAddDeltas(keepAdd);
+  const modDeltas = buildModifiedDeltas(keepMod, prevAugmented);
+  const remDeltas = buildRemovedDeltas(removed, prevAugmented);
+  const deltas = [...addDeltas, ...modDeltas, ...remDeltas];
+  const deltaSummary = summarize(deltas);
+
+  return {
+    written: writeCount,
+    removed: removeCount,
+    cursor,
+    skipped: false,
+    deltas,
+    deltaSummary,
+  };
 }
 
 // ---------- Handler ----------
@@ -221,17 +249,34 @@ export const handler = async (event) => {
     let totalRemoved = 0;
     let lastCursorSaved = null;
 
+    let allDeltas = [];
     for (const docSnap of itemsSnap.docs) {
-      const res = await syncItem({
-        db, plaid, uid,
-        itemDocRef: docSnap.ref,
-        month,
-      });
+      const res = await syncItem({ db, plaid, uid, itemDocRef: docSnap.ref, month });
       if (!res.skipped) {
         itemsProcessed++;
         totalWritten += res.written;
         totalRemoved += res.removed;
         lastCursorSaved = res.cursor || lastCursorSaved;
+        if (res.deltas?.length) allDeltas = allDeltas.concat(res.deltas);
+      }
+    }
+
+    // Send batched rollup deltas (single request) if any
+    let rollupApplied = false; let rollupError = null;
+    if (allDeltas.length) {
+      try {
+        // Forward same caller token (already verified) for rollup-update auth consistency
+        const callerAuth = event.headers?.authorization || event.headers?.Authorization || '';
+        const resp = await fetch(`${process.env.ROLLUP_FUNCTION_URL || 'http://localhost/.netlify/functions/rollup-update'}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(callerAuth ? { Authorization: callerAuth } : {}) },
+          body: JSON.stringify({ userId: uid, deltas: allDeltas })
+        });
+        if (!resp.ok) throw new Error(`rollup-update ${resp.status}`);
+        rollupApplied = true;
+      } catch (e) {
+        rollupError = e.message;
+        console.warn('[plaid-sync] rollup apply failed', e);
       }
     }
 
@@ -242,6 +287,9 @@ export const handler = async (event) => {
       txWritten: totalWritten,
       txRemoved: totalRemoved,
       lastCursorSaved,
+      deltas: allDeltas.length,
+      rollupApplied,
+      rollupError,
     });
   } catch (err) {
     console.error('[plaid-sync] error', err);

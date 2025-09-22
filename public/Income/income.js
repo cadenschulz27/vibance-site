@@ -12,6 +12,12 @@
 // ----------------------------------------------------
 
 import { auth, db } from '../api/firebase.js';
+import {
+  createManualTransaction,
+  updateManualTransaction,
+  upsertOverride,
+  normalizeIncomeRow,
+} from '../shared/transactions.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   collection, getDocs, doc, getDoc, setDoc, addDoc,
@@ -253,6 +259,9 @@ async function syncAllItems(uid) {
   for (const it of items) {
     const res = await callPlaidFn({ action: 'sync_transactions', item_id: it.id });
     added += Number(res?.added || 0); modified += Number(res?.modified || 0); removed += Number(res?.removed || 0); count++;
+    if (res?.rollupApplied) {
+      console.log('[Income] Rollup deltas applied server-side for item', it.id, 'deltas:', res?.deltas);
+    }
   }
   return { added, modified, removed, count };
 }
@@ -734,135 +743,85 @@ function wireUI() {
   els.manualOpen?.addEventListener('click', () => openManualModal());
   els.manualClose?.addEventListener('click', () => closeManualModal());
   els.manualOverlay?.addEventListener('click', () => closeManualModal());
-  els.manualForm?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!UID) {
-      showManualError('Sign in to add manual income.');
-      return;
-    }
-    const name = (els.manualName?.value || '').trim();
-    const amountVal = parseFloat(els.manualAmount?.value || '');
-    const dateVal = els.manualDate?.value || '';
-    const categoryVal = (els.manualCategory?.value || '').trim();
-    const notesVal = (els.manualNotes?.value || '').trim();
-
-    if (!name) { showManualError('Enter a description for the income.'); els.manualName?.focus(); return; }
-    if (!Number.isFinite(amountVal) || amountVal <= 0) { showManualError('Enter a positive amount.'); els.manualAmount?.focus(); return; }
-    if (!dateVal) { showManualError('Select a date for the income.'); els.manualDate?.focus(); return; }
-
-    showManualError('');
-    const submitBtn = document.getElementById('income-manual-submit');
-    if (submitBtn) submitBtn.dataset.prevText = manualMode === 'create' ? 'Save income' : 'Save changes';
-    setBtnBusy(submitBtn, manualMode === 'create' ? 'Recording…' : 'Saving…', true);
-    try {
-      const normalizedAmount = Number(Math.abs(amountVal).toFixed(2));
-      if (manualMode === 'create') {
-        const payload = {
-          type: 'income',
-          name,
-          amount: normalizedAmount,
-          date: dateVal,
-          category: categoryVal,
-          notes: notesVal,
-          currency: 'USD',
-          archived: false,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-          account: 'Manual entry',
-        };
-        await addDoc(collection(db, 'users', UID, 'manual_entries'), payload);
-        closeManualModal();
-        toast('Income recorded');
-      } else if (editingRecord?.manual) {
-        const ref = doc(db, 'users', UID, 'manual_entries', editingRecord.id);
-        await setDoc(ref, {
-          name,
-          amount: normalizedAmount,
-          date: dateVal,
-          category: categoryVal,
-          notes: notesVal,
-          archived: !!editingRecord.archived,
-          updatedAt: Timestamp.now(),
-        }, { merge: true });
-        closeManualModal();
-        toast('Income updated');
-      } else if (editingRecord) {
-        const key = overrideKey(editingRecord.itemId, editingRecord.id);
-        const ref = doc(db, 'users', UID, 'transaction_overrides', key);
-        const payload = {
-          type: 'income',
-          name,
-          amount: normalizedAmount,
-          date: dateVal,
-          category: categoryVal,
-          notes: notesVal,
-          currency: 'USD',
-          archived: !!editingRecord.archived,
-          updatedAt: Timestamp.now(),
-        };
-        if (!editingRecord.override) {
-          payload.createdAt = Timestamp.now();
-          if (!payload.category) payload.category = editingOriginal?.categoryUser || editingOriginal?.categoryAuto || '';
-          if (!payload.name) payload.name = editingOriginal?.name || '';
-          if (!payload.date) payload.date = editingOriginal?.date || (editingOriginal?._epoch ? new Date(editingOriginal._epoch).toISOString().slice(0, 10) : dateVal);
-          if (!payload.notes) payload.notes = editingOriginal?.notes || '';
-          if (!Number.isFinite(payload.amount) || !payload.amount) payload.amount = Math.abs(Number(editingOriginal?.amount || 0));
-          payload.currency = editingOriginal?.isoCurrency || payload.currency;
+  if (els.manualForm) {
+    els.manualForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!UID) { showManualError('Sign in to add manual income.'); return; }
+      const name = (els.manualName?.value || '').trim();
+      const amountVal = parseFloat(els.manualAmount?.value || '');
+      const dateVal = (els.manualDate?.value || '').slice(0,10);
+      const categoryVal = (els.manualCategory?.value || '').trim();
+      const notesVal = (els.manualNotes?.value || '').trim();
+      if (!name) { showManualError('Enter a description.'); els.manualName?.focus(); return; }
+      if (!Number.isFinite(amountVal) || amountVal <= 0) { showManualError('Enter a positive amount.'); els.manualAmount?.focus(); return; }
+      if (!dateVal) { showManualError('Select a date.'); els.manualDate?.focus(); return; }
+      showManualError('');
+      const submitBtn = document.getElementById('income-manual-submit');
+      if (submitBtn) submitBtn.dataset.prevText = manualMode === 'create' ? 'Save income' : 'Save changes';
+      setBtnBusy(submitBtn, manualMode === 'create' ? 'Recording…' : 'Saving…', true);
+      try {
+        if (manualMode === 'create') {
+          await createManualTransaction({
+            type: 'income', name, amount: amountVal, date: dateVal,
+            category: categoryVal, notes: notesVal, currency: 'USD'
+          });
+          closeManualModal(); toast('Income recorded');
+        } else if (editingRecord?.manual) {
+          await updateManualTransaction(editingRecord.id, {
+            name, amount: amountVal, date: dateVal, category: categoryVal, notes: notesVal, archived: !!editingRecord.archived
+          });
+          closeManualModal(); toast('Income updated');
+        } else if (editingRecord) {
+          await upsertOverride({
+            itemId: editingRecord.itemId,
+            txId: editingRecord.id,
+            type: 'income',
+            name, amount: amountVal, date: dateVal,
+            category: categoryVal, notes: notesVal,
+            archived: !!editingRecord.archived,
+            currency: 'USD',
+            original: editingOriginal,
+          });
+          closeManualModal(); toast('Income updated');
         }
-        await setDoc(ref, payload, { merge: true });
-        closeManualModal();
-        toast('Income updated');
+        await loadAllTransactions(UID);
+      } catch (e) {
+        console.error('Manual income failed', e);
+        showManualError('Could not save income. Please try again.');
+      } finally {
+        setBtnBusy(submitBtn, '', false);
       }
-      await loadAllTransactions(UID);
-    } catch (error) {
-      console.error('Manual income failed', error);
-      showManualError('Could not save income. Please try again.');
-    } finally {
-      setBtnBusy(submitBtn, '', false);
-    }
-  });
+    });
+  }
 
-  els.manualArchive?.addEventListener('click', async () => {
-    if (!UID || !editingRecord) return;
-    const newArchived = !editingRecord.archived;
-    const archiveBtn = els.manualArchive;
-    if (!archiveBtn) return;
-    archiveBtn.disabled = true;
-    archiveBtn.textContent = newArchived ? 'Archiving…' : 'Restoring…';
-    try {
-      if (editingRecord.manual) {
-        const ref = doc(db, 'users', UID, 'manual_entries', editingRecord.id);
-        await setDoc(ref, { archived: newArchived, updatedAt: Timestamp.now() }, { merge: true });
-      } else {
-        const key = overrideKey(editingRecord.itemId, editingRecord.id);
-        const ref = doc(db, 'users', UID, 'transaction_overrides', key);
-        const payload = {
-          type: 'income',
-          archived: newArchived,
-          updatedAt: Timestamp.now(),
-        };
-        if (!editingRecord.override) {
-          payload.createdAt = Timestamp.now();
-          payload.name = editingOriginal?.name || '';
-          payload.amount = Math.abs(Number(editingOriginal?.amount || 0));
-          payload.date = editingOriginal?.date || (editingOriginal?._epoch ? new Date(editingOriginal._epoch).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
-          payload.category = editingOriginal?.categoryUser || editingOriginal?.categoryAuto || '';
-          payload.notes = editingOriginal?.notes || '';
-          payload.currency = editingOriginal?.isoCurrency || 'USD';
+  if (els.manualArchive) {
+    els.manualArchive.addEventListener('click', async () => {
+      if (!UID || !editingRecord) return;
+      const newArchived = !editingRecord.archived;
+      const archiveBtn = els.manualArchive; archiveBtn.disabled = true; archiveBtn.textContent = newArchived ? 'Archiving…' : 'Restoring…';
+      try {
+        if (editingRecord.manual) {
+          await updateManualTransaction(editingRecord.id, { archived: newArchived });
+        } else {
+          await upsertOverride({
+            itemId: editingRecord.itemId,
+            txId: editingRecord.id,
+            type: 'income',
+            archived: newArchived,
+            original: editingOriginal,
+          });
         }
-        await setDoc(ref, payload, { merge: true });
+        closeManualModal();
+        toast(newArchived ? 'Income archived' : 'Income restored');
+        await loadAllTransactions(UID);
+      } catch (e) {
+        console.error('Archive toggle failed', e);
+        showManualError('Unable to update archive state.');
+      } finally {
+        archiveBtn.disabled = false; archiveBtn.textContent = newArchived ? 'Restore income' : 'Archive income';
       }
-      closeManualModal();
-      toast(newArchived ? 'Income archived' : 'Income restored');
-      await loadAllTransactions(UID);
-    } catch (error) {
-      console.error('Archive toggle failed', error);
-      showManualError('Unable to update archive state.');
-      archiveBtn.disabled = false;
-      archiveBtn.textContent = newArchived ? 'Archive income' : 'Restore income';
-      return;
-    }
-  });
+    });
+  }
 
 }
 

@@ -13,6 +13,12 @@
 // ----------------------------------------------------
 
 import { auth, db } from '../api/firebase.js';
+import {
+  createManualTransaction,
+  updateManualTransaction,
+  upsertOverride,
+  normalizeExpenseRow,
+} from '../shared/transactions.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   collection, getDocs, doc, getDoc, setDoc, addDoc,
@@ -328,6 +334,9 @@ async function syncAllItems(uid) {
       modified += Number(res?.modified || res?.modifiedCount || 0);
       removed += Number(res?.removed || res?.removedCount || 0);
       count++;
+      if (res?.rollupApplied) {
+        console.log('[Expenses] Rollup deltas applied server-side for item', it.id, 'deltas:', res?.deltas);
+      }
     } catch (e) {
       console.error('Sync failed for item', it.id, e);
     }
@@ -895,6 +904,104 @@ function wireUI() {
     console.warn('DEBUG: Archive button NOT found');
   }
   if (!els.syncAll) console.warn('DEBUG: Sync All button NOT found');
+
+  // -------------------- Manual Form Submit (Refactored) --------------------
+  if (els.manualForm) {
+    els.manualForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!UID) { showManualError('Sign in to save.'); return; }
+      const name = (els.manualName?.value || '').trim();
+      const amountVal = parseFloat(els.manualAmount?.value || '');
+      const dateVal = (els.manualDate?.value || '').slice(0,10);
+      const categoryVal = (els.manualCategory?.value || '').trim();
+      const notesVal = (els.manualNotes?.value || '').trim();
+      if (!name) { showManualError('Enter a description.'); els.manualName?.focus(); return; }
+      if (!Number.isFinite(amountVal) || amountVal <= 0) { showManualError('Enter a positive amount.'); els.manualAmount?.focus(); return; }
+      if (!dateVal) { showManualError('Select a date.'); els.manualDate?.focus(); return; }
+      showManualError('');
+      const submitBtn = document.getElementById('expense-manual-submit');
+      if (submitBtn) submitBtn.dataset.prevText = manualMode === 'create' ? 'Save expense' : 'Save changes';
+      setBtnBusy(submitBtn, manualMode === 'create' ? 'Recording…' : 'Saving…', true);
+      try {
+        if (manualMode === 'create') {
+          await createManualTransaction({
+            type: 'expense',
+            name,
+            amount: amountVal,
+            date: dateVal,
+            category: categoryVal,
+            notes: notesVal,
+            currency: 'USD'
+          });
+          closeManualModal();
+          toast('Expense recorded');
+        } else if (editingRecord?.manual) {
+          await updateManualTransaction(editingRecord.id, {
+            name,
+            amount: amountVal,
+            date: dateVal,
+            category: categoryVal,
+            notes: notesVal,
+            archived: !!editingRecord.archived,
+          });
+          closeManualModal();
+          toast('Expense updated');
+        } else if (editingRecord) {
+          await upsertOverride({
+            itemId: editingRecord.itemId,
+            txId: editingRecord.id,
+            type: 'expense',
+            name,
+            amount: amountVal,
+            date: dateVal,
+            category: categoryVal,
+            notes: notesVal,
+            archived: !!editingRecord.archived,
+            currency: 'USD',
+            original: editingOriginal,
+          });
+          closeManualModal();
+          toast('Expense updated');
+        }
+        await loadAllTransactions(UID); // refresh local table
+      } catch (e) {
+        console.error('Manual expense failed', e);
+        showManualError('Could not save. Try again.');
+      } finally {
+        setBtnBusy(submitBtn, '', false);
+      }
+    });
+  }
+
+  // -------------------- Archive / Restore (Refactored) --------------------
+  if (els.manualArchive) {
+    els.manualArchive.addEventListener('click', async () => {
+      if (!UID || !editingRecord) return;
+      const newArchived = !editingRecord.archived;
+      const btn = els.manualArchive; btn.disabled = true; btn.textContent = newArchived ? 'Archiving…' : 'Restoring…';
+      try {
+        if (editingRecord.manual) {
+          await updateManualTransaction(editingRecord.id, { archived: newArchived });
+        } else {
+          await upsertOverride({
+            itemId: editingRecord.itemId,
+            txId: editingRecord.id,
+            type: 'expense',
+            archived: newArchived,
+            original: editingOriginal,
+          });
+        }
+        closeManualModal();
+        toast(newArchived ? 'Expense archived' : 'Expense restored');
+        await loadAllTransactions(UID);
+      } catch (e) {
+        console.error('Archive toggle failed', e);
+        showManualError('Unable to update archive state.');
+      } finally {
+        btn.disabled = false; btn.textContent = newArchived ? 'Restore expense' : 'Archive expense';
+      }
+    });
+  }
 }
 
 // -------------------- Init --------------------
