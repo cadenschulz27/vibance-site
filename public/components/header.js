@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Bump this to force refetch of header assets when structure changes
-const HEADER_VERSION = 'v21';
+const HEADER_VERSION = 'v24';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
@@ -26,6 +26,7 @@ function lastInitialFrom(profile, displayName) {
 }
 function setActiveNav(root) {
   const path = (location.pathname || '').toLowerCase();
+  console.log('[header] setActiveNav called with path:', path);
   const pairs = [
     [/\/dashboard\//, '#nav-dashboard'],
     [/\/expenses\//,  '#nav-expenses'],
@@ -40,22 +41,32 @@ function setActiveNav(root) {
   let matched = false;
   for (const [re, id] of pairs) {
     if (re.test(path)) {
+      console.log('[header] Matched regex:', re, 'for element:', id);
       const el = $(id, root);
       if (el) {
         el.classList.add('active');
+        console.log('[header] Added active class to:', el);
         const text = el.textContent?.trim();
         if (text) $$('.mnav-link', root).find(a => a.textContent.trim() === text)?.classList.add('active');
         matched = true;
+      } else {
+        console.log('[header] Element not found:', id);
       }
       break;
     }
   }
   if (!matched) {
+    console.log('[header] No regex match, trying fallback');
     // Fallback: highlight by href segment containing last path part
     const seg = path.split('/').filter(Boolean).pop();
     if (seg) {
       const anchor = Array.from($$('#desktop-nav a', root)).find(a => a.getAttribute('href')?.toLowerCase().includes(`/${seg}`));
-      if (anchor) anchor.classList.add('active');
+      if (anchor) {
+        console.log('[header] Fallback matched anchor:', anchor);
+        anchor.classList.add('active');
+      } else {
+        console.log('[header] No fallback match for segment:', seg);
+      }
     }
   }
 }
