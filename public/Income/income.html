@@ -71,7 +71,7 @@
     /* Toast */
     #toast { transition: opacity 200ms ease; }
 
-    .btn-net {
+  .btn-net {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
@@ -91,25 +91,7 @@
     .btn-net:active { transform: translateY(0); }
     .btn-net svg { height: 0.9rem; width: 0.9rem; }
 
-    .btn-manual {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.6rem 1.15rem;
-      border-radius: 999px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      color: #04130e;
-      background: linear-gradient(135deg, #34d399 0%, #22d3ee 60%, #60a5fa 100%);
-      box-shadow: 0 16px 32px rgba(34, 211, 238, 0.25);
-      transition: transform .18s ease, box-shadow .22s ease, opacity .18s ease;
-    }
-    .btn-manual:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 20px 36px rgba(34, 211, 238, 0.32);
-    }
-    .btn-manual:active { transform: translateY(0); }
-    .btn-manual svg { height: 0.9rem; width: 0.9rem; }
+    /* Add Income now uses same green gradient (btn-income) so legacy .btn-manual gradient removed */
 
     .vb-modal { position: fixed; inset: 0; z-index: 60; display: none; }
     .vb-modal--open { display: block; }
@@ -180,34 +162,7 @@
   </style>
 </head>
 <body class="bg-black text-white vb-anim-page">
-    <style>
-    .sync-all-btn {
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      font-size: 0.95rem;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(148,163,184,0.22);
-      background: linear-gradient(135deg, #CCFF00 0%, #A3FF00 100%);
-      color: #222;
-      box-shadow: 0 2px 8px rgba(204,255,0,0.18);
-      cursor: pointer;
-      margin-left: 0.5rem;
-      transition: border-color .2s, background .2s, box-shadow .2s;
-    }
-    .sync-icon {
-      stroke: #fff !important;
-      color: #fff !important;
-      filter: drop-shadow(0 1px 2px #222);
-    }
-    .sync-all-btn:hover {
-      border-color: #CCFF00;
-      background: linear-gradient(135deg, #E6FF66 0%, #CCFF00 100%);
-      color: #222;
-      box-shadow: 0 4px 12px rgba(204,255,0,0.22);
-    }
-    </style>
+    <!-- Removed obsolete circular .sync-all-btn style; unified with .btn-income/.btn-sync-all -->
   <!-- Header mount -->
   <div id="site-header"></div>
 
@@ -222,7 +177,7 @@
           <span id="income-archive-indicator" class="archive-indicator hidden">Viewing archived income</span>
         </div>
         <div class="flex items-center gap-2 flex-wrap justify-end">
-          <button id="open-manual-income" type="button" class="btn-manual">
+          <button id="open-manual-income" type="button" class="btn-income">
             + Add Income
           </button>
           <button id="toggle-income-archive" type="button" class="btn-income" aria-pressed="false" title="View archive">Archive</button>
