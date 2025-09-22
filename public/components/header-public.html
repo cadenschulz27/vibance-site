@@ -1,0 +1,69 @@
+<!-- public/components/header-public.html -->
+<header id="public-header" class="fixed inset-x-0 top-0 z-40 border-b border-neutral-900/70 bg-black/70 backdrop-blur supports-[backdrop-filter]:bg-black/50" role="banner">
+  <div class="mx-auto max-w-7xl px-4">
+    <div class="h-16 flex items-center justify-between gap-4">
+      <a href="/index.html" class="flex items-center gap-3" aria-label="Vibance Home">
+        <img src="/images/logo_white.png" alt="Vibance Logo" class="h-10 w-10 rounded" />
+        <span class="text-white font-semibold tracking-tight text-2xl md:text-3xl" style="line-height:1.1">Vibance</span>
+      </a>
+      <nav class="hidden lg:flex items-center gap-1 text-sm" aria-label="Marketing">
+        <a id="nav-prod-budgeting"  href="/pages/feature-budgeting.html" class="mkt-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Budgeting</a>
+        <a id="nav-prod-expenses"   href="/pages/feature-expenses.html"  class="mkt-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Expense Tracking</a>
+        <a id="nav-prod-goals"      href="/pages/feature-goals.html"     class="mkt-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Goals</a>
+        <a id="nav-prod-literacy"   href="/Literacy/literacy.html"       class="mkt-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Literacy</a>
+        <a id="nav-prod-community"  href="/Social/social.html"           class="mkt-link px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900">Community</a>
+        <div class="relative group">
+          <button class="px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900 inline-flex items-center gap-1" aria-haspopup="true" aria-expanded="false">Company<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/></svg></button>
+          <div class="absolute left-0 mt-2 hidden group-hover:block min-w-[240px] rounded-xl border border-neutral-800 bg-neutral-950 shadow-xl p-2">
+            <a href="/pages/about.html"   class="sub-link block px-3 py-1.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-neutral-900">About us</a>
+            <a href="/pages/blog.html"    class="sub-link block px-3 py-1.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-neutral-900">Blog</a>
+            <a href="/pages/careers.html" class="sub-link block px-3 py-1.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-neutral-900">Careers</a>
+            <a href="/pages/press.html"   class="sub-link block px-3 py-1.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-neutral-900">Press</a>
+          </div>
+        </div>
+        <div class="relative group">
+          <button class="px-3 py-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-900 inline-flex items-center gap-1" aria-haspopup="true" aria-expanded="false">Legal & Reg<svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/></svg></button>
+          <div class="absolute left-0 mt-2 hidden group-hover:block min-w-[260px] rounded-xl border border-neutral-800 bg-neutral-950 shadow-xl p-2">
+            <a href="/pages/terms.html"     class="sub-link block px-3 py-1.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-neutral-900">Terms & Conditions</a>
+            <a href="/pages/privacy.html"   class="sub-link block px-3 py-1.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-neutral-900">Privacy Policy</a>
+            <a href="/pages/disclosures.html" class="sub-link block px-3 py-1.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-neutral-900">Disclosures</a>
+          </div>
+        </div>
+      </nav>
+      <div class="flex items-center gap-2">
+        <a href="/login.html"  class="px-3 py-1.5 rounded-lg text-sm text-neutral-200 hover:bg-neutral-900">Log in</a>
+        <a href="/signup.html" class="px-3 py-1.5 rounded-lg text-sm font-medium text-black bg-[var(--neon,#CCFF00)] hover:opacity-90">Sign up</a>
+      </div>
+      <button id="btn-mobile-public" class="lg:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg hover:bg-neutral-900" aria-label="Open menu" aria-controls="public-mobile" aria-expanded="false">
+        <svg class="h-5 w-5 text-neutral-300" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="public-mobile" class="lg:hidden hidden border-t border-neutral-900/70 bg-black/85 backdrop-blur" role="dialog" aria-modal="true">
+    <nav class="p-3 space-y-1 text-sm">
+      <a href="/pages/feature-budgeting.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Budgeting</a>
+      <a href="/pages/feature-expenses.html"  class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Expense Tracking</a>
+      <a href="/pages/feature-goals.html"     class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Goals</a>
+      <a href="/Literacy/literacy.html"       class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Literacy</a>
+      <a href="/Social/social.html"           class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Community</a>
+      <hr class="my-2 border-neutral-800" />
+      <a href="/pages/about.html"       class="block px-3 py-2 rounded-lg hover:bg-neutral-900">About us</a>
+      <a href="/pages/blog.html"        class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Blog</a>
+      <a href="/pages/careers.html"     class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Careers</a>
+      <a href="/pages/press.html"       class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Press</a>
+      <hr class="my-2 border-neutral-800" />
+      <a href="/pages/terms.html"       class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Terms & Conditions</a>
+      <a href="/pages/privacy.html"     class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Privacy Policy</a>
+      <a href="/pages/disclosures.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Disclosures</a>
+      <hr class="my-2 border-neutral-800" />
+      <div class="flex gap-2 pt-2">
+        <a href="/login.html"  class="flex-1 px-3 py-2 rounded-lg text-center bg-neutral-900">Log in</a>
+        <a href="/signup.html" class="flex-1 px-3 py-2 rounded-lg text-center bg-[var(--neon,#CCFF00)] text-black font-medium">Sign up</a>
+      </div>
+    </nav>
+  </div>
+</header>
+<style>
+  :root { --neon:#CCFF00; }
+  .mkt-link.active { background: var(--neon); color:#0a0a0a; }
+</style>

@@ -4,8 +4,8 @@
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-// Bump this to force refetch of header.html if you update it
-const HEADER_VERSION = 'v15';
+// Bump this to force refetch of header assets when structure changes
+const HEADER_VERSION = 'v16';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
@@ -34,6 +34,10 @@ function setActiveNav(root) {
     [/\/social\//,    '#nav-community'],
     [/\/literacy\//,  '#nav-literacy'],
     [/\/admin\//,     '#nav-admin'],
+    [/\/user-profile\//, 'a[href*="user-profile.html"]'],
+    [/\/pages\/profile\.html$/, 'a[href="/pages/profile.html"]'],
+    [/\/accounts\//, 'a[href*="/Accounts/accounts.html"]'],
+    [/\/support\//, 'a[href*="support.html"]'],
   ];
   $$('.nav-link', root).forEach(a => a.classList.remove('active'));
   $$('.mnav-link', root).forEach(a => a.classList.remove('active'));
@@ -66,9 +70,21 @@ async function loadFirebase() {
 }
 
 // Inject header.html once
-async function ensureHeaderMarkup() {
-  if ($('#app-header')) return document.body; // already present
-  const url = new URL('./header.html', import.meta.url);
+function isMarketingPath() {
+  const p = location.pathname.toLowerCase();
+  return [
+    '/', '/index.html', '/about', '/pages/about.html', '/pages/blog', '/pages/blog.html',
+    '/pages/careers.html', '/pages/press.html', '/pages/terms.html', '/pages/privacy.html', '/pages/disclosures.html',
+    '/pages/feature-budgeting.html', '/pages/feature-expenses.html', '/pages/feature-goals.html'
+  ].some(x => p === x || p.startsWith(x.replace(/\.html$/,'')));
+}
+
+async function ensureHeaderMarkup({ variant }) {
+  // If already injected, skip
+  if (variant === 'app' && $('#app-header')) return document.body;
+  if (variant === 'public' && $('#public-header')) return document.body;
+  const file = variant === 'public' ? 'header-public.html' : 'header.html';
+  const url = new URL(`./${file}`, import.meta.url);
   url.searchParams.set('v', HEADER_VERSION);
   const res = await fetch(url.toString());
   const html = await res.text();
@@ -76,10 +92,9 @@ async function ensureHeaderMarkup() {
   frag.innerHTML = html.trim();
   const node = frag.firstElementChild;
   document.body.prepend(node);
-  // push content down below the fixed header
-  const headerHeight = clamp($('#app-header')?.offsetHeight || 64, 56, 96);
+  const headerEl = variant === 'public' ? $('#public-header') : $('#app-header');
+  const headerHeight = clamp(headerEl?.offsetHeight || 64, 56, 96);
   document.body.style.paddingTop = `${headerHeight}px`;
-  // Expose header offset for sticky elements (e.g., Expenses toolbar)
   document.documentElement.style.setProperty('--vb-header-offset', `${headerHeight}px`);
   return document.body;
 }
@@ -113,6 +128,7 @@ function showSignedIn(root) {
   $('#btn-mobile', root)?.classList.remove('hidden');
   $('#user-menu', root)?.classList.remove('hidden');
   $('#m-user-actions', root)?.classList.remove('hidden');
+  $('#desktop-secondary', root)?.classList.remove('hidden');
 }
 
 // Dropdown wiring
@@ -182,19 +198,29 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
 
 // Boot
 (async function init() {
-  // 1) Inject markup
-  await ensureHeaderMarkup();
+  // Decide initial variant before auth (marketing pages use public by default)
+  let variant = 'app';
+  if (isMarketingPath()) variant = 'public';
+
+  await ensureHeaderMarkup({ variant });
   const root = document;
 
-  // 2) Brand link always points to dashboard
-  const brand = $('#brand-link', root);
-  if (brand) {
-    brand.setAttribute('href', '/dashboard/dashboard.html');
-    brand.addEventListener('click', (e) => { e.preventDefault(); location.href = '/dashboard/dashboard.html'; });
+  // Brand link: public variant -> index landing, app variant -> dashboard
+  function wireBrand() {
+    const brand = $('#brand-link', root) || $('a[aria-label="Vibance Home"]', root);
+    if (!brand) return;
+    if (variant === 'public') {
+      brand.setAttribute('href', '/index.html');
+      brand.onclick = (e) => { e.preventDefault(); location.href = '/index.html'; };
+    } else {
+      brand.setAttribute('href', '/dashboard/dashboard.html');
+      brand.onclick = (e) => { e.preventDefault(); location.href = '/dashboard/dashboard.html'; };
+    }
   }
+  wireBrand();
 
   // 3) Static nav highlighting (works even before auth)
-  setActiveNav(root);
+  if (variant === 'app') setActiveNav(root);
 
   // 3b) Theme setup (CSS + initial apply + toggle)
   try {
@@ -220,10 +246,9 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
   // 4) Firebase
   const { auth, db } = await loadFirebase();
 
-  // If Firebase failed to load, show anonymous header
+  // If Firebase not available just keep current variant (likely public)
   if (!auth || !db) {
-    console.warn('[header] Firebase not available — rendering signed-out UI.');
-    showSignedOut(root);
+    if (variant === 'app') showSignedOut(root); // fallback
     return;
   }
 
@@ -233,7 +258,25 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
 
   // 6) React to auth state
   onAuthStateChanged(auth, async (user) => {
-    if (!user) { showSignedOut(root); return; }
+    if (!user) {
+      // If on marketing path but public header not loaded yet, swap
+      if (variant !== 'public' && isMarketingPath()) {
+        variant = 'public';
+        await ensureHeaderMarkup({ variant:'public' });
+        wireBrand();
+      }
+      showSignedOut(root);
+      return;
+    }
+    // Logged in: ensure app header
+    if (variant !== 'app') {
+      variant = 'app';
+      await ensureHeaderMarkup({ variant:'app' });
+      wireBrand();
+      setActiveNav(root);
+      wireAvatarMenu(root, auth);
+      wireMobileMenu(root, auth);
+    }
 
     // Fetch profile doc
     let profile = {};
@@ -249,8 +292,8 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
     const lastInitial = lastInitialFrom(profile, user.displayName);
     const photoURL    = profile.photoURL || user.photoURL || '/images/logo_white.png';
 
-    paintIdentity(root, { firstName, lastInitial, photoURL });
-  showSignedIn(root);
-  setActiveNav(root); // re-evaluate now that admin link may be visible
+      paintIdentity(root, { firstName, lastInitial, photoURL });
+      showSignedIn(root);
+      setActiveNav(root);
   });
 })();
