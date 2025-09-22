@@ -185,13 +185,7 @@ input::placeholder, textarea::placeholder { color: #6b7280; }
   .mobile-stack { display: grid; gap: .75rem; }
 }
 
-/* Header (active tab neon) lives in components/header.html;
-   included here for safety if page is standalone */
-.nav-link.active, .mnav-link.active {
-  background: var(--neon) !important;
-  color: #0a0a0a !important;
-  border: none !important;
-}
+/* Header active tab styles now handled by components/header.html */
 
 /* Toast (if used) */
 #toast {
