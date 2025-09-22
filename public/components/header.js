@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // Bump this to force refetch of header assets when structure changes
-const HEADER_VERSION = 'v17';
+const HEADER_VERSION = 'v18';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
@@ -33,21 +33,29 @@ function setActiveNav(root) {
     [/\/budgeting\//, '#nav-budgeting'],
     [/\/social\//,    '#nav-community'],
     [/\/literacy\//,  '#nav-literacy'],
-    [/\/admin\//,     '#nav-admin'],
-    [/\/user-profile\//, 'a[href*="user-profile.html"]'],
-    [/\/pages\/profile\.html$/, 'a[href="/pages/profile.html"]'],
-    [/\/accounts\//, 'a[href*="/Accounts/accounts.html"]'],
-    [/\/support\//, 'a[href*="support.html"]'],
   ];
-  $$('.nav-link', root).forEach(a => a.classList.remove('active'));
-  $$('.mnav-link', root).forEach(a => a.classList.remove('active'));
+  const clear = sel => $$(sel, root).forEach(a => a.classList.remove('active'));
+  clear('.nav-link');
+  clear('.mnav-link');
+  let matched = false;
   for (const [re, id] of pairs) {
     if (re.test(path)) {
-      $(id, root)?.classList.add('active');
-      // mobile counterpart
-      const text = $(id, root)?.textContent?.trim() || '';
-      $$('.mnav-link', root).find(a => a.textContent.trim() === text)?.classList.add('active');
+      const el = $(id, root);
+      if (el) {
+        el.classList.add('active');
+        const text = el.textContent?.trim();
+        if (text) $$('.mnav-link', root).find(a => a.textContent.trim() === text)?.classList.add('active');
+        matched = true;
+      }
       break;
+    }
+  }
+  if (!matched) {
+    // Fallback: highlight by href segment containing last path part
+    const seg = path.split('/').filter(Boolean).pop();
+    if (seg) {
+      const anchor = Array.from($$('#desktop-nav a', root)).find(a => a.getAttribute('href')?.toLowerCase().includes(`/${seg}`));
+      if (anchor) anchor.classList.add('active');
     }
   }
 }
@@ -80,9 +88,9 @@ function isMarketingPath() {
 }
 
 async function ensureHeaderMarkup({ variant }) {
-  // If already injected, skip
-  if (variant === 'app' && $('#app-header')) return document.body;
-  if (variant === 'public' && $('#public-header')) return document.body;
+  // Remove any existing header(s) to prevent duplication stacking
+  $('#app-header')?.remove();
+  $('#public-header')?.remove();
   const file = variant === 'public' ? 'header-public.html' : 'header.html';
   const url = new URL(`./${file}`, import.meta.url);
   url.searchParams.set('v', HEADER_VERSION);
@@ -110,6 +118,12 @@ function applyTheme(theme) {
   const sun = document.getElementById('icon-sun');
   const moon = document.getElementById('icon-moon');
   if (sun && moon) { sun.classList.toggle('hidden', !dark); moon.classList.toggle('hidden', dark); }
+  // Basic light theme overrides (ensure body + cards flip)
+  if (!dark) {
+    document.body.classList.add('theme-light');
+  } else {
+    document.body.classList.remove('theme-light');
+  }
 }
 
 // Signed-out/signed-in UI toggles
