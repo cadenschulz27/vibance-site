@@ -689,20 +689,32 @@ function wireUI() {
   els.syncAll?.setAttribute('aria-label', 'Sync accounts');
   if (els.syncAll) {
     els.syncAll.addEventListener('click', async () => {
-      els.syncAll.textContent = 'Syncing...';
-      els.syncAll.disabled = true;
-
+      if (els.syncAll.dataset.syncing === '1') return;
+      els.syncAll.dataset.syncing = '1';
+      setBtnBusy(els.syncAll, true);
       try {
         const { added, modified, removed, count } = await syncAllItems(UID);
-        toast(`Synced ${count} income source${count === 1 ? '' : 's'}  +${added} • ~${modified} • –${removed}`);
-        await loadAllIncomes(UID);  // refresh the table/list
-      } catch (err) {
-        console.error('Income sync failed:', err);
+        toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
+        await loadAllTransactions(UID);
+      } catch (e) {
+        console.error('Income sync failed', e);
         toast('Sync failed');
       } finally {
-        els.syncAll.textContent = 'Sync All';
-        els.syncAll.disabled = false;
+        delete els.syncAll.dataset.syncing;
+        setBtnBusy(els.syncAll, false);
       }
+    });
+  }
+  if (els.archiveToggle) {
+    els.archiveToggle.addEventListener('click', () => {
+      VIEW_ARCHIVE = !VIEW_ARCHIVE;
+      els.archiveToggle.textContent = VIEW_ARCHIVE ? 'Back to income' : 'View archive';
+      els.archiveToggle.setAttribute('aria-pressed', String(VIEW_ARCHIVE));
+      if (els.archiveIndicator) {
+        els.archiveIndicator.classList.toggle('hidden', !VIEW_ARCHIVE);
+        els.archiveIndicator.textContent = VIEW_ARCHIVE ? 'Viewing archived income' : '';
+      }
+      applyFilters();
     });
   }
   els.syncAll?.addEventListener('click', async () => {
@@ -852,18 +864,6 @@ function wireUI() {
     }
   });
 
-  els.archiveToggle?.addEventListener('click', () => {
-    VIEW_ARCHIVE = !VIEW_ARCHIVE;
-    if (els.archiveToggle) {
-      els.archiveToggle.textContent = VIEW_ARCHIVE ? 'Back to income' : 'View archive';
-      els.archiveToggle.setAttribute('aria-pressed', String(VIEW_ARCHIVE));
-    }
-    if (els.archiveIndicator) {
-      els.archiveIndicator.classList.toggle('hidden', !VIEW_ARCHIVE);
-      els.archiveIndicator.textContent = VIEW_ARCHIVE ? 'Viewing archived income' : '';
-    }
-    applyFilters();
-  });
 }
 
 function init() {

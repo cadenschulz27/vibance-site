@@ -855,7 +855,9 @@ function wireUI() {
   // ensure starting icon
   // Do not overwrite the button's HTML; let the markup in expenses.html control the icon and text.
   els.syncAll?.addEventListener('click', async () => {
-    setBtnBusy(els.syncAll, true);
+    if (els.syncAll.dataset.syncing === '1') return; // prevent double click
+    els.syncAll.dataset.syncing = '1';
+    setBtnBusy(els.syncAll, 'Syncing…', true);
     try {
       const { added, modified, removed, count } = await syncAllItems(UID);
       toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
@@ -864,7 +866,8 @@ function wireUI() {
       console.error(e);
       toast('Sync failed');
     } finally {
-      setBtnBusy(els.syncAll, false);
+      delete els.syncAll.dataset.syncing;
+      setBtnBusy(els.syncAll, '', false);
     }
   });
 
@@ -891,24 +894,7 @@ function wireUI() {
   } else {
     console.warn('DEBUG: Archive button NOT found');
   }
-  if (els.syncAll) {
-    console.log('DEBUG: Sync All button found, wiring event');
-    els.syncAll.addEventListener('click', async () => {
-      setBtnBusy(els.syncAll, true);
-      try {
-        const { added, modified, removed, count } = await syncAllItems(UID);
-        toast(`Synced ${count} account${count===1?'':'s'}  +${added} • ~${modified} • –${removed}`);
-        await loadAllTransactions(UID);
-      } catch (e) {
-        console.error(e);
-        toast('Sync failed');
-      } finally {
-        setBtnBusy(els.syncAll, false);
-      }
-    });
-  } else {
-    console.warn('DEBUG: Sync All button NOT found');
-  }
+  if (!els.syncAll) console.warn('DEBUG: Sync All button NOT found');
 }
 
 // -------------------- Init --------------------
