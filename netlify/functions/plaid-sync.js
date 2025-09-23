@@ -134,10 +134,23 @@ async function syncItem({ db, plaid, uid, itemDocRef, month }) {
   let removed = [];
   while (true) {
     const req = cursor
-      ? { access_token, cursor, count: 500 } // continue
-      : { access_token, count: 500 };        // first call
-    const resp = await plaid.transactionsSync(req);
-    const data = resp.data;
+      ? { access_token, cursor, count: 500 }
+      : { access_token, count: 500 };
+    let resp, data;
+    try {
+      resp = await plaid.transactionsSync(req);
+      data = resp.data;
+    } catch (e) {
+      // Surface Plaid error details for diagnostics
+      const perr = e?.response?.data || {};
+      throw new Error('plaid-transactionsSync-failed:' + JSON.stringify({
+        error_code: perr.error_code,
+        error_type: perr.error_type,
+        error_message: perr.error_message,
+        display_message: perr.display_message,
+        status: e?.response?.status
+      }));
+    }
     added = added.concat(data.added || []);
     modified = modified.concat(data.modified || []);
     removed = removed.concat(data.removed || []);
@@ -305,6 +318,14 @@ export const handler = async (event) => {
     });
   } catch (err) {
     console.error('[plaid-sync] error', err);
+    // Attempt structured Plaid error extraction if our wrapped message present
+    const m = (err?.message || '').match(/^plaid-transactionsSync-failed:(.*)$/);
+    if (m) {
+      try {
+        const detail = JSON.parse(m[1]);
+        return json(500, { ok:false, error:'plaid-sync-failed', detail });
+      } catch(_) {}
+    }
     return bad(500, err?.message || 'Internal error');
   }
 };
