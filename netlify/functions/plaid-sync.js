@@ -79,13 +79,24 @@ function envRequired(key) {
 // ---------- Firebase Admin (singleton) ----------
 function getAdmin() {
   if (!getApps().length) {
-    const privateKey = envRequired('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n');
+    let projectId, clientEmail, privateKey;
+    if (process.env.FIREBASE_ADMIN_SDK_CONFIG) {
+      try {
+        const parsed = JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG);
+        projectId = parsed.project_id;
+        clientEmail = parsed.client_email;
+        privateKey = parsed.private_key?.replace(/\\n/g, '\n');
+        if (!projectId || !clientEmail || !privateKey) throw new Error('Missing keys in FIREBASE_ADMIN_SDK_CONFIG');
+      } catch (e) {
+        throw new Error('Invalid FIREBASE_ADMIN_SDK_CONFIG: ' + e.message);
+      }
+    } else {
+      projectId = envRequired('FIREBASE_PROJECT_ID');
+      clientEmail = envRequired('FIREBASE_CLIENT_EMAIL');
+      privateKey = envRequired('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n');
+    }
     initializeApp({
-      credential: cert({
-        projectId: envRequired('FIREBASE_PROJECT_ID'),
-        clientEmail: envRequired('FIREBASE_CLIENT_EMAIL'),
-        privateKey,
-      }),
+      credential: cert({ projectId, clientEmail, privateKey }),
     });
   }
   return { auth: getAuth(), db: getFirestore() };
