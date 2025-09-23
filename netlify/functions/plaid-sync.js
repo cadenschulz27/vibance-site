@@ -268,7 +268,25 @@ export const handler = async (event) => {
       return json(200, { ok: true, month, itemsProcessed: 0, txWritten: 0, txRemoved: 0, lastCursorSaved: null });
     }
 
-    const plaid = getPlaid();
+    // Graceful skip if Plaid env vars not set (allows rest of app to function)
+    const missing = [];
+    ['PLAID_ENV','PLAID_CLIENT_ID','PLAID_SECRET'].forEach(k => { if (!process.env[k]) missing.push(k); });
+    let plaid = null;
+    if (!missing.length) {
+      plaid = getPlaid();
+    } else {
+      return json(200, {
+        ok: true,
+        skipped: true,
+        reason: 'missing-plaid-config',
+        missing,
+        itemsProcessed: 0,
+        txWritten: 0,
+        txRemoved: 0,
+        deltas: 0,
+        rollupApplied: false,
+      });
+    }
     let itemsProcessed = 0;
     let totalWritten = 0;
     let totalRemoved = 0;
