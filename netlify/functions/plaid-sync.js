@@ -125,8 +125,8 @@ async function syncItem({ db, plaid, uid, itemDocRef, month }) {
   const access_token = item.access_token;
   if (!access_token) return { written: 0, removed: 0, cursor: null, skipped: true };
 
-  // Start from saved cursor if present
-  let cursor = item.cursor || null;
+  // Start from saved cursor if present; support legacy field name transactions_cursor
+  let cursor = item.cursor || item.transactions_cursor || null;
 
   // Transactions Sync loop
   let added = [];
@@ -197,6 +197,7 @@ async function syncItem({ db, plaid, uid, itemDocRef, month }) {
     batch.delete(ref);
     removeCount++;
   }
+  // Persist normalized cursor field
   batch.set(itemDocRef, { cursor, last_synced: FieldValue.serverTimestamp() }, { merge: true });
   await batch.commit();
 
