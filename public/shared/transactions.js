@@ -64,7 +64,7 @@ function makeDeltaFromTx(op, prevTx, nextTx) {
   const base = (tx) => tx ? {
     type: tx.type,
     amount: tx.amount,
-    category: tx.categoryUser || tx.categoryAuto || 'Uncategorized',
+    category: tx.categoryUser || tx.categoryAuto || tx.category || 'Uncategorized',
     date: tx.date,
   } : null;
   if (op === 'add') return { op: 'add', ...base(nextTx) };
@@ -101,7 +101,7 @@ export function normalizeExpenseRow(row) {
     epoch,
     name: row.name || 'Transaction',
     merchant: row.merchant || '',
-    categoryUser: row.categoryUser || '',
+    categoryUser: row.categoryUser || row.category || '',
     categoryAuto: row.categoryAuto || '',
     notes: row.notes || '',
     pending: !!row.pending,
@@ -132,7 +132,7 @@ export function normalizeIncomeRow(row) {
     epoch,
     name: row.name || 'Income',
     merchant: row.merchant || '',
-    categoryUser: row.categoryUser || '',
+    categoryUser: row.categoryUser || row.category || '',
     categoryAuto: row.categoryAuto || '',
     notes: row.notes || '',
     pending: !!row.pending,
