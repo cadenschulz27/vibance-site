@@ -198,8 +198,21 @@ export const VibeScoreUI = {
             bubble.style.setProperty('--border-color', colors.borderColor);
             
             const scoreText = item.hasData ? item.score.toFixed(0) : 'N/A';
-            const coreContent = `<div class="bubble-core" style="--text-color: ${colors.textColor};"><span>${item.name}</span><span class="bubble-score">${scoreText}</span></div>`;
-            bubble.innerHTML = item.hasData ? coreContent : `<a href="../pages/profile.html" class="bubble-core-link">${coreContent}</a>`;
+            const tooltipLines = [];
+            if (item.analysis && item.analysis.breakdown) {
+                const topFactor = Object.values(item.analysis.breakdown)
+                    .sort((a, b) => (b.contribution ?? 0) - (a.contribution ?? 0))[0];
+                const biggestGap = Object.values(item.analysis.breakdown)
+                    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0];
+                if (topFactor) tooltipLines.push(`Strength: ${topFactor.label} (${topFactor.score.toFixed(0)})`);
+                if (biggestGap) tooltipLines.push(`Focus: ${biggestGap.label} (${biggestGap.score.toFixed(0)})`);
+            }
+            if (item.analysis?.penalty?.total) {
+                tooltipLines.push(`Penalties: -${item.analysis.penalty.total.toFixed(1)} pts`);
+            }
+            const tooltipAttr = tooltipLines.length ? ` title="${tooltipLines.join(' \u2022 ')}"` : '';
+            const coreContent = `<div class="bubble-core"${tooltipAttr} style="--text-color: ${colors.textColor};"><span>${item.name}</span><span class="bubble-score">${scoreText}</span></div>`;
+            bubble.innerHTML = coreContent;
             plane.appendChild(bubble);
 
             bubble.addEventListener('pointerenter', () => this.showInsight(item, colors));

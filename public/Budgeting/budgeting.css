@@ -134,41 +134,7 @@ button, .btn, .btn-secondary {
 /* Totals strip */
 #totals-progress { min-width: 0%; }
 
-/* Calendar */
-#calendar-grid {
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-}
-.calendar-day {
-  background: #0a0a0a;
-  border: 1px solid var(--border);
-  border-radius: .9rem;
-  min-height: 88px;
-  padding: .5rem;
-  display: flex;
-  flex-direction: column;
-  gap: .25rem;
-  transition: border-color .15s ease, background-color .15s ease;
-}
-.calendar-day:hover { background: #0d0d0f; border-color: #2b2b31; }
-.calendar-day .date {
-  font-size: .75rem;
-  color: var(--muted);
-}
-.calendar-day .amount {
-  margin-top: auto;
-  font-size: .8rem;
-  font-weight: 600;
-}
-.amount-negative { color: #fda4af; }
-.amount-positive { color: #bbf7d0; }
-
-/* Month nav buttons */
-#prev-month, #next-month {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--ink);
-}
-#prev-month:hover, #next-month:hover { background: var(--hover); }
+/* Calendar styles moved to dashboard */
 
 /* Form tweaks */
 input[type="text"].chip,

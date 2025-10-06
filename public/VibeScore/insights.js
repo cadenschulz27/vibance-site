@@ -23,23 +23,62 @@ const formatCurrency = (value) => {
     });
 };
 
+const humanizeKey = (key = '') => key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .toLowerCase();
+
 // --- INSIGHT GENERATION FUNCTIONS ---
 
-const generateIncomeInsight = (data = {}, score = 0) => {
-    const totalIncome = (data.primaryIncome || 0) + (data.additionalIncome || 0);
-    if (score > 80) return `Exceptional! Your high and stable income of ${formatCurrency(totalIncome)}/mo provides a powerful foundation for your financial goals.`;
-    if (score > 60) {
-        let insight = `Your income stream of ${formatCurrency(totalIncome)}/mo is solid. `;
-        insight += data.growthPotential !== 'high' 
-            ? "Focusing on career growth or upskilling could elevate this score even further." 
-            : "Your high growth potential is a key strength to leverage.";
-        return insight;
+const generateIncomeInsight = (data = {}, score = 0, analysis = null) => {
+    const totalIncome = analysis?.totalIncome
+        ?? (data.primaryIncome || 0)
+        + (data.additionalIncome || 0)
+        + (data.passiveIncome || 0)
+        + (data.sideIncome || 0);
+
+    const breakdownEntries = analysis?.breakdown
+        ? Object.values(analysis.breakdown)
+        : [];
+    const sortedByScore = [...breakdownEntries].sort((a, b) => (b?.score ?? 0) - (a?.score ?? 0));
+    const topStrength = sortedByScore.find((entry) => (entry?.score ?? 0) >= 70);
+    const biggestGap = [...sortedByScore].reverse().find((entry) => (entry?.score ?? 0) <= 65);
+    const primaryPenalty = analysis?.penalty?.items?.[0];
+    const missingKeys = analysis?.quality?.missing ?? [];
+
+    let message;
+    if (score >= 85) {
+        message = `Your household is generating ${formatCurrency(totalIncome)}/mo with elite stability—income is a cornerstone strength.`;
+    } else if (score >= 70) {
+        message = `Income foundations are strong at ${formatCurrency(totalIncome)}/mo. A few targeted tweaks can push you into top-tier territory.`;
+    } else if (score >= 55) {
+        message = `Income is trending in the right direction, but resilience needs reinforcement before it can anchor larger goals.`;
+    } else {
+        message = `Income is underpowered relative to your goals. Prioritize cash-flow expansion and harden safety nets to stabilize the system.`;
     }
-    let insight = "This is a key area for growth. ";
-    insight += (data.additionalIncome || 0) === 0 
-        ? "Exploring additional income streams, even small ones, can significantly increase your financial security." 
-        : `Your additional income of ${formatCurrency(data.additionalIncome)}/mo is a great start—keep building on it!`;
-    return insight;
+
+    if (topStrength) {
+        message += ` ${topStrength.label} is carrying the score—keep nurturing that edge.`;
+    }
+
+    if (primaryPenalty) {
+        message += ` Watch the ${primaryPenalty.label.toLowerCase()}; it is trimming points from your profile.`;
+    }
+
+    if (biggestGap) {
+        message += ` Biggest upside: upgrade ${biggestGap.label.toLowerCase()} to unlock the next band of performance.`;
+    }
+
+    if (missingKeys.length >= 2) {
+        const readable = missingKeys
+            .slice(0, 3)
+            .map((key) => humanizeKey(key))
+            .join(', ');
+        message += ` Add data for ${readable} so the engine can reward the full picture.`;
+    }
+
+    return message;
 };
 
 const generateSavingsInsight = (data = {}, score = 0) => {

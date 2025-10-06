@@ -275,6 +275,211 @@ body.modal-open {
     font-weight: 500;
 }
 
+/* --- CASH-FLOW CALENDAR (Relocated from Budgeting) --- */
+#cashflow-calendar .calendar-card {
+    position: relative;
+    background: linear-gradient(155deg, rgba(20,20,26,0.92), rgba(12,12,20,0.82));
+    border: 1px solid rgba(150,150,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.75rem 1.9rem;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    overflow: hidden;
+}
+#cashflow-calendar .calendar-card::before {
+    content: "";
+    position: absolute;
+    inset: -30% 40% 40% -30%;
+    background: radial-gradient(circle at top, rgba(204,255,0,0.12), transparent 55%);
+    pointer-events: none;
+    filter: blur(30px);
+}
+#cashflow-calendar .calendar-card::after {
+    content: "";
+    position: absolute;
+    inset: 35% -35% -25% 45%;
+    background: radial-gradient(circle at bottom right, rgba(111,76,255,0.13), transparent 60%);
+    pointer-events: none;
+    filter: blur(28px);
+}
+#cashflow-calendar .calendar-card > * { position: relative; z-index: 1; }
+#cashflow-calendar .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+#cashflow-calendar .month-label {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    min-width: 120px;
+    text-align: center;
+}
+#cashflow-calendar .cal-nav-btn {
+    background: linear-gradient(120deg, rgba(204,255,0,0.18), rgba(204,255,0,0));
+    border: 1px solid rgba(204,255,0,0.28);
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.25s ease;
+}
+#cashflow-calendar .cal-nav-btn:hover {
+    background: linear-gradient(120deg, rgba(204,255,0,0.35), rgba(204,255,0,0.05));
+    transform: translateY(-1px);
+}
+#cashflow-calendar .calendar-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.9rem;
+    margin: 0 0 1.1rem;
+}
+#cashflow-calendar .summary-pill {
+    background: linear-gradient(135deg, rgba(32,35,45,0.72), rgba(22,24,32,0.78));
+    border: 1px solid rgba(156,163,175,0.15);
+    border-radius: 0.85rem;
+    padding: 0.75rem 0.9rem;
+    display: grid;
+    gap: 0.35rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: border-color 0.3s ease, transform 0.3s ease;
+}
+#cashflow-calendar .summary-pill .label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(229,231,235,0.55);
+}
+#cashflow-calendar .summary-pill .value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: #f9fafb;
+}
+#cashflow-calendar .summary-pill.positive .value { color: #a9f5c6; }
+#cashflow-calendar .summary-pill.negative .value { color: #f5b3c0; }
+#cashflow-calendar .summary-pill:hover {
+    border-color: rgba(204,255,0,0.28);
+    transform: translateY(-2px);
+}
+#cashflow-calendar .calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0,1fr));
+    gap: 0.5rem;
+    text-align: center;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: rgba(148,163,184,0.65);
+    margin-bottom: 0.65rem;
+}
+#cashflow-calendar .calendar-weekdays div {
+    padding: 0.45rem 0;
+    border-radius: 0.75rem;
+    background: linear-gradient(120deg, rgba(42,46,60,0.35), rgba(32,36,50,0.2));
+    border: 1px solid rgba(148,163,184,0.12);
+}
+#cashflow-calendar .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0,1fr));
+    gap: 0.55rem;
+}
+#cashflow-calendar .cal-day {
+    position: relative;
+    background: var(--cal-base, rgba(18,18,26,0.88));
+    border: 1px solid rgba(92,106,133,0.16);
+    border-radius: 1rem;
+    min-height: 92px;
+    padding: 0.55rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    opacity: 0;
+    transform: translateY(18px) scale(0.95);
+}
+#cashflow-calendar .cal-day::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    border: 1px solid transparent;
+    pointer-events: none;
+    transition: border-color 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+#cashflow-calendar .cal-day.positive::after {
+    opacity: 1;
+    border-image: linear-gradient(135deg, rgba(153,255,204,0.65), rgba(81,183,255,0.35)) 1;
+}
+#cashflow-calendar .cal-day.negative::after {
+    opacity: 1;
+    border-image: linear-gradient(135deg, rgba(255,160,207,0.6), rgba(255,112,130,0.4)) 1;
+}
+#cashflow-calendar .cal-day.cal-day--show {
+    animation: calDayEnter 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation-delay: calc(var(--enter-index, 0) * 45ms);
+}
+#cashflow-calendar .cal-day:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 18px 32px rgba(0,0,0,0.35);
+}
+#cashflow-calendar .cal-day .date {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(226,232,240,0.7);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+#cashflow-calendar .cal-day .amount {
+    margin-top: auto;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+#cashflow-calendar .cal-day.has-data .amount { filter: drop-shadow(0 0 6px rgba(0,0,0,0.35)); }
+#cashflow-calendar .amount-negative { color:#f5a1b5; }
+#cashflow-calendar .amount-positive { color:#9cf0c3; }
+#cashflow-calendar .cal-day.today::after {
+    opacity: 1;
+    border-image: linear-gradient(135deg, rgba(204,255,0,0.9), rgba(89,154,255,0.65)) 1;
+    box-shadow: 0 0 22px rgba(204,255,0,0.18);
+}
+#cashflow-calendar .cal-day.empty { opacity: 0.35; }
+
+@keyframes calDayEnter {
+    0% { opacity: 0; transform: translateY(24px) scale(0.9); }
+    55% { opacity: 1; transform: translateY(-4px) scale(1.01); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Tooltip */
+.calendar-tooltip {
+    position: absolute;
+    z-index: 90;
+    background: linear-gradient(150deg, rgba(24,26,34,0.95), rgba(10,10,18,0.88));
+    border: 1px solid rgba(148,163,184,0.22);
+    border-radius: 0.85rem;
+    padding: 0.85rem 1rem;
+    min-width: 180px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+    font-size: 0.72rem;
+    display: grid;
+    gap: 0.45rem;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.calendar-tooltip.hidden { pointer-events: none; opacity: 0; }
+.calendar-tooltip:not(.hidden) { opacity: 1; transform: translateY(0); }
+.calendar-tooltip .tt-date { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.08em; color:#7d7d7d; }
+.calendar-tooltip .tt-row { display:flex; align-items:center; justify-content:space-between; }
+.calendar-tooltip .tt-row span:last-child { font-weight:600; color: #e2e8f0; }
+.calendar-tooltip .tt-row.net span:last-child { color: var(--neon-green); }
+
+
+
 /* -------------------- Mobile polish (<= 640px) -------------------- */
 @media (max-width: 640px) {
     .content-section { padding: 0 1rem; margin-bottom: 3rem; }

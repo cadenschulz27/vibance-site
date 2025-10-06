@@ -11,6 +11,10 @@ const MIN_SENTENCE_LENGTH = 25;
 const CACHE_TTL_MS = Number(process.env.NEWS_CACHE_TTL_MS || 15 * 60 * 1000);
 const DEFAULT_DISCLAIMER = process.env.NEWS_GLOBAL_DISCLAIMER
   || 'Vibance Briefs summarize third-party reporting. Verify details with the original source before making financial decisions.';
+const TARGET_BULLET_COUNT = Number(process.env.NEWS_TAKEAWAY_TARGET || 3);
+const MIN_BULLET_WORDS = Number(process.env.NEWS_MIN_BULLET_WORDS || 12);
+const FALLBACK_MIN_BULLET_WORDS = Math.max(6, MIN_BULLET_WORDS - 4);
+const MAX_TICKERS = Number(process.env.NEWS_MAX_TICKERS || 6);
 
 const DISALLOWED_SOURCES = new Set(
   (process.env.NEWS_BLOCKED_SOURCES || '')
@@ -95,6 +99,10 @@ function toSentenceCase(str = '') {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
+function wordCount(text = '') {
+  return (text || '').trim().split(/\s+/).filter(Boolean).length;
+}
+
 function substituteWords(line = '') {
   return line
     .split(' ')
@@ -164,20 +172,45 @@ function isIncompleteSentence(text = '') {
   return false;
 }
 
-function buildBulletPoints(candidates = [], summaryLowerSet = new Set(), limit = 3) {
+function normalizeBullet(raw = '', minWords = MIN_BULLET_WORDS) {
+  const sanitized = ensureTerminal(toSentenceCase(substituteWords(sanitizeFragment(String(raw)))));
+  if (!sanitized) return '';
+  if (isIncompleteSentence(sanitized)) return '';
+  if (wordCount(sanitized) < minWords) return '';
+  return sanitized;
+}
+
+function buildBulletPoints(primaryCandidates = [], summaryLowerSet = new Set(), limit = TARGET_BULLET_COUNT, ...fallbackCandidateLists) {
   const bullets = [];
   const seen = new Set();
-  for (const raw of candidates) {
-    const sanitized = ensureTerminal(toSentenceCase(substituteWords(sanitizeFragment(raw))));
-    if (!sanitized) continue;
-    const lower = sanitized.toLowerCase();
-    if (summaryLowerSet.has(lower)) continue;
-    if (seen.has(lower)) continue;
-    if (isIncompleteSentence(sanitized)) continue;
-    bullets.push(sanitized);
+  const queues = [];
+
+  if (Array.isArray(primaryCandidates)) queues.push({ list: primaryCandidates, minWords: MIN_BULLET_WORDS });
+  fallbackCandidateLists.forEach((list, idx) => {
+    if (!Array.isArray(list)) return;
+    const relaxation = Math.max(0, idx * 2);
+    queues.push({ list, minWords: Math.max(5, FALLBACK_MIN_BULLET_WORDS - relaxation) });
+  });
+
+  const tryAdd = (raw, minWords) => {
+    if (bullets.length >= limit) return;
+    const candidate = normalizeBullet(raw, minWords);
+    if (!candidate) return;
+    const lower = candidate.toLowerCase();
+    if (summaryLowerSet.has(lower)) return;
+    if (seen.has(lower)) return;
+    bullets.push(candidate);
     seen.add(lower);
+  };
+
+  for (const { list, minWords } of queues) {
+    for (const raw of list) {
+      tryAdd(raw, minWords);
+      if (bullets.length >= limit) break;
+    }
     if (bullets.length >= limit) break;
   }
+
   return bullets;
 }
 
@@ -202,6 +235,17 @@ function buildPerspective(sentiment, summary = '', bullets = []) {
   }
 
   return `${focusClause} ${outlookLine}`.trim();
+}
+
+function inferRiskLevel(sentiment = 'neutral') {
+  switch (sentiment) {
+    case 'positive':
+      return 'moderate opportunity';
+    case 'negative':
+      return 'elevated risk';
+    default:
+      return 'balanced';
+  }
 }
 
 function dedupeArticles(articles = []) {
@@ -234,6 +278,25 @@ function extractTickers(text = '') {
     if (!out.includes(token)) out.push(token);
   }
   return out.slice(0, 6);
+}
+
+function mergeTickers(...lists) {
+  const seen = new Set();
+  const merged = [];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const raw of list) {
+      const token = String(raw || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      if (!token) continue;
+      if (token.length > 6 || token.length < 1) continue;
+      if (STOP_TICKERS.has(token)) continue;
+      if (seen.has(token)) continue;
+      seen.add(token);
+      merged.push(token);
+      if (merged.length >= MAX_TICKERS) return merged;
+    }
+  }
+  return merged;
 }
 
 function computeSentiment(text = '') {
@@ -271,11 +334,14 @@ function fallbackRewrite(article) {
     .filter((s) => !isIncompleteSentence(s));
 
   let summarySentences = sanitizedSentences.slice(0, 2);
-  if (!summarySentences.length) {
+  if (summarySentences.length < 2) {
     summarySentences = sentences
       .map((s) => ensureTerminal(toSentenceCase(substituteWords(sanitizeFragment(s)))))
       .filter((s) => !isIncompleteSentence(s))
       .slice(0, 2);
+  }
+  if (!summarySentences.length && sanitizedSentences.length) {
+    summarySentences = sanitizedSentences.slice(0, Math.min(2, sanitizedSentences.length));
   }
   let summary = summarySentences.join(' ');
   if (!summary) {
@@ -284,22 +350,29 @@ function fallbackRewrite(article) {
   }
 
   const summaryLowerSet = new Set(summarySentences.map((s) => s.toLowerCase()));
+  summaryLowerSet.add(summary.toLowerCase());
   const remainder = sanitizedSentences.slice(summarySentences.length);
-  let keyTakeaways = buildBulletPoints(remainder, summaryLowerSet, 3);
+  const summaryPieces = summary.split(/(?<=\.)\s+/).map((item) => ensureTerminal(item));
+  let keyTakeaways = buildBulletPoints(remainder, summaryLowerSet, TARGET_BULLET_COUNT, sanitizedSentences, sentences, summaryPieces);
   if (!keyTakeaways.length) {
-    const summaryPieces = summary.split(/(?<=\.)\s+/).map((item) => ensureTerminal(item));
-    keyTakeaways = buildBulletPoints(summaryPieces, new Set(), Math.min(3, summaryPieces.length));
+    keyTakeaways = buildBulletPoints(summaryPieces, new Set(), Math.min(TARGET_BULLET_COUNT, summaryPieces.length), summaryPieces);
+  }
+  if (!keyTakeaways.length && summarySentences.length) {
+    keyTakeaways = summarySentences.slice(0, Math.min(TARGET_BULLET_COUNT, summarySentences.length));
   }
 
   const sentiment = computeSentiment(context);
   const headline = deriveHeadline(summary, keyTakeaways, `${sourceName} Update`);
+  const riskLevel = inferRiskLevel(sentiment);
+  const tickers = mergeTickers(extractTickers(context));
 
   return {
     headline,
     summary,
     keyTakeaways,
-    tickers: [],
+    tickers,
     sentiment,
+    riskLevel,
     insight: buildPerspective(sentiment, summary, keyTakeaways),
     method: 'heuristic',
     complianceNote: `Summary compiled by Vibance using reporting from ${sourceName}. Review the original article for complete context before making decisions.`
@@ -316,10 +389,12 @@ async function rewriteWithOpenAI(article) {
 
   const prompt = `Rewrite the following financial news details into an original Vibance briefing. ` +
     `Respond ONLY with valid JSON using this schema: {"headline": string, "summary": string, "keyTakeaways": string[], "insight": string, "sentiment": "positive"|"neutral"|"negative", "riskLevel": string, "tickers": string[]}. ` +
-    `Headlines should feel fresh while staying factual. Cite the same facts, avoid speculation, limit summary to 90 words. ` +
-    `Key takeaways should be concise bullets (max 3) describing what clients should know. ` +
-    `Risk level should be a short phrase (e.g. "elevated risk", "balanced"). ` +
-    `Ticker list should include any mentioned equities; return an empty array if none. ` +
+    `Headlines must stay factual yet timely. ` +
+    `Summary should be 2-3 sentences (65-95 words) that capture the central development, catalysts, and market context. ` +
+    `Each key takeaway MUST be a single complete sentence between 12 and 28 words, ending with a period, and outline a distinct actionable insight. Avoid fragments or stacked clauses. Provide at most ${TARGET_BULLET_COUNT} items.` +
+    `Risk level should be a short phrase (e.g. "elevated risk", "balanced opportunity") summarizing forward-looking posture. ` +
+    `Ticker list should include unique equity tickers or be an empty array if none are mentioned. ` +
+    `Ensure the insight paragraph has at least two sentences that contextualize next steps for Vibance clients. ` +
     `Article snippets:\n${context}`;
 
   const body = {
@@ -370,32 +445,40 @@ async function rewriteWithOpenAI(article) {
   const takeawaysRaw = Array.isArray(parsed.keyTakeaways) ? parsed.keyTakeaways : [];
   const rawSummary = sanitizeFragment(parsed.summary);
   const sanitizedSummary = toSentenceCase(substituteWords(rawSummary));
-  const summaryLower = sanitizedSummary.toLowerCase();
-  const sanitizedTakeaways = uniqueByLower(
-    takeawaysRaw
-      .map((item) => sanitizeFragment(String(item)))
-      .map((item) => ensureTerminal(toSentenceCase(substituteWords(item))))
-      .filter((item) => item && item.toLowerCase() !== summaryLower)
-  );
-  const summarySentenceSet = new Set([summaryLower]);
-  let keyTakeaways = buildBulletPoints(sanitizedTakeaways, summarySentenceSet, 3);
+  const summarySentences = sanitizedSummary
+    .split(/(?<=\.)\s+/)
+    .map((item) => ensureTerminal(toSentenceCase(substituteWords(sanitizeFragment(item)))))
+    .filter(Boolean);
+  const summaryLowerSet = new Set(summarySentences.map((s) => s.toLowerCase()));
+  const contextSentences = splitSentences(context);
+  const sanitizedTakeaways = takeawaysRaw.map((item) => sanitizeFragment(String(item)));
+  let keyTakeaways = buildBulletPoints(sanitizedTakeaways, summaryLowerSet, TARGET_BULLET_COUNT, takeawaysRaw, contextSentences, summarySentences);
   if (!keyTakeaways.length) {
-    const summaryPieces = sanitizedSummary.split(/(?<=\.)\s+/).map((item) => ensureTerminal(item));
-    keyTakeaways = buildBulletPoints(summaryPieces, new Set(), Math.min(3, summaryPieces.length));
+    keyTakeaways = buildBulletPoints(contextSentences, summaryLowerSet, TARGET_BULLET_COUNT, summarySentences);
+  }
+  if (!keyTakeaways.length && summarySentences.length) {
+    keyTakeaways = summarySentences.slice(0, Math.min(TARGET_BULLET_COUNT, summarySentences.length));
   }
   const safeHeadline = deriveHeadline(sanitizedSummary, keyTakeaways, `${article.sourceName || 'Market'} Update`);
   const sanitizedInsight = sanitizeFragment(parsed.insight || '');
-  const perspective = sanitizedInsight && sanitizedInsight.split(/[.!?]/).filter((s) => s.trim()).length >= 2
-    ? toSentenceCase(substituteWords(sanitizedInsight))
+  const insightSentences = sanitizedInsight.split(/[.!?]/).filter((s) => s.trim());
+  const perspective = insightSentences.length >= 2
+    ? insightSentences.map((line) => ensureTerminal(toSentenceCase(substituteWords(line)))).join(' ')
     : buildPerspective(parsed.sentiment, sanitizedSummary, keyTakeaways);
+
+  const aiTickers = Array.isArray(parsed.tickers) ? parsed.tickers : [];
+  const tickers = mergeTickers(aiTickers, extractTickers(context), extractTickers(sanitizedSummary));
+  const sentimentNormalized = parsed.sentiment === 'positive' || parsed.sentiment === 'negative' ? parsed.sentiment : 'neutral';
+  const riskRaw = sanitizeFragment(parsed.riskLevel || '') || inferRiskLevel(sentimentNormalized);
+  const riskLevel = toSentenceCase(riskRaw);
 
   return {
     headline: safeHeadline,
     summary: sanitizedSummary,
     keyTakeaways,
-    tickers: [],
-    sentiment: parsed.sentiment === 'positive' || parsed.sentiment === 'negative' ? parsed.sentiment : 'neutral',
-    riskLevel: null,
+    tickers,
+    sentiment: sentimentNormalized,
+    riskLevel,
     insight: perspective,
     method: 'llm'
   };
@@ -422,6 +505,12 @@ async function curateArticle(article) {
     curated.complianceNote = `Summary generated by Vibance using reporting from ${base.sourceName}. Review the original article for complete context before making decisions.`;
   }
 
+  const combinedContext = [article.title, article.description, article.content]
+    .filter(Boolean)
+    .join(' ');
+  const tickers = mergeTickers(Array.isArray(curated.tickers) ? curated.tickers : [], extractTickers(combinedContext));
+  const riskLevel = curated.riskLevel || inferRiskLevel(curated.sentiment);
+
   return {
     id: uniqueId(article.url || article.title || String(Math.random())),
     headline: curated.headline,
@@ -429,8 +518,8 @@ async function curateArticle(article) {
     keyTakeaways: curated.keyTakeaways,
     insight: curated.insight,
     sentiment: curated.sentiment,
-    riskLevel: curated.riskLevel ?? null,
-    tickers: Array.isArray(curated.tickers) ? curated.tickers : [],
+    riskLevel,
+    tickers,
     complianceNote: curated.complianceNote,
     attribution: {
       source: article.source?.name || 'Unknown publication',

@@ -5,6 +5,8 @@
  * Each function is designed to be pure, taking in a data object and returning a score from 0 to 100.
  */
 
+import { calculateAdvancedIncomeScore } from './income/index.js';
+
 // --- UTILITY FUNCTIONS ---
 
 /**
@@ -25,39 +27,6 @@ const clamp = (value, min = 0, max = 100) => Math.max(min, Math.min(value, max))
 const getNumeric = (data, key) => {
     const value = data?.[key];
     return typeof value === 'number' && !isNaN(value) ? value : 0;
-};
-
-// --- CORE CALCULATION FUNCTIONS ---
-
-/**
- * Calculates the Income Score based on amount, stability, and growth potential.
- * - 50% of score from total monthly income amount.
- * - 25% from income stability (e.g., salaried vs. freelance).
- * - 25% from growth potential (e.g., career field).
- * @param {object} data - The user's income data.
- * @returns {number} The calculated Income Score (0-100).
- */
-const calculateIncomeScore = (data = {}) => {
-    const totalIncome = getNumeric(data, 'primaryIncome') + getNumeric(data, 'additionalIncome');
-    
-    // Score based on income brackets
-    let amountScore;
-    if (totalIncome >= 7000) amountScore = 50;
-    else if (totalIncome >= 5000) amountScore = 40;
-    else if (totalIncome >= 3000) amountScore = 30;
-    else if (totalIncome > 0) amountScore = 15;
-    else amountScore = 0;
-
-    // Score based on stability
-    const stabilityMap = { high: 25, medium: 15, low: 5 };
-    const stabilityScore = stabilityMap[data.stability] || 5;
-
-    // Score based on growth potential
-    const growthMap = { high: 25, medium: 15, low: 5 };
-    const growthScore = growthMap[data.growthPotential] || 5;
-
-    const totalScore = amountScore + stabilityScore + growthScore;
-    return clamp(totalScore);
 };
 
 /**
@@ -229,7 +198,7 @@ const calculateEmergencyFundScore = (data = {}) => {
  * This allows other modules to import and use them.
  */
 export const VibeScoreCalculations = {
-    'Income': calculateIncomeScore,
+    'Income': (data = {}) => calculateAdvancedIncomeScore(data),
     'Savings': calculateSavingsScore,
     'Budgeting': calculateBudgetingScore,
     'Cash Flow': calculateCashFlowScore,

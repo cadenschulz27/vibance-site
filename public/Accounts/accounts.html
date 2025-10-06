@@ -14,30 +14,74 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; }
+    body {
+      background: radial-gradient(circle at 20% -10%, rgba(94, 234, 212, 0.12), transparent 45%),
+                  radial-gradient(circle at 80% 0%, rgba(129, 140, 248, 0.12), transparent 35%),
+                  #050505;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    .aurora-blur {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .aurora-blur span {
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(120px);
+      opacity: 0.45;
+      mix-blend-mode: screen;
+    }
+
+    .aurora-blur span:nth-child(1) { background: #22d3ee; top: 10%; left: -10%; width: 40vw; height: 40vw; }
+    .aurora-blur span:nth-child(2) { background: #a855f7; top: 35%; right: -15%; width: 45vw; height: 45vw; }
+    .aurora-blur span:nth-child(3) { background: #4ade80; bottom: -20%; left: 25%; width: 35vw; height: 35vw; }
   </style>
 </head>
-<body class="bg-black text-white">
+<body class="relative text-white">
   <!-- Header mount -->
   <div id="site-header"></div>
 
-  <main class="max-w-5xl mx-auto px-4 py-8">
-    <header class="flex items-center justify-between border-b border-neutral-800 pb-4 mb-6">
-      <h1 class="text-2xl md:text-3xl font-semibold">Linked Accounts.</h1>
-      <button id="link-account-btn" class="px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 font-semibold text-sm text-black">
-        Link new account
-      </button>
-    </header>
+  <div class="aurora-blur" aria-hidden="true">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
 
-    <!-- Empty state message -->
-    <div id="empty-state" class="hidden text-neutral-400 text-center py-10">
-      You haven’t linked any accounts yet!
-    </div>
+  <main class="relative mx-auto max-w-6xl px-4 py-12">
+    <section class="relative overflow-hidden rounded-3xl border border-neutral-800/70 bg-neutral-950/70 backdrop-blur-xl shadow-[0_30px_80px_-45px_rgba(0,0,0,0.8)]">
+      <div class="absolute inset-0 bg-gradient-to-b from-white/2 via-transparent to-transparent pointer-events-none"></div>
+      <div class="relative z-10 px-6 py-8 md:px-12 md:py-12">
+        <header class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p class="text-sm uppercase tracking-[0.4em] text-neutral-500">Connections</p>
+            <h1 class="mt-2 text-3xl font-semibold md:text-4xl">Linked financial accounts</h1>
+            <p class="mt-3 max-w-xl text-sm text-neutral-400">
+              Manage your Plaid connections, nickname each institution, and drill into rich activity insights per account.
+            </p>
+          </div>
+          <button id="link-account-btn" class="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-emerald-400/90 px-6 py-3 text-sm font-semibold text-black shadow-[0_18px_35px_-15px_rgba(16,185,129,0.55)] transition hover:bg-emerald-300">
+            <span class="absolute inset-0 h-full w-full bg-gradient-to-r from-emerald-300/0 via-white/30 to-emerald-200/0 opacity-0 transition group-hover:opacity-100"></span>
+            <span class="relative">Link new account</span>
+          </button>
+        </header>
 
-    <!-- Accounts list container (injected by accounts.js) -->
-    <div id="accounts-list" class="space-y-4">
-      <!-- cards are inserted here dynamically -->
-    </div>
+        <!-- Empty state message -->
+        <div id="empty-state" class="hidden rounded-2xl border border-dashed border-neutral-700/70 bg-neutral-900/60 py-12 text-center text-neutral-400">
+          You haven’t linked any accounts yet. Connect your first institution to unlock deep insights.
+        </div>
+
+        <!-- Accounts list container (injected by accounts.js) -->
+        <div id="accounts-list" class="mt-8 space-y-6">
+          <!-- cards are inserted here dynamically -->
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- Toast notification -->

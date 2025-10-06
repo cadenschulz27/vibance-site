@@ -52,14 +52,11 @@
       </div>
 
       <!-- Tabs -->
-      <div class="mt-4 flex items-center gap-2">
-        <button id="tab-budget" class="tab-btn active px-3 py-2 rounded-xl text-sm">Budget</button>
-        <button id="tab-calendar" class="tab-btn px-3 py-2 rounded-xl text-sm">Cash-Flow Calendar</button>
-      </div>
+      <!-- Calendar moved to dashboard; tabs removed -->
     </header>
 
-    <!-- Views -->
-    <section id="view-budget" class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+  <!-- Budget view -->
+  <section id="view-budget" class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <!-- Left: categories + add form (spans 2) -->
       <div class="lg:col-span-2 space-y-4">
         <!-- Add category -->
@@ -129,25 +126,6 @@
       </aside>
     </section>
 
-    <!-- Calendar view -->
-    <section id="view-calendar" class="hidden">
-      <article class="glass p-4 md:p-5 vb-anim-card">
-        <div class="flex items-center justify-between">
-          <h2 class="font-medium text-lg">Cash-Flow Calendar</h2>
-          <div class="flex items-center gap-2">
-            <button id="prev-month" class="chip px-3 py-2 rounded-xl text-sm">Prev</button>
-            <div id="month-label" class="text-sm text-neutral-300"></div>
-            <button id="next-month" class="chip px-3 py-2 rounded-xl text-sm">Next</button>
-          </div>
-        </div>
-        <div class="mt-4 grid grid-cols-7 gap-2 text-center text-xs text-neutral-400">
-          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-        </div>
-        <div id="calendar-grid" class="mt-2 grid grid-cols-7 gap-2">
-          <!-- budget-logic.js renders day cells here -->
-        </div>
-      </article>
-    </section>
   </main>
 
   <!-- Templates -->

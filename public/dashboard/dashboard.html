@@ -39,6 +39,43 @@
             </div>
             <p id="news-disclaimer" class="news-disclaimer"></p>
         </section>
+        
+        <section id="cashflow-calendar" class="content-section">
+            <h2 class="section-header">Cash-Flow Calendar</h2>
+            <div class="calendar-card">
+                <div class="flex items-center justify-between mb-2 text-xs text-gray-400">
+                    <div class="flex items-center gap-3">
+                        <span><span class="inline-block w-3 h-3 rounded-sm" style="background:rgba(180,70,90,0.35)"></span> Net Outflow</span>
+                        <span><span class="inline-block w-3 h-3 rounded-sm" style="background:rgba(100,180,140,0.35)"></span> Net Inflow</span>
+                    </div>
+                    <span id="calendar-loading" class="opacity-60">Loading…</span>
+                </div>
+                <div class="calendar-header">
+                    <button id="dashboard-prev-month" class="cal-nav-btn" type="button">Prev</button>
+                    <div id="dashboard-month-label" class="month-label"></div>
+                    <button id="dashboard-next-month" class="cal-nav-btn" type="button">Next</button>
+                </div>
+                <div class="calendar-summary">
+                    <div class="summary-pill">
+                        <span class="label">Net flow</span>
+                        <span id="calendar-summary-net" class="value">$0</span>
+                    </div>
+                    <div class="summary-pill">
+                        <span class="label">Income</span>
+                        <span id="calendar-summary-income" class="value">$0</span>
+                    </div>
+                    <div class="summary-pill">
+                        <span class="label">Outflow</span>
+                        <span id="calendar-summary-expense" class="value">$0</span>
+                    </div>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div id="dashboard-calendar-grid" class="calendar-grid"></div>
+                <div id="calendar-empty" class="mt-4 text-xs text-gray-500 hidden">No transaction data for this month yet.</div>
+            </div>
+        </section>
 
         <section id="savings-goals" class="content-section">
             <h2 class="section-header">Savings Goals</h2>
@@ -56,6 +93,7 @@
     <script type="module" src="../components/header.js"></script>
     <script type="module" src="../VibeScore/vibescore.js"></script>
     <script type="module" src="dashboard.js"></script>
+    <script type="module" src="dashboard-calendar.js"></script>
 
     <div id="news-modal" class="news-modal" aria-hidden="true">
         <div id="news-modal-overlay" class="news-modal__overlay" tabindex="-1"></div>

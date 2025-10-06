@@ -61,12 +61,23 @@ async function sendRollupDeltas(deltas) {
 
 function makeDeltaFromTx(op, prevTx, nextTx) {
   // Convert canonical tx -> rollup delta entry structure
-  const base = (tx) => tx ? {
-    type: tx.type,
-    amount: tx.amount,
-    category: tx.categoryUser || tx.categoryAuto || tx.category || 'Uncategorized',
-    date: tx.date,
-  } : null;
+  const base = (tx) => {
+    if (!tx) return null;
+    const amount = Math.abs(Number(tx.amount || 0)) || 0;
+    const effectiveAmount = tx.archived ? 0 : amount;
+    const category = (tx.categoryUser || tx.categoryAuto || tx.category || 'Uncategorized') || 'Uncategorized';
+    const type = tx.type === 'income' ? 'income' : 'expense';
+    const rawDate = (tx.date || (typeof tx._epoch === 'number' && Number.isFinite(tx._epoch)
+      ? new Date(tx._epoch).toISOString().slice(0, 10)
+      : ''));
+    const date = (rawDate && rawDate.length >= 10) ? rawDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+    return {
+      type,
+      amount: effectiveAmount,
+      category,
+      date,
+    };
+  };
   if (op === 'add') return { op: 'add', ...base(nextTx) };
   if (op === 'delete') return { op: 'delete', ...base(prevTx) };
   if (op === 'update') return { op: 'update', prev: base(prevTx), next: base(nextTx) };

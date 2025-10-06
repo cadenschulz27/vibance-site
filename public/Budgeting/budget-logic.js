@@ -6,35 +6,7 @@
 // - Keeps style consistent with Expenses / Social tabs
 // --------------------------------------------------------------------
 
-const els = {
-  tabBudget: document.getElementById('tab-budget'),
-  tabCalendar: document.getElementById('tab-calendar'),
-  viewBudget: document.getElementById('view-budget'),
-  viewCalendar: document.getElementById('view-calendar'),
-  monthLabel: document.getElementById('month-label'),
-  calGrid: document.getElementById('calendar-grid'),
-  prev: document.getElementById('prev-month'),
-  next: document.getElementById('next-month'),
-};
-
-let CURRENT = new Date();
-
-// -------------------- Tabs --------------------
-function switchTab(tab) {
-  els.tabBudget?.classList.remove('active');
-  els.tabCalendar?.classList.remove('active');
-  els.viewBudget?.classList.add('hidden');
-  els.viewCalendar?.classList.add('hidden');
-
-  if (tab === 'budget') {
-    els.tabBudget?.classList.add('active');
-    els.viewBudget?.classList.remove('hidden');
-  } else {
-    els.tabCalendar?.classList.add('active');
-    els.viewCalendar?.classList.remove('hidden');
-    renderCalendar(CURRENT);
-  }
-}
+// Calendar moved to dashboard; file now only handles budget progress rendering
 
 // -------------------- Budget Rollups --------------------
 import { auth, db } from '../api/firebase.js';
@@ -124,75 +96,15 @@ async function refreshBudgetProgress() {
   }
 }
 
-// -------------------- Calendar --------------------
-function renderCalendar(baseDate) {
-  if (!els.calGrid) return;
-  els.calGrid.innerHTML = '';
-
-  const y = baseDate.getFullYear();
-  const m = baseDate.getMonth();
-  const first = new Date(y, m, 1);
-  const startDay = first.getDay();
-  const lastDate = new Date(y, m+1, 0).getDate();
-
-  const label = `${baseDate.toLocaleString('default',{month:'long'})} ${y}`;
-  if (els.monthLabel) els.monthLabel.textContent = label;
-
-  // filler cells before
-  for (let i=0;i<startDay;i++) {
-    const empty = document.createElement('div');
-    empty.className='calendar-day opacity-30';
-    els.calGrid.appendChild(empty);
-  }
-
-  // days
-  for (let d=1; d<=lastDate; d++) {
-    const cell=document.createElement('div');
-    cell.className='calendar-day';
-    const dt=new Date(y,m,d);
-    const today=new Date();
-    if (dt.toDateString()===today.toDateString()) {
-      cell.classList.add('ring-2','ring-[var(--neon)]');
-    }
-    const date=document.createElement('div');
-    date.className='date';
-    date.textContent=d;
-    cell.appendChild(date);
-
-    // Placeholder amount (demo)
-    const amt=document.createElement('div');
-    amt.className='amount muted';
-    if (Math.random()>0.75) {
-      const val=Math.round(Math.random()*80)-40;
-      amt.textContent=(val<0?'-':'+')+'$'+Math.abs(val);
-      amt.classList.remove('muted');
-      amt.classList.add(val<0?'amount-negative':'amount-positive');
-    }
-    cell.appendChild(amt);
-
-    els.calGrid.appendChild(cell);
-  }
-}
-
 // -------------------- Wiring --------------------
-function wire() {
-  els.tabBudget?.addEventListener('click',()=>switchTab('budget'));
-  els.tabCalendar?.addEventListener('click',()=>switchTab('calendar'));
-  els.prev?.addEventListener('click',()=>{CURRENT=new Date(CURRENT.getFullYear(),CURRENT.getMonth()-1,1);renderCalendar(CURRENT);});
-  els.next?.addEventListener('click',()=>{CURRENT=new Date(CURRENT.getFullYear(),CURRENT.getMonth()+1,1);renderCalendar(CURRENT);});
-}
+function wire() { /* tabs removed */ }
 
 // -------------------- Init --------------------
 document.addEventListener('DOMContentLoaded',()=>{
   wire();
-  switchTab('budget'); // default
   refreshBudgetProgress();
-  // Listen for transaction changes (future: aggregate + refresh budget UI)
   try {
     window.addEventListener('transactions:changed', (e) => {
-      // Placeholder: in future we will recompute active budget progress.
-      // For now simply log to verify wiring.
-      // Recompute progress after a small debounce to batch rapid changes
       if (e?.detail?.tx) {
         clearTimeout(window.__budgetRefreshTimer);
         window.__budgetRefreshTimer = setTimeout(()=>refreshBudgetProgress(), 300);

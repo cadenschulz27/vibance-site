@@ -11,6 +11,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 import { VibeScoreCalculations } from './calculations.js';
 import { VibeScoreInsights } from './insights.js';
 import { VibeScoreUI } from './ui.js';
+import { loadIncomeDataFromTabs } from './income/data-loader.js';
 
 // --- DATA MAPPING ---
 
@@ -33,7 +34,12 @@ const calculationMap = {
     'Income': {
         calc: VibeScoreCalculations.Income,
         gen: VibeScoreInsights.Income,
-        dataKey: 'income'
+        dataKey: 'income',
+        prepare: async ({ uid, userData }) => {
+            const derived = await loadIncomeDataFromTabs(uid, userData);
+            if (derived) return derived;
+            return userData?.income || {};
+        }
     },
     'Cash Flow': {
         calc: VibeScoreCalculations['Cash Flow'],
@@ -87,15 +93,32 @@ function initVibeScore() {
                 const userDoc = await getDoc(userDocRef);
                 const userData = userDoc.exists() ? userDoc.data() : {};
 
-                // Process the raw user data into a structured format for the UI
-                const dynamicFinancialData = Object.keys(calculationMap).map(name => {
+                const dynamicFinancialData = await Promise.all(Object.keys(calculationMap).map(async (name) => {
                     const map = calculationMap[name];
-                    const data = userData[map.dataKey] || {};
-                    const hasData = Object.keys(data).length > 0;
-                    const score = hasData ? map.calc(data) : 0;
-                    const insight = hasData ? map.gen(data, score) : "No data found. Click to go to your profile and add your information.";
-                    return { name, score, insight, hasData };
-                });
+                    let data = {};
+                    if (typeof map.prepare === 'function') {
+                        data = await map.prepare({ uid: user.uid, userData }) || {};
+                    } else {
+                        data = userData[map.dataKey] || {};
+                    }
+                    const hasData = !!(data && typeof data === 'object' && Object.values(data).some((value) => {
+                        if (typeof value === 'number') return !Number.isNaN(value) && value !== 0;
+                        if (typeof value === 'boolean') return true;
+                        if (typeof value === 'string') return value.trim().length > 0;
+                        if (Array.isArray(value)) return value.length > 0;
+                        if (value && typeof value === 'object') {
+                            return Object.keys(value).length > 0;
+                        }
+                        return false;
+                    }));
+                    const calcResult = hasData ? map.calc(data) : null;
+                    const score = hasData
+                        ? (typeof calcResult === 'number' ? calcResult : (calcResult?.score ?? 0))
+                        : 0;
+                    const analysis = (calcResult && typeof calcResult === 'object') ? calcResult : null;
+                    const insight = hasData ? map.gen(data, score, analysis) : "No data found. Sync your financial tabs to populate this insight.";
+                    return { name, score, insight, hasData, analysis };
+                }));
 
                 // Calculate the overall VibeScore
                 const itemsWithData = dynamicFinancialData.filter(item => item.hasData);
