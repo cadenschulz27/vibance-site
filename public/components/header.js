@@ -2,17 +2,24 @@
 // Vibance Header Controller — injects header.html, wires auth state, avatar/name, dropdown, admin link, and mobile menu.
 
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { initTheme, toggleTheme, onThemeChange, getCurrentTheme, applyTheme, VALID_THEMES } from '../shared/theme-controller.js';
 
 // Bump this to force refetch of header assets when structure changes
-const HEADER_VERSION = 'v27';
+const HEADER_VERSION = 'v30';
 const ADMIN_EMAIL_FALLBACK = 'cadenschulz@gmail.com';
 
 // Utils
 const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-const outside = (el, t) => !(el && (el === t || el.contains(t)));
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+
+initTheme();
+
+let currentUser = null;
+let dbRef = null;
+let detachThemeButton = null;
+let detachBrandWatcher = null;
 
 function firstNameFrom(profile, displayName, email) {
   const v = (profile?.firstName || profile?.name || displayName || '').trim();
@@ -146,7 +153,6 @@ function wireAvatarMenu(root, auth) {
   pop.innerHTML = `
     <a href="/Social/user-profile.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">My Profile</a>
     <a href="/Social/bookmarks.html"  class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">Saved Posts</a>
-    <a href="/pages/profile.html"       class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">Settings</a>
     <a href="/Accounts/accounts.html"   class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">Account Linkage</a>
     <hr class="my-1 border-neutral-800" role="separator"/>
     <a href="/pages/support.html"       class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">Help &amp; Support</a>
@@ -155,6 +161,7 @@ function wireAvatarMenu(root, auth) {
 
   // Toggle logic
   let open = false;
+  const outside = (el, t) => !(el && (el === t || el.contains(t)));
   const openMenu  = () => { pop.classList.remove('hidden'); btn.setAttribute('aria-expanded','true'); open = true; };
   const closeMenu = () => { pop.classList.add('hidden');    btn.setAttribute('aria-expanded','false'); open = false; };
 
@@ -189,6 +196,38 @@ function wireMobileMenu(root, auth) {
   });
 }
 
+function wireThemeToggle(root) {
+  const btn = $('#btn-theme', root);
+  if (!btn) return;
+
+  const sun = $('#icon-sun', root);
+  const moon = $('#icon-moon', root);
+
+  if (detachThemeButton) detachThemeButton();
+  const updateVisuals = (theme) => {
+    const label = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    if (sun) sun.classList.toggle('hidden', theme === 'light');
+    if (moon) moon.classList.toggle('hidden', theme !== 'light');
+  };
+  detachThemeButton = onThemeChange(updateVisuals, { immediate: true });
+
+  if (btn.dataset.boundTheme !== 'true') {
+    btn.addEventListener('click', async () => {
+      const next = toggleTheme();
+      if (currentUser && dbRef) {
+        try {
+          await setDoc(doc(dbRef, 'users', currentUser.uid), { theme: next }, { merge: true });
+        } catch (error) {
+          console.warn('[header] failed to persist theme', error);
+        }
+      }
+    });
+    btn.dataset.boundTheme = 'true';
+  }
+}
+
 // Admin link visibility based on custom claims OR email allow-list
 // Admin link visibility logic removed: Admin links are no longer present in header
 
@@ -221,13 +260,20 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
       brand.setAttribute('href', '/dashboard/dashboard.html');
       brand.onclick = (e) => { e.preventDefault(); location.href = '/dashboard/dashboard.html'; };
     }
+
+    const syncLogo = (theme) => {
+      const logo = $('#brand-logo', root);
+      if (!logo) return;
+      logo.src = theme === 'light' ? '/images/logo_black.png' : '/images/logo_white.png';
+    };
+    if (detachBrandWatcher) detachBrandWatcher();
+    detachBrandWatcher = onThemeChange(syncLogo, { immediate: true });
   }
   wireBrand();
+  wireThemeToggle(root);
 
   // 3) Static nav highlighting (works even before auth)
   if (variant === 'app') setActiveNav(root);
-
-  // Theme toggle removed: no initialization required
 
   // 4) Firebase
   const { auth, db } = await loadFirebase();
@@ -238,6 +284,8 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
     return;
   }
 
+  dbRef = db;
+
   // 5) Wire menus (they’ll be revealed on sign-in)
   wireAvatarMenu(root, auth);
   wireMobileMenu(root, auth);
@@ -245,21 +293,25 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
   // 6) React to auth state
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
+      currentUser = null;
       // If on marketing path but public header not loaded yet, swap
       if (variant !== 'public' && isMarketingPath()) {
         variant = 'public';
         await ensureHeaderMarkup({ variant:'public' });
         wireBrand();
+        wireThemeToggle(root);
       }
       showSignedOut(root);
       return;
     }
+    currentUser = user;
     // Logged in: ensure app header
     if (variant !== 'app') {
       variant = 'app';
       await ensureHeaderMarkup({ variant:'app' });
       wireBrand();
       setActiveNav(root);
+      wireThemeToggle(root);
       wireAvatarMenu(root, auth);
       wireMobileMenu(root, auth);
     }
@@ -271,6 +323,18 @@ function paintIdentity(root, { firstName, lastInitial, photoURL }) {
       if (snap.exists()) profile = snap.data() || {};
     } catch (e) {
       console.warn('[header] failed to read user profile', e?.message || e);
+    }
+
+    const docRef = doc(db, 'users', user.uid);
+    const profileTheme = typeof profile.theme === 'string' && VALID_THEMES.has(profile.theme) ? profile.theme : null;
+    if (profileTheme && profileTheme !== getCurrentTheme()) {
+      applyTheme(profileTheme);
+    } else if (!profileTheme) {
+      try {
+        await setDoc(docRef, { theme: getCurrentTheme() }, { merge: true });
+      } catch (error) {
+        console.warn('[header] failed to seed theme preference', error);
+      }
     }
 
     // Name + avatar

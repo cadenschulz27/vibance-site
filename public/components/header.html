@@ -27,6 +27,23 @@
 
       <!-- Right cluster -->
   <div class="flex items-center gap-2">
+        <button id="btn-theme" type="button" class="flex items-center justify-center h-9 w-9 rounded-lg border border-neutral-800 bg-black/40 text-neutral-200 hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon,#CCFF00)]" aria-label="Switch to light mode" title="Switch to light mode">
+          <span class="sr-only">Toggle theme</span>
+          <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 3v2"></path>
+            <path d="M12 19v2"></path>
+            <path d="M5.22 5.22 6.64 6.64"></path>
+            <path d="M17.36 17.36 18.78 18.78"></path>
+            <path d="M3 12h2"></path>
+            <path d="M19 12h2"></path>
+            <path d="M5.22 18.78 6.64 17.36"></path>
+            <path d="M17.36 6.64 18.78 5.22"></path>
+          </svg>
+          <svg id="icon-moon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79z"></path>
+          </svg>
+        </button>
         <!-- Shown when signed OUT -->
         <div id="auth-actions" class="flex items-center gap-2">
           <a href="/login.html"  class="px-3 py-1.5 rounded-lg text-sm text-neutral-200 hover:bg-neutral-900">Log in</a>
@@ -79,7 +96,6 @@
   <!-- Admin link removed: not accessible -->
         <hr class="my-1 border-neutral-800"/>
         <a href="/Social/user-profile.html"  class="block px-3 py-2 rounded-lg hover:bg-neutral-900">My Profile</a>
-        <a href="/pages/profile.html"        class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Settings</a>
         <button id="m-btn-signout" class="w-full text-left mt-1 px-3 py-2 rounded-lg text-red-300 hover:bg-neutral-900">Log out</button>
       </div>
     </nav>
@@ -100,4 +116,10 @@
     color: #0b0b0b !important;
     font-weight: 600;
   }
+  #btn-theme {
+    transition: background 0.18s ease, border 0.18s ease, transform 0.15s ease;
+  }
+  #btn-theme:hover { transform: translateY(-1px); }
+  #btn-theme:active { transform: translateY(0); }
+  #btn-theme svg { width: 18px; height: 18px; pointer-events: none; }
 </style>

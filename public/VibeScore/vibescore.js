@@ -12,6 +12,7 @@ import { VibeScoreCalculations } from './calculations.js';
 import { VibeScoreInsights } from './insights.js';
 import { VibeScoreUI } from './ui.js';
 import { loadIncomeDataFromTabs } from './income/data-loader.js';
+import { loadCashflowExperience, getCashflowInsight } from './cashflow/index.js';
 
 // --- DATA MAPPING ---
 
@@ -42,9 +43,34 @@ const calculationMap = {
         }
     },
     'Cash Flow': {
-        calc: VibeScoreCalculations['Cash Flow'],
-        gen: VibeScoreInsights['Cash Flow'],
-        dataKey: 'cashFlow'
+        calc: (data = {}) => {
+            if (!data.report) return null;
+            return {
+                score: data.report.score ?? 0,
+                report: data.report,
+                projections: data.projections,
+                alerts: data.alerts,
+                scenarios: data.scenarios,
+                breakdown: buildCashflowBreakdown(data.report),
+                penalty: { total: 0, items: [] },
+            };
+        },
+        gen: (_data, _score, analysis) => getCashflowInsight(analysis?.report ?? null),
+        dataKey: 'cashFlow',
+        prepare: async ({ uid, userData, db, roots }) => {
+            try {
+                const result = await loadCashflowExperience({
+                    uid,
+                    db,
+                    root: roots?.cashflow || null,
+                    context: { userData },
+                });
+                return result;
+            } catch (error) {
+                console.warn('[VibeScore] Failed to load cashflow experience', error);
+                return userData?.cashFlow || {};
+            }
+        }
     },
     'Credit Score': {
         calc: VibeScoreCalculations['Credit Score'],
@@ -97,7 +123,7 @@ function initVibeScore() {
                     const map = calculationMap[name];
                     let data = {};
                     if (typeof map.prepare === 'function') {
-                        data = await map.prepare({ uid: user.uid, userData }) || {};
+                        data = await map.prepare({ uid: user.uid, userData, db }) || {};
                     } else {
                         data = userData[map.dataKey] || {};
                     }
@@ -134,6 +160,28 @@ function initVibeScore() {
             }
         }
     });
+}
+
+const CASHFLOW_FACTOR_META = {
+    surplus: { label: 'Surplus Quality', weight: 0.4 },
+    volatility: { label: 'Stability', weight: 0.2 },
+    runway: { label: 'Runway', weight: 0.25 },
+    goals: { label: 'Goal Fuel', weight: 0.15 },
+};
+
+function buildCashflowBreakdown(report = {}) {
+    const factors = report.factors || {};
+    return Object.entries(CASHFLOW_FACTOR_META).reduce((acc, [key, meta]) => {
+        const score = Math.round(factors[key] ?? 0);
+        acc[key] = {
+            key,
+            label: meta.label,
+            score,
+            weight: meta.weight,
+            contribution: Math.round(meta.weight * score),
+        };
+        return acc;
+    }, {});
 }
 
 

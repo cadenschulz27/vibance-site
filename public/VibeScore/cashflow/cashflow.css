@@ -1,0 +1,262 @@
+/* cashflow/cashflow.css */
+
+.cashflow-panel-root {
+    width: 100%;
+    max-width: 960px;
+    margin: 2rem auto 0 auto;
+    display: flex;
+    justify-content: center;
+}
+
+.cashflow-panel {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    color: #e4e4e7;
+}
+
+.cf-card {
+    background: linear-gradient(145deg, rgba(32, 30, 35, 0.9), rgba(20, 18, 22, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 18px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: 0 24px 60px rgba(15, 15, 30, 0.45);
+    backdrop-filter: blur(12px);
+}
+
+.cf-card header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.cf-card header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f5f5f5;
+}
+
+.cf-card header p {
+    font-size: 0.9rem;
+    color: rgba(226, 232, 240, 0.75);
+}
+
+.cf-card--score {
+    grid-column: span 2;
+    min-height: 320px;
+}
+
+.cf-card--runway {
+    justify-content: space-between;
+}
+
+.cf-card--alerts ul,
+.cf-card--scenarios ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cf-card .cf-empty {
+    color: rgba(226, 232, 240, 0.65);
+    font-size: 0.9rem;
+}
+
+.cf-gauge {
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.05));
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    text-align: center;
+    padding: 1.25rem;
+}
+
+.cf-gauge__value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #60a5fa;
+}
+
+.cf-gauge__label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: rgba(148, 163, 184, 0.85);
+}
+
+.cf-waterfall {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    text-align: center;
+}
+
+.cf-waterfall div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.cf-waterfall dt {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: rgba(148, 163, 184, 0.85);
+}
+
+.cf-waterfall dd {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.cf-waterfall dd[data-kind="income"] {
+    color: #34d399;
+}
+
+.cf-waterfall dd[data-kind="expense"] {
+    color: #f87171;
+}
+
+.cf-waterfall dd[data-kind="surplus"] {
+    color: #facc15;
+}
+
+.cf-chart {
+    min-height: 120px;
+    border-radius: 14px;
+    border: 1px dashed rgba(148, 163, 184, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: rgba(148, 163, 184, 0.6);
+}
+
+.cf-runway {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 1rem;
+}
+
+.cf-runway strong {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #facc15;
+}
+
+.cf-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cf-actions li strong {
+    display: block;
+    font-weight: 600;
+    color: #f5f5f5;
+}
+
+.cf-actions li p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    color: rgba(226, 232, 240, 0.75);
+}
+
+.cf-alerts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.cf-alerts li {
+    padding: 0.75rem 0.85rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.cf-alerts li[data-severity="critical"] {
+    background: rgba(248, 113, 113, 0.18);
+    border-color: rgba(248, 113, 113, 0.35);
+    color: #fecaca;
+}
+
+.cf-alerts li[data-severity="warning"] {
+    background: rgba(250, 204, 21, 0.14);
+    border-color: rgba(250, 204, 21, 0.3);
+    color: #fef3c7;
+}
+
+.cf-alerts li[data-severity="info"] {
+    background: rgba(96, 165, 250, 0.14);
+    border-color: rgba(96, 165, 250, 0.3);
+    color: #dbeafe;
+}
+
+.cf-scenarios {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.cf-scenarios li {
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: rgba(45, 51, 67, 0.45);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.cf-scenarios li strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: #93c5fd;
+}
+
+.cf-scenarios li span {
+    display: block;
+    font-size: 0.9rem;
+    color: rgba(226, 232, 240, 0.75);
+}
+
+@media (max-width: 1024px) {
+    .cashflow-panel-root {
+        padding: 0 1rem 1rem;
+    }
+
+    .cf-card--score {
+        grid-column: span 1;
+    }
+
+    .cf-waterfall {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .cashflow-panel-root {
+        margin-top: 1rem;
+    }
+
+    .cashflow-panel {
+        gap: 1rem;
+    }
+
+    .cf-waterfall {
+        grid-template-columns: 1fr;
+    }
+
+    .cf-gauge {
+        width: 120px;
+        height: 120px;
+    }
+}
