@@ -5,10 +5,14 @@
 const STORAGE_KEY = 'vb_theme';
 const THEME_LINK_ID = 'vb-theme-link';
 const THEME_CSS_PATH = '/shared/theme.css';
+const THEME_TRANSITION_CLASS = 'vb-theme-transitioning';
+const THEME_TRANSITION_DURATION = 420;
+
 export const VALID_THEMES = new Set(['light', 'dark']);
 
 let currentTheme = 'dark';
 let initialized = false;
+let transitionTimer = null;
 const listeners = new Set();
 
 function ensureThemeStyles() {
@@ -75,13 +79,26 @@ function notify(theme) {
   });
 }
 
-export function applyTheme(theme, { persist = true } = {}) {
+function queueTransition() {
+  if (typeof document === 'undefined' || typeof requestAnimationFrame !== 'function') return;
+  const { body } = document;
+  if (!body) return;
+  body.classList.add(THEME_TRANSITION_CLASS);
+  if (transitionTimer) clearTimeout(transitionTimer);
+  transitionTimer = setTimeout(() => {
+    body.classList.remove(THEME_TRANSITION_CLASS);
+    transitionTimer = null;
+  }, THEME_TRANSITION_DURATION);
+}
+
+export function applyTheme(theme, { persist = true, suppressTransition = false } = {}) {
   if (typeof document === 'undefined') return currentTheme;
   ensureThemeStyles();
   const next = VALID_THEMES.has(theme) ? theme : 'dark';
   const isChanged = !initialized || next !== currentTheme;
   currentTheme = next;
   document.documentElement.setAttribute('data-theme', next);
+  if (document.body) document.body.setAttribute('data-theme', next);
   document.documentElement.style.setProperty('color-scheme', next === 'light' ? 'light' : 'dark');
   if (persist) {
     try {
@@ -91,6 +108,7 @@ export function applyTheme(theme, { persist = true } = {}) {
     }
   }
   initialized = true;
+  if (isChanged && !suppressTransition) queueTransition();
   if (isChanged) {
     notify(next);
     document.dispatchEvent(new CustomEvent('vb-theme-change', { detail: { theme: next } }));
@@ -106,7 +124,7 @@ export function toggleTheme(options = {}) {
 export function initTheme() {
   ensureThemeStyles();
   const stored = getStoredTheme();
-  return applyTheme(stored, { persist: false });
+  return applyTheme(stored, { persist: false, suppressTransition: true });
 }
 
 // Auto-initialize on module load to avoid flash of incorrect theme.

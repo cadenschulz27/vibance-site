@@ -860,7 +860,6 @@ function wireUI() {
 
   els.syncAll?.setAttribute('title', 'Sync accounts');
   els.syncAll?.setAttribute('aria-label', 'Sync accounts');
-  els.syncAll.classList.add('sync-btn');
   // ensure starting icon
   // Do not overwrite the button's HTML; let the markup in expenses.html control the icon and text.
   els.syncAll?.addEventListener('click', async () => {

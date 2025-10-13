@@ -37,6 +37,213 @@ body {
     text-align: left;
 }
 
+/* --- AI COPILOT --- */
+.ai-copilot .ai-card {
+    position: relative;
+    overflow: hidden;
+    padding: 2.6rem 2.8rem 2.4rem;
+    border-radius: 1.5rem;
+    background:
+        radial-gradient(circle at 12% 18%, rgba(204, 255, 0, 0.22), transparent 46%),
+        radial-gradient(circle at 85% 85%, rgba(111, 76, 255, 0.2), transparent 55%),
+        linear-gradient(135deg, rgba(16, 18, 30, 0.96), rgba(10, 11, 20, 0.88));
+    border: 1px solid rgba(173, 255, 120, 0.32);
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.ai-copilot .ai-card::before {
+    content: "";
+    position: absolute;
+    inset: -40% 50% 45% -35%;
+    background: radial-gradient(circle at top, rgba(204, 255, 0, 0.26), transparent 68%);
+    filter: blur(25px);
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.ai-copilot .ai-card::after {
+    content: "";
+    position: absolute;
+    inset: 55% -25% -35% 40%;
+    background: radial-gradient(circle at bottom right, rgba(111, 76, 255, 0.32), transparent 70%);
+    filter: blur(35px);
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+.ai-card-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.ai-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #101010;
+    background: linear-gradient(135deg, rgba(204, 255, 0, 0.92), rgba(204, 255, 0, 0.65));
+    box-shadow: 0 10px 24px rgba(204, 255, 0, 0.35);
+}
+
+.ai-status {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(224, 231, 255, 0.62);
+}
+
+.ai-card-title {
+    position: relative;
+    z-index: 1;
+    font-family: 'Lora', serif;
+    font-size: 2.3rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 0 0 1rem 0;
+}
+
+.ai-summary {
+    position: relative;
+    z-index: 1;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: rgba(235, 241, 255, 0.86);
+    margin-bottom: 1.4rem;
+}
+
+.ai-empty {
+    position: relative;
+    z-index: 1;
+    font-size: 0.9rem;
+    color: rgba(200, 206, 219, 0.7);
+    margin-bottom: 1.2rem;
+}
+
+.ai-tips {
+    position: relative;
+    z-index: 1;
+    margin: 0 0 1.6rem 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.85rem;
+}
+
+.ai-tips li {
+    position: relative;
+    padding-left: 1.6rem;
+    font-size: 0.98rem;
+    line-height: 1.6;
+    color: rgba(235, 241, 255, 0.9);
+}
+
+.ai-tips li::before {
+    content: "";
+    position: absolute;
+    top: 0.5rem;
+    left: 0;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(204, 255, 0, 0.85), rgba(111, 76, 255, 0.75));
+    box-shadow: 0 0 12px rgba(204, 255, 0, 0.45);
+}
+
+.ai-card-footer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.1rem;
+}
+
+.ai-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.75rem 1.35rem;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(204, 255, 0, 0.35);
+    background: rgba(10, 12, 20, 0.82);
+    color: #f8fafc;
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ai-refresh-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(204, 255, 0, 0.55);
+    box-shadow: 0 18px 42px rgba(204, 255, 0, 0.18);
+}
+
+.ai-refresh-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.ai-refresh-btn.is-busy .ai-refresh-btn__label {
+    opacity: 0.55;
+}
+
+.ai-refresh-btn__spinner {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.34);
+    border-top-color: rgba(204, 255, 0, 0.9);
+    display: none;
+}
+
+.ai-refresh-btn.is-busy .ai-refresh-btn__spinner {
+    display: inline-flex;
+    animation: ai-spin 0.9s linear infinite;
+}
+
+.ai-footnote {
+    font-size: 0.78rem;
+    color: rgba(214, 223, 255, 0.58);
+}
+
+@keyframes ai-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .ai-copilot .ai-card {
+        padding: 2.1rem 1.8rem 1.7rem;
+    }
+
+    .ai-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+
+    .ai-card-title {
+        font-size: 1.9rem;
+    }
+
+    .ai-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
 /* --- FINANCIAL NEWS GRID --- */
 .news-grid {
     display: grid;

@@ -30,6 +30,26 @@
                 </div>
         </section>
 
+        <section id="ai-copilot" class="content-section ai-copilot">
+            <div class="ai-card" id="ai-card">
+                <div class="ai-card-header">
+                    <span class="ai-chip" id="ai-chip">On-device AI</span>
+                    <span id="ai-status" class="ai-status">Standing by…</span>
+                </div>
+                <h2 class="ai-card-title">Spending Copilot</h2>
+                <p id="ai-summary" class="ai-summary">We’ll scan your latest transactions once they load.</p>
+                <ul id="ai-insights" class="ai-tips" style="display: none;"></ul>
+                <p id="ai-empty" class="ai-empty">Connect one or more accounts to unlock tailored guidance.</p>
+                <div class="ai-card-footer">
+                    <button id="ai-refresh-btn" class="ai-refresh-btn" type="button">
+                        <span class="ai-refresh-btn__label">Regenerate insight</span>
+                        <span class="ai-refresh-btn__spinner" aria-hidden="true"></span>
+                    </button>
+                    <p class="ai-footnote">Runs fully in your browser • powered by open-source transformers</p>
+                </div>
+            </div>
+        </section>
+
         <section id="financial-news" class="content-section">
             <h2 class="section-header">Financial News</h2>
             <div id="news-grid" class="news-grid">
@@ -88,6 +108,10 @@
         </section>
     </main>
 
+    <script>
+        window.vibanceAI = window.vibanceAI || {};
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0/dist/transformers.min.js" defer></script>
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
@@ -115,6 +139,10 @@
             <div id="news-modal-perspective-section" class="news-modal__section">
                 <h4 class="news-modal__section-title">Vibance perspective</h4>
                 <p id="news-modal-perspective" class="news-modal__text"></p>
+            </div>
+            <div id="news-modal-advisor-section" class="news-modal__section" style="display:none;">
+                <h4 class="news-modal__section-title">AI concierge note</h4>
+                <p id="news-modal-advisor" class="news-modal__text"></p>
             </div>
             <div class="news-modal__section news-modal__links">
                 <a id="news-modal-source" class="news-modal__source" href="#" target="_blank" rel="noopener noreferrer">Read the original report</a>
