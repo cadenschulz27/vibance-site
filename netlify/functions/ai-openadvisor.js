@@ -1,8 +1,8 @@
 const fetch = require('node-fetch');
 
-const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct';
-const API_KEY = process.env.OPENROUTER_API_KEY;
+const API_URL = 'https://api.cohere.com/v1/chat';
+const DEFAULT_MODEL = process.env.COHERE_MODEL || 'command-r-plus';
+const API_KEY = process.env.COHERE_API_KEY;
 
 function jsonResponse(status, payload = {}) {
   return {
@@ -59,7 +59,7 @@ module.exports.handler = async function handler(event) {
   }
 
   if (!API_KEY) {
-    return jsonResponse(500, { error: 'Missing OpenRouter API key. Set OPENROUTER_API_KEY.' });
+    return jsonResponse(500, { error: 'Missing Cohere API key. Set COHERE_API_KEY.' });
   }
 
   let payload;
@@ -75,21 +75,13 @@ module.exports.handler = async function handler(event) {
 
   const body = {
     model: DEFAULT_MODEL,
-    messages: [
-      {
-        role: 'system',
-        content: 'You are the Vibance concierge AI. You speak with warmth, clarity, and a bias toward actionable guidance. Keep responses compact, avoid emojis, and do not fabricate numbers. When you reference an action, include the rationale in plain language.',
-      },
-      {
-        role: 'user',
-        content: buildUserPrompt(payload),
-      },
-    ],
-    max_tokens: 220,
-    temperature: Number.isFinite(Number(process.env.OPENROUTER_TEMPERATURE))
-      ? Number(process.env.OPENROUTER_TEMPERATURE)
+    temperature: Number.isFinite(Number(process.env.COHERE_TEMPERATURE))
+      ? Number(process.env.COHERE_TEMPERATURE)
       : 0.6,
-    top_p: 0.9,
+    max_tokens: Math.min(Number(process.env.COHERE_MAX_TOKENS) || 220, 400),
+    message: buildUserPrompt(payload),
+    stream: false,
+    preamble: 'You are the Vibance concierge AI. You speak with warmth, clarity, and a bias toward actionable guidance. Keep responses compact (2-3 sentences, under 70 words), avoid emojis, and never fabricate numbers. When you outline an action, include the rationale in plain language.',
   };
 
   let response;
@@ -100,38 +92,37 @@ module.exports.handler = async function handler(event) {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${API_KEY}`,
-        'HTTP-Referer': process.env.URL || 'https://vibance.com',
-        'X-Title': 'Vibance Concierge',
+        'Cohere-Version': '2024-08-06',
       },
       body: JSON.stringify(body),
     });
   } catch (err) {
-    console.error('OpenRouter request failed', err);
-    return jsonResponse(502, { error: 'Failed to reach OpenRouter API.' });
+    console.error('Cohere request failed', err);
+    return jsonResponse(502, { error: 'Failed to reach Cohere API.' });
   }
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('OpenRouter error', response.status, errorText);
-    return jsonResponse(response.status, { error: 'OpenRouter API error', details: errorText });
+    console.error('Cohere error', response.status, errorText);
+    return jsonResponse(response.status, { error: 'Cohere API error', details: errorText });
   }
 
   let data;
   try {
     data = await response.json();
   } catch (err) {
-    console.error('Failed to parse OpenRouter response', err);
-    return jsonResponse(502, { error: 'Invalid response from OpenRouter.' });
+    console.error('Failed to parse Cohere response', err);
+    return jsonResponse(502, { error: 'Invalid response from Cohere.' });
   }
 
-  const tip = data?.choices?.[0]?.message?.content?.trim();
+  const tip = (data?.text || data?.response || '').toString().trim();
   if (!tip) {
-    return jsonResponse(502, { error: 'No content returned from OpenRouter.' });
+    return jsonResponse(502, { error: 'No content returned from Cohere.' });
   }
 
   return jsonResponse(200, {
     tip,
     model: data?.model || DEFAULT_MODEL,
-    usage: data?.usage || null,
+    usage: data?.meta || null,
   });
 };

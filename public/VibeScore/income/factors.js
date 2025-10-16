@@ -81,11 +81,27 @@ const normalizeSkillDemand = (value) => {
 };
 
 export const computeEarningPowerFactor = (data, context) => {
-  const { adjustedIncome, options } = context;
-  const { strongIncomeCap, baselineMonthlyIncome } = options ?? DEFAULT_OPTIONS;
+  const { adjustedIncome, options, ageTargets, age } = context;
+  const config = options ?? DEFAULT_OPTIONS;
+  const strongIncomeCap = config.strongIncomeCap ?? DEFAULT_OPTIONS.strongIncomeCap;
+  const baselineMonthlyIncome = config.baselineMonthlyIncome ?? DEFAULT_OPTIONS.baselineMonthlyIncome;
+
   const normalized = saturate(adjustedIncome, strongIncomeCap);
-  const baselineLift = Math.min(1.1, adjustedIncome / Math.max(1, baselineMonthlyIncome));
-  const score = clampScore((0.65 * normalized + 0.35 * Math.min(1, baselineLift)) * 100);
+  const baselineLiftRaw = adjustedIncome / Math.max(1, baselineMonthlyIncome);
+  const baselineComponent = Math.max(0, Math.min(1, baselineLiftRaw));
+  const baselineLift = Math.min(1.1, Math.max(0, baselineLiftRaw));
+
+  const expectation = ageTargets?.expectation || null;
+  let alignmentRatio = null;
+  let alignmentComponent = baselineComponent;
+  if (expectation && expectation.monthlyMid > 0) {
+    alignmentRatio = adjustedIncome / expectation.monthlyMid;
+    const bounded = Math.max(0, alignmentRatio);
+    alignmentComponent = Math.min(1.1, bounded);
+  }
+
+  const blended = (0.55 * normalized) + (0.25 * baselineComponent) + (0.20 * alignmentComponent);
+  const score = clampScore(blended * 100);
   return {
     id: 'earningPower',
     label: 'Earning Power',
@@ -95,7 +111,11 @@ export const computeEarningPowerFactor = (data, context) => {
       baselineMonthlyIncome,
       strongIncomeCap,
       normalized,
-      baselineLift
+      baselineLift,
+      alignmentComponent,
+      ageAlignment: alignmentRatio,
+      ageExpectation: expectation,
+      ageYears: age?.years ?? null
     }
   };
 };
@@ -332,6 +352,35 @@ export const computePenaltyAdjustments = (data, context) => {
       label: 'Missing key income data',
       amount: Math.min(6, dataGaps.length * 1.5)
     });
+  }
+
+  const ageExpectation = context.ageTargets?.expectation;
+  const ageYears = context.age?.years;
+  if (ageExpectation && Number.isFinite(ageYears)) {
+    const expectedMax = ageExpectation.monthlyMax;
+    const income = context.totalIncome;
+    if (expectedMax > 0) {
+      const ratio = income / expectedMax;
+      if (ratio < 0.5) {
+        const severity = Math.min(1, (0.5 - ratio) / 0.5);
+        items.push({
+          id: 'ageAlignmentLow',
+          label: 'Income low relative to age peers',
+          amount: 5 * severity
+        });
+      }
+    }
+    if (ageExpectation.monthlyMid > 0) {
+      const overRatio = income / ageExpectation.monthlyMid;
+      if (overRatio > 3) {
+        const severity = Math.min(1, (overRatio - 3) / 4);
+        items.push({
+          id: 'ageAlignmentHigh',
+          label: 'Income atypically high for age band',
+          amount: 3 * severity
+        });
+      }
+    }
   }
 
   return items;

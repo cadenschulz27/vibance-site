@@ -36,6 +36,15 @@ function setActiveNav(root) {
   const path = (location.pathname || '').toLowerCase();
   console.log(`[Header] Checking path: "${path}"`);
 
+  const noHighlightPaths = [
+    '/pages/profile',
+    '/pages/profile.html',
+  ];
+  if (noHighlightPaths.some(p => path.startsWith(p))) {
+    console.log('[Header] Path opted out of nav highlighting.');
+    return;
+  }
+
   const pairs = [
     ['/dashboard', '#nav-dashboard'],
     ['/expenses',  '#nav-expenses'],
@@ -151,8 +160,7 @@ function wireAvatarMenu(root, auth) {
 
   // Build once
   pop.innerHTML = `
-    <a href="/Social/user-profile.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">My Profile</a>
-    <a href="/Social/bookmarks.html"  class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">Saved Posts</a>
+    <a href="/pages/profile.html" class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">My Profile</a>
     <a href="/Accounts/accounts.html"   class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">Account Linkage</a>
     <hr class="my-1 border-neutral-800" role="separator"/>
     <a href="/pages/support.html"       class="block px-3 py-2 rounded-lg text-sm hover:bg-neutral-900" role="menuitem">Help &amp; Support</a>

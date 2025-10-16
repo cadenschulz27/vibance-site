@@ -246,12 +246,26 @@ export async function toggleSavedPost(postId, save) {
   await setDoc(ref, { savedPosts: save ? arrayUnion(postId) : arrayRemove(postId), updatedAt: nowServer() }, { merge: true });
 }
 export async function getPostsByIds(ids = []) {
-  const out = [];
-  for (const id of ids) {
-    const p = await getPost(id);
-    if (p) out.push(p);
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+
+  const order = [];
+  const seen = new Set();
+  for (const raw of ids) {
+    const id = typeof raw === 'string' ? raw.trim() : String(raw || '').trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    order.push(id);
   }
-  return out;
+
+  if (order.length === 0) return [];
+
+  const results = await Promise.all(order.map(id => getPost(id).catch(() => null)));
+  const mapped = new Map();
+  results.forEach(post => {
+    if (post?.id) mapped.set(post.id, post);
+  });
+
+  return order.map(id => mapped.get(id)).filter(Boolean);
 }
 
 /* -------------------------------- Comments ------------------------------- */

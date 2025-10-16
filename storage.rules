@@ -1,0 +1,80 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for Vibance
+// Last updated: October 14, 2025
+//
+// Purpose: Secure user profile avatars and prevent unauthorized access
+// Path structure: users/{userId}/profile/avatar.jpg
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function: Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function: Check if user owns the resource
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Helper function: Validate image file
+    function isValidImage() {
+      return request.resource != null
+          && request.resource.size < 5 * 1024 * 1024 // 5MB max
+          && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+    
+    // =============================================================
+    // User Profile Avatars
+    // Path: users/{userId}/profile/{fileName}
+    // =============================================================
+    match /users/{userId}/profile/{fileName} {
+      // Allow read if:
+      // - User is authenticated AND
+      // - Either owns the file OR file is marked as public (via metadata)
+      allow read: if isAuthenticated() 
+                  && (isOwner(userId) 
+                      || (resource != null && resource.metadata.visibility == 'public'));
+      
+      // Allow write (upload/update) if:
+      // - User owns the resource AND
+      // - File is a valid image (JPEG, PNG, WebP) AND
+      // - File is under 5MB AND
+      // - Filename is avatar.jpg/png/webp
+      allow write: if isOwner(userId) 
+                   && isValidImage() 
+                   && (fileName == 'avatar.jpg' 
+                       || fileName == 'avatar.png' 
+                       || fileName == 'avatar.webp');
+      
+      // Allow delete if user owns the resource
+      allow delete: if isOwner(userId);
+    }
+    
+    // =============================================================
+    // Post Images (Social Feed)
+    // Path: posts/{userId}/{fileName}
+    // =============================================================
+    match /posts/{userId}/{fileName} {
+      // Allow authenticated users to read any post image
+      allow read: if isAuthenticated();
+      
+      // Allow user to upload their own post images
+      // - Must be valid image type (JPEG, PNG, WebP)
+      // - Must be under 5MB
+      allow write: if isOwner(userId) && isValidImage();
+      
+      // Allow user to delete their own post images
+      allow delete: if isOwner(userId);
+    }
+    
+    // =============================================================
+    // Default: Deny all other access
+    // =============================================================
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

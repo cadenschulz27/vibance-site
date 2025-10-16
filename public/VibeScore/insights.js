@@ -38,6 +38,12 @@ const generateIncomeInsight = (data = {}, score = 0, analysis = null) => {
         + (data.passiveIncome || 0)
         + (data.sideIncome || 0);
 
+    const ageBracket = analysis?.demographics?.ageBracket ?? data.ageBracket ?? null;
+    const ageExpectation = analysis?.demographics?.ageExpectation ?? null;
+    const ageAlignment = typeof data.ageIncomeAlignmentRatio === 'number'
+        ? data.ageIncomeAlignmentRatio
+        : (analysis?.breakdown?.earningPower?.details?.ageAlignment ?? null);
+
     const breakdownEntries = analysis?.breakdown
         ? Object.values(analysis.breakdown)
         : [];
@@ -56,6 +62,25 @@ const generateIncomeInsight = (data = {}, score = 0, analysis = null) => {
         message = `Income is trending in the right direction, but resilience needs reinforcement before it can anchor larger goals.`;
     } else {
         message = `Income is underpowered relative to your goals. Prioritize cash-flow expansion and harden safety nets to stabilize the system.`;
+    }
+
+    if (ageBracket && ageExpectation) {
+        const mid = ageExpectation?.monthlyMid ? formatCurrency(ageExpectation.monthlyMid) : null;
+        const range = ageExpectation?.monthlyMin && ageExpectation?.monthlyMax
+            ? `${formatCurrency(ageExpectation.monthlyMin)}–${formatCurrency(ageExpectation.monthlyMax)}`
+            : null;
+        if (mid && range) {
+            message += ` For peers in the ${ageBracket} range, typical monthly income lands near ${mid} (${range}).`;
+        } else if (mid) {
+            message += ` Typical income for the ${ageBracket} range averages around ${mid} per month.`;
+        }
+        if (typeof ageAlignment === 'number' && isFinite(ageAlignment)) {
+            if (ageAlignment >= 1.2) {
+                message += ` You're outpacing your age group—consider channeling the surplus into long-term assets and protections.`;
+            } else if (ageAlignment <= 0.75) {
+                message += ` Your cash flow is trailing age-based expectations; focus on skill-building or negotiating compensation to narrow the gap.`;
+            }
+        }
     }
 
     if (topStrength) {

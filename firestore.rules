@@ -29,7 +29,7 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if isOwner(uid);
+      allow read: if isOwner(uid) || isAdmin();
 
       allow create: if isOwner(uid) &&
         request.resource.data.username is string;
@@ -69,6 +69,12 @@ service cloud.firestore {
           allow update: if isOwner(uid) &&
             request.resource.data.diff(resource.data).changedKeys().hasOnly(['categoryUser']);
         }
+      }
+
+      // Legacy analytics docs (read-only for owner)
+      match /analytics/{docId=**} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if false;
       }
       
       // Manual entries (user-created income/expense rows)
@@ -131,13 +137,13 @@ service cloud.firestore {
 
     match /siteContent/{docId=**} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
     match /applications/{appId} {
-      allow read: if false;
-      allow create: if isSignedIn();
-      allow update, delete: if false;
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
 
     match /posts/{postId} {

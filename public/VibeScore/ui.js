@@ -172,6 +172,9 @@ export const VibeScoreUI = {
             console.error("VibeScore UI Error: Invalid or missing financial data provided.", data);
             return;
         }
+        if (plane) {
+            plane.innerHTML = '';
+        }
         const angleStep = 360 / data.length;
         const startingAngle = -90;
 
@@ -180,14 +183,35 @@ export const VibeScoreUI = {
             
             let colors;
             if (!item.hasData) {
-                colors = { borderColor: 'var(--color-nodata)', textColor: '#9CA3AF' };
+                colors = {
+                    borderColor: 'rgba(148, 163, 184, 0.32)',
+                    textColor: '#9CA3AF',
+                    bubbleBg: 'rgba(26, 31, 40, 0.72)'
+                };
             } else if (item.score < 50) {
-                colors = { borderColor: 'rgba(255, 69, 0, 0.4)', textColor: 'var(--color-red)' };
+                colors = {
+                    borderColor: 'rgba(248, 113, 113, 0.42)',
+                    textColor: '#F87171',
+                    bubbleBg: 'linear-gradient(135deg, rgba(248, 113, 113, 0.24), rgba(127, 29, 29, 0.58))'
+                };
             } else if (item.score < 80) {
-                colors = { borderColor: 'rgba(255, 215, 0, 0.4)', textColor: 'var(--color-yellow)' };
+                colors = {
+                    borderColor: 'rgba(253, 224, 71, 0.4)',
+                    textColor: '#FACC15',
+                    bubbleBg: 'linear-gradient(135deg, rgba(253, 224, 71, 0.28), rgba(161, 98, 7, 0.52))'
+                };
             } else {
-                colors = { borderColor: 'rgba(144, 238, 144, 0.4)', textColor: 'var(--color-green)' };
+                colors = {
+                    borderColor: 'rgba(110, 231, 183, 0.42)',
+                    textColor: '#86EFAC',
+                    bubbleBg: 'linear-gradient(135deg, rgba(110, 231, 183, 0.28), rgba(6, 95, 70, 0.52))'
+                };
             }
+
+            const insightAccent = {
+                borderColor: colors.borderColor,
+                textColor: colors.textColor
+            };
 
             const bubble = document.createElement('div');
             bubble.className = 'hud-bubble';
@@ -210,12 +234,22 @@ export const VibeScoreUI = {
             if (item.analysis?.penalty?.total) {
                 tooltipLines.push(`Penalties: -${item.analysis.penalty.total.toFixed(1)} pts`);
             }
-            const tooltipAttr = tooltipLines.length ? ` title="${tooltipLines.join(' \u2022 ')}"` : '';
-            const coreContent = `<div class="bubble-core"${tooltipAttr} style="--text-color: ${colors.textColor};"><span>${item.name}</span><span class="bubble-score">${scoreText}</span></div>`;
+            const ariaLabel = tooltipLines.length ? ` aria-label="${tooltipLines.join(' \u2022 ').replace(/"/g, "'")}"` : '';
+
+            const coreContent = `
+                <div class="bubble-core"${ariaLabel} style="--text-color: ${colors.textColor}; --bubble-title-color: ${colors.textColor}; --bubble-score-color: ${colors.textColor}; --bubble-border: ${colors.borderColor}; --bubble-bg: ${colors.bubbleBg}">
+                    <div class="bubble-info">
+                        <div class="bubble-info__header">
+                            <span class="bubble-title">${item.name}</span>
+                            <span class="bubble-score">${scoreText}</span>
+                        </div>
+                    </div>
+                </div>
+            `.trim();
             bubble.innerHTML = coreContent;
             plane.appendChild(bubble);
 
-            bubble.addEventListener('pointerenter', () => this.showInsight(item, colors));
+            bubble.addEventListener('pointerenter', () => this.showInsight(item, insightAccent));
             bubble.addEventListener('pointerleave', () => this.hideInsight());
         });
     },

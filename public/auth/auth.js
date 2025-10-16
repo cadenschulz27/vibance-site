@@ -115,13 +115,22 @@ if (signupForm) {
 
       // 3) Write profile fields (do NOT re-send 'username' here)
       const fullName = `${firstName} ${lastName}`.trim();
-      await setDoc(doc(db, "users", user.uid), {
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(userRef, {
         firstName,
         lastName,
         name: fullName,
         email,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        onboarding: {
+          pending: true,
+          basicsComplete: false,
+          incomeProfileComplete: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastPrompted: serverTimestamp()
+        }
       }, { merge: true });
 
       // 4) Send 6-digit code and go to verification page

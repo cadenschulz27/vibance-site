@@ -15,9 +15,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
     
     <style>
+        :root {
+            --navy-950: #020617;
+            --navy-920: #050B1A;
+            --navy-880: #071327;
+            --navy-840: #0C1C35;
+            --navy-glass: rgba(11, 21, 41, 0.65);
+            --navy-glass-strong: rgba(11, 21, 41, 0.85);
+            --border-muted: rgba(68, 89, 140, 0.45);
+            --border-highlight: rgba(118, 155, 255, 0.48);
+            --accent-neon: #CCFF00;
+            --accent-neon-soft: #b8ff3b;
+            --text-primary: #F8FAFC;
+            --text-secondary: rgba(203, 213, 225, 0.78);
+        }
         body {
-            background-color: #000000;
-            color: #FFFFFF;
+            background:
+                radial-gradient(120% 120% at 50% 0%, rgba(37, 74, 140, 0.26), transparent 62%),
+                var(--navy-950);
+            color: var(--text-primary);
             font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
@@ -26,24 +42,25 @@
             font-family: 'Lora', serif;
         }
         .bg-neon {
-            background-color: #CCFF00;
+            background: linear-gradient(135deg, var(--accent-neon), var(--accent-neon-soft));
         }
         .text-neon {
-            color: #CCFF00;
+            color: var(--accent-neon);
         }
         .btn-neon {
-            background-color: #CCFF00;
-            color: #000000;
+            background: linear-gradient(135deg, var(--accent-neon), var(--accent-neon-soft));
+            color: #041406;
             font-weight: 700;
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 16px 34px rgba(204, 255, 0, 0.24);
         }
         .btn-neon:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2);
+            box-shadow: 0 22px 48px rgba(204, 255, 0, 0.3);
         }
         .hero-bg {
             position: relative;
-            background-color: #0D0D0D;
+            background: radial-gradient(120% 120% at 50% 0%, rgba(70, 123, 255, 0.3) 0%, rgba(16, 29, 58, 0.92) 40%, var(--navy-950) 100%);
             overflow: hidden;
         }
         /* NEW: Canvas for WebGL */
@@ -56,7 +73,9 @@
             z-index: 0;
         }
         .section-bg {
-            background-color: #101010;
+            background: linear-gradient(180deg, var(--navy-920), var(--navy-880));
+            border-top: 1px solid rgba(54, 72, 114, 0.4);
+            border-bottom: 1px solid rgba(35, 48, 84, 0.45);
         }
 
         .fade-in-up {
@@ -77,26 +96,34 @@
             stroke-dasharray: 3000;
             stroke-dashoffset: 3000;
             transition: stroke-dashoffset 0.5s ease-out;
+            stroke: rgba(86, 114, 179, 0.45);
         }
         
         .interactive-card {
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            background-color: rgba(26, 26, 26, 0.5);
-            border: 1px solid #2A2A2A;
-            backdrop-filter: blur(5px);
+            background: var(--navy-glass);
+            border: 1px solid var(--border-muted);
+            backdrop-filter: blur(12px);
             border-radius: 1rem;
             padding: 1.5rem;
+            box-shadow: 0 22px 50px rgba(5, 10, 24, 0.45);
         }
         .interactive-card:hover {
-            box-shadow: 0 0 40px rgba(204, 255, 0, 0.1);
+            box-shadow: 0 26px 56px rgba(8, 14, 32, 0.6);
+            border-color: var(--border-highlight);
+        }
+        .feature-chip {
+            background: linear-gradient(145deg, rgba(36, 52, 88, 0.92), rgba(16, 29, 54, 0.82));
+            border: 1px solid rgba(78, 102, 158, 0.5);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 28px rgba(9, 18, 35, 0.6);
         }
 
         /* NEW: Wall of Wins Styling */
         .wall-of-wins-container {
             overflow: hidden;
             position: relative;
-            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+            mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
         }
         .wall-of-wins-track {
             display: flex;
@@ -108,13 +135,35 @@
             flex-shrink: 0;
             margin: 0 1rem;
             padding: 1.5rem;
-            background-color: #1A1A1A;
-            border: 1px solid #2A2A2A;
+            background: var(--navy-glass-strong);
+            border: 1px solid rgba(70, 92, 145, 0.5);
             border-radius: 1rem;
+            box-shadow: 0 16px 44px rgba(5, 11, 25, 0.5);
         }
         .data-card {
-            background-color: #CCFF00;
-            color: #000;
+            background: linear-gradient(150deg, rgba(204, 255, 0, 0.95), rgba(148, 255, 108, 0.92));
+            color: #041406;
+            box-shadow: 0 18px 42px rgba(204, 255, 0, 0.24);
+        }
+        #live-data-ticker {
+            color: var(--text-secondary);
+        }
+        footer .text-gray-400 {
+            color: rgba(202, 213, 234, 0.72);
+        }
+        .site-header {
+            background: linear-gradient(130deg, rgba(11, 20, 41, 0.92), rgba(7, 15, 30, 0.85));
+            border-bottom: 1px solid rgba(52, 74, 119, 0.45);
+            box-shadow: 0 18px 44px rgba(5, 10, 24, 0.4);
+        }
+        .site-header a:not(.btn-neon) {
+            color: rgba(224, 231, 255, 0.85);
+        }
+        .site-header a:not(.btn-neon):hover {
+            color: #ffffff;
+        }
+        .site-header .btn-neon {
+            color: #041406;
         }
         @keyframes scroll {
             from { transform: translateX(0); }
@@ -122,9 +171,9 @@
         }
     </style>
 </head>
-<body class="bg-black text-white">
+<body class="text-white">
 
-    <header class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md">
+    <header class="site-header fixed top-0 left-0 right-0 z-50 backdrop-blur-md">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <img src="images/logo_white.png" alt="Vibance Logo" class="h-8 w-8">
@@ -169,22 +218,22 @@
                 <div class="container mx-auto px-6 relative z-10">
                     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                         <div class="fade-in-up delay-1 interactive-card">
-                            <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                            <div class="feature-chip inline-block p-4 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
                             <h2 class="font-headline text-2xl font-semibold mb-4">Build a Budget That Works for You.</h2>
                             <p class="text-gray-400">Stop guessing where your money goes. Our tools help you track spending patterns and create a simple, effective budget in minutes.</p>
                         </div>
                         <div class="fade-in-up delay-2 interactive-card">
-                            <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
+                            <div class="feature-chip inline-block p-4 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
                             <h2 class="font-headline text-2xl font-semibold mb-4">See Your Spending Clearly.</h2>
                             <p class="text-gray-400">Log your daily expenses to gain a clear understanding of your habits. From coffee to subscriptions, know exactly where your money is going.</p>
                         </div>
                         <div class="fade-in-up delay-3 interactive-card">
-                            <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg></div>
+                            <div class="feature-chip inline-block p-4 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg></div>
                             <h2 class="font-headline text-2xl font-semibold mb-4">Level Up Your Financial IQ.</h2>
                             <p class="text-gray-400">Learn the essentials with our interactive modules on budgeting, saving, investing, and managing debt.</p>
                         </div>
                         <div class="fade-in-up delay-4 interactive-card">
-                            <div class="inline-block p-4 bg-gray-900 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.002 3.002 0 013.42-2.322M12 12a3 3 0 11-6 0 3 3 0 016 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>
+                            <div class="feature-chip inline-block p-4 rounded-lg mb-4"><svg class="w-8 h-8 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.002 3.002 0 013.42-2.322M12 12a3 3 0 11-6 0 3 3 0 016 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>
                             <h2 class="font-headline text-2xl font-semibold mb-4">Learn and Grow with Your Peers.</h2>
                             <p class="text-gray-400">Engage with a community on the same financial journey. Participate in group saving challenges, climb leaderboards, and earn rewards for hitting your goals.</p>
                         </div>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Vibance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy-980: #01040d;
+      --navy-950: #020617;
+      --navy-920: #050b1a;
+      --navy-880: #081327;
+      --navy-glass: rgba(11, 21, 41, 0.76);
+      --navy-glass-strong: rgba(11, 21, 41, 0.9);
+      --border-muted: rgba(86, 114, 179, 0.5);
+      --border-strong: rgba(118, 155, 255, 0.55);
+      --accent-neon: #ccff00;
+      --accent-neon-soft: #b8ff3b;
+      --text-primary: #f8fafc;
+      --text-secondary: rgba(203, 213, 225, 0.82);
+      --text-muted: rgba(148, 163, 184, 0.75);
+    }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(120% 120% at 50% -10%, rgba(74, 115, 186, 0.32), transparent 55%),
+        radial-gradient(80% 80% at 85% 10%, rgba(62, 43, 137, 0.22), transparent 68%),
+        linear-gradient(160deg, var(--navy-980), var(--navy-920));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      position: relative;
+    }
+    .welcome-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .welcome-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: rgba(224, 231, 255, 0.92);
+    }
+    .welcome-card {
+      background: linear-gradient(160deg, var(--navy-glass-strong), rgba(14, 27, 56, 0.82));
+      border: 1px solid var(--border-muted);
+      box-shadow: 0 34px 120px rgba(4, 12, 32, 0.65);
+    }
+    .font-headline {
+      font-family: 'Lora', serif;
+    }
+    .step-card {
+      border: 1px solid rgba(70, 96, 150, 0.35);
+      background: rgba(10, 18, 34, 0.58);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      background: rgba(86, 114, 179, 0.28);
+      color: rgba(226, 232, 255, 0.86);
+      border: 1px solid rgba(109, 142, 219, 0.35);
+    }
+    .btn-neon {
+      background: linear-gradient(135deg, var(--accent-neon), var(--accent-neon-soft));
+      color: #041406;
+      font-weight: 700;
+      transition: transform 0.18s ease, box-shadow 0.2s ease;
+      box-shadow: 0 20px 40px rgba(204, 255, 0, 0.24);
+    }
+    .btn-neon:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 26px 60px rgba(204, 255, 0, 0.32);
+    }
+    .btn-ghost {
+      border: 1px solid rgba(118, 155, 255, 0.45);
+      background: rgba(10, 18, 32, 0.65);
+      color: rgba(226, 232, 255, 0.88);
+      transition: border 0.18s ease, background 0.18s ease;
+    }
+    .btn-ghost:hover {
+      border-color: rgba(164, 190, 255, 0.9);
+      background: rgba(18, 26, 44, 0.78);
+    }
+    .input-field {
+      background: rgba(10, 18, 34, 0.85);
+      border: 1px solid rgba(78, 102, 158, 0.5);
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+      color: inherit;
+    }
+    .input-field:focus {
+      border-color: var(--accent-neon);
+      box-shadow: 0 0 0 3px rgba(204, 255, 0, 0.14);
+      outline: none;
+    }
+    .status-banner {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: rgba(8, 16, 32, 0.82);
+      border: 1px solid rgba(102, 128, 190, 0.35);
+      backdrop-filter: blur(12px);
+      padding: 0.875rem 1.4rem;
+      border-radius: 999px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      box-shadow: 0 18px 48px rgba(4, 8, 20, 0.45);
+      transition: opacity 0.2s ease;
+    }
+    .status-banner[data-state="hidden"] {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .status-banner[data-variant="error"] {
+      border-color: rgba(248, 113, 113, 0.55);
+      color: #fecaca;
+    }
+    .status-banner[data-variant="success"] {
+      border-color: rgba(204, 255, 0, 0.6);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="welcome-shell">
+    <header class="px-6 py-6 sm:px-12">
+      <a href="/index.html" class="welcome-brand">
+        <img src="/images/logo_white.png" alt="Vibance logo" class="h-10 w-10 rounded" />
+        <span class="text-lg font-semibold tracking-tight">Vibance</span>
+      </a>
+    </header>
+
+    <main class="flex-1 px-6 pb-16 sm:px-12">
+      <div class="max-w-4xl mx-auto">
+        <section class="welcome-card rounded-3xl p-6 sm:p-10 space-y-10">
+          <div class="space-y-4">
+            <span class="chip">Just signed up</span>
+            <h1 class="font-headline text-3xl sm:text-4xl font-semibold leading-tight">
+              Welcome, <span id="welcome-name">friend</span>. Let&rsquo;s personalize your VibeScore.
+            </h1>
+            <p class="text-base sm:text-lg text-[color:var(--text-secondary)] max-w-2xl">
+              A few quick details help us tailor your insights from day one. Knock out the essentials below, then we&rsquo;ll walk you through the income profile that powers your VibeScore.
+            </p>
+          </div>
+
+          <div class="grid gap-6 lg:grid-cols-2">
+            <article class="step-card rounded-2xl p-5 sm:p-6 space-y-5">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h2 class="text-lg font-semibold">Step 1 · Account basics</h2>
+                  <p class="text-sm text-[color:var(--text-secondary)]">Confirm who you are so we can greet you properly.</p>
+                </div>
+                <span id="basics-status-pill" class="px-3 py-1 rounded-full text-xs uppercase tracking-[0.18em] bg-[rgba(128,156,238,0.18)] border border-[rgba(150,176,246,0.32)] text-[rgba(226,232,255,0.82)]">Required</span>
+              </div>
+
+              <form id="basics-form" class="space-y-4">
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label class="block text-sm font-medium text-[color:var(--text-secondary)]">
+                    First name
+                    <input id="basics-first-name" name="firstName" type="text" autocomplete="given-name" required class="input-field mt-2 w-full rounded-xl px-4 py-3" />
+                  </label>
+                  <label class="block text-sm font-medium text-[color:var(--text-secondary)]">
+                    Last name
+                    <input id="basics-last-name" name="lastName" type="text" autocomplete="family-name" required class="input-field mt-2 w-full rounded-xl px-4 py-3" />
+                  </label>
+                </div>
+                <label class="block text-sm font-medium text-[color:var(--text-secondary)]">
+                  Birthday
+                  <input id="basics-birthday" name="birthday" type="date" autocomplete="bday" class="input-field mt-2 w-full rounded-xl px-4 py-3" />
+                </label>
+              </form>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <button id="save-basics" type="button" class="btn-neon rounded-full px-6 py-3 text-sm">Save details</button>
+                <span id="basics-feedback" class="text-xs text-[color:var(--text-muted)]"></span>
+              </div>
+            </article>
+
+            <article class="step-card rounded-2xl p-5 sm:p-6 space-y-5">
+              <div class="space-y-2">
+                <h2 class="text-lg font-semibold">Step 2 · Income profile</h2>
+                <p class="text-sm text-[color:var(--text-secondary)]">Capture the work, growth, and safety nets that shape your VibeScore.</p>
+              </div>
+              <ul class="space-y-2 text-sm text-[color:var(--text-secondary)]">
+                <li>• Role, tenure, and industry outlook</li>
+                <li>• Savings rate, protection, and upcoming expenses</li>
+                <li>• Growth momentum, skill demand, and satisfaction</li>
+              </ul>
+              <div class="flex flex-col gap-3">
+                <button id="launch-income-profile" type="button" class="btn-ghost rounded-full px-6 py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                  Launch income profile wizard
+                </button>
+                <button id="skip-to-dashboard" type="button" class="text-sm text-[color:var(--text-muted)] underline-offset-4 hover:underline self-start">
+                  Skip for now — show me the dashboard
+                </button>
+                <p class="text-xs text-[color:var(--text-muted)]">
+                  We&rsquo;ll remember where you left off and keep nudging you until the profile is complete.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="status-banner" class="status-banner" data-state="hidden" role="status" aria-live="polite"></div>
+
+  <script type="module" src="../api/firebase.js"></script>
+  <script type="module" src="./welcome.js"></script>
+</body>
+</html>

@@ -158,6 +158,48 @@
     .vb-modal__actions button { flex: 1 1 auto; }
     .vb-modal__error { margin-top: 0.75rem; font-size: 0.85rem; color: #fca5a5; }
 
+    .inline-category-cell { min-width: 190px; }
+    .inline-category-input {
+      width: 100%;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148,163,184,0.3);
+      background: rgba(10,16,22,0.84);
+      color: #f8fafc;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.9rem;
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .inline-category-input:focus {
+      outline: none;
+      border-color: rgba(204,255,0,0.5);
+      box-shadow: 0 0 0 2px rgba(204,255,0,0.16);
+      background: rgba(6,12,18,0.95);
+    }
+    .inline-category-input--busy {
+      opacity: 0.65;
+      cursor: wait;
+    }
+    .inline-category-hint {
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      color: rgba(148, 163, 184, 0.78);
+    }
+    .inline-category-reset {
+      margin-top: 0.4rem;
+      padding: 0;
+      background: none;
+      border: none;
+      color: #a3ff00;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+    .inline-category-reset:hover {
+      color: #d9ff7d;
+      text-decoration: underline;
+    }
+
     body.modal-open { overflow: hidden; }
 
     /* Animations (unified) */
@@ -341,7 +383,7 @@
         </label>
         <label>
           Source / Category
-          <input id="income-manual-category" name="category" type="text" placeholder="e.g. Bonus, Refund" />
+          <input id="income-manual-category" name="category" type="text" placeholder="e.g. Bonus, Refund" list="income-category-list" />
         </label>
         <label>
           Notes (optional)

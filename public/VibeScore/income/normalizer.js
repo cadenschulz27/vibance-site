@@ -203,6 +203,18 @@ export const normalizeIncomeData = (rawData = {}) => {
   const history = deriveHistory(rawData);
   if (history.length) normalized.incomeHistory = history;
 
+  const ageYears = pickFirstNumber(rawData, ['ageYears', 'age', 'ageInYears'], NaN);
+  if (Number.isFinite(ageYears)) normalized.age = ageYears;
+
+  const ageBracket = pickFirstString(rawData, ['ageBracket', 'ageRange', 'ageBand']);
+  if (ageBracket) normalized.ageBracket = ageBracket;
+
+  const ageExpectedMonthly = pickFirstNumber(rawData, ['ageIncomeExpectedMonthly', 'ageExpectedMonthlyIncome', 'ageMonthlyExpected'], NaN);
+  if (Number.isFinite(ageExpectedMonthly)) normalized.ageIncomeExpectedMonthly = ageExpectedMonthly;
+
+  const ageAlignment = pickFirstNumber(rawData, ['ageIncomeAlignmentRatio', 'ageIncomeAlignment'], NaN);
+  if (Number.isFinite(ageAlignment)) normalized.ageIncomeAlignmentRatio = ageAlignment;
+
   return normalized;
 };
 

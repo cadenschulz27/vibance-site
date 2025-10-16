@@ -12,20 +12,111 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root { color-scheme: dark; }
-    body { background:#000; color:#fff; font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; }
-    .card {
-      background-color: rgba(18, 18, 18, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    :root {
+      color-scheme: dark;
+      --navy-960: #010414;
+      --navy-940: #050b1f;
+      --navy-900: #0a1630;
+      --navy-860: #102044;
+      --navy-glass: rgba(11, 22, 45, 0.82);
+      --border-muted: rgba(82, 110, 172, 0.4);
+      --border-strong: rgba(138, 176, 255, 0.6);
+      --accent: #ccff00;
+      --accent-soft: rgba(204, 255, 0, 0.18);
+      --text-primary: #f8fafc;
+      --text-secondary: rgba(204, 212, 234, 0.78);
     }
-    .input-field { background:#1C1C1E; border:1px solid #3A3A3C; transition: border-color .15s ease; }
-    .input-field:focus { border-color:#CCFF00; outline: none; }
-    .btn-neon { background:#CCFF00; color:#000; font-weight:700; transition: transform .08s ease; }
-    .btn-neon:active { transform: translateY(1px); }
-    a.minor { color:#9ca3af; }
-    a.minor:hover { color:#e5e7eb; }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 2.5rem 1rem;
+      background:
+        radial-gradient(120% 120% at 50% -10%, rgba(86, 126, 255, 0.24), transparent 65%),
+        linear-gradient(165deg, var(--navy-960), var(--navy-940));
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    main {
+      position: relative;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(6, 12, 32, 0.55);
+    }
+
+    .card {
+      background: linear-gradient(160deg, rgba(12, 24, 45, 0.94), rgba(7, 15, 32, 0.9));
+      border: 1px solid var(--border-muted);
+      backdrop-filter: blur(16px);
+      transition: border-color 0.2s ease, box-shadow 0.25s ease;
+    }
+
+    .card:hover {
+      border-color: var(--border-strong);
+      box-shadow: 0 38px 96px rgba(8, 16, 40, 0.65);
+    }
+
+    .input-field {
+      background: rgba(13, 22, 42, 0.85);
+      border: 1px solid rgba(86, 110, 172, 0.45);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+      color: var(--text-primary);
+    }
+
+    .input-field::placeholder {
+      color: rgba(180, 192, 220, 0.55);
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+      background: rgba(8, 16, 34, 0.95);
+      outline: none;
+    }
+
+    .btn-neon {
+      background: linear-gradient(135deg, var(--accent), #b8ff4a);
+      color: #041203;
+      font-weight: 700;
+      transition: transform .12s ease, box-shadow .18s ease;
+      box-shadow: 0 16px 40px rgba(204, 255, 0, 0.24);
+    }
+
+    .btn-neon:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 24px 58px rgba(204, 255, 0, 0.28);
+    }
+
+    .btn-neon:active {
+      transform: translateY(0);
+    }
+
+    #resend-code {
+      background: rgba(13, 24, 46, 0.72);
+      border: 1px solid rgba(86, 110, 172, 0.4);
+      color: var(--text-secondary);
+      transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+      border-radius: 999px;
+    }
+
+    #resend-code:hover {
+      border-color: var(--border-strong);
+      background: rgba(13, 24, 46, 0.85);
+      color: var(--text-primary);
+    }
+
+    a.minor {
+      color: var(--text-secondary);
+      transition: color 0.18s ease;
+    }
+
+    a.minor:hover {
+      color: var(--text-primary);
+    }
   </style>
 </head>
 <body class="min-h-screen grid place-items-center px-4">
@@ -93,7 +184,7 @@
         await u.reload();
         if (u.emailVerified) {
           show('Already verified. Redirecting…');
-          setTimeout(() => (window.location.href = '/dashboard/dashboard.html'), 800);
+          setTimeout(() => (window.location.href = '/onboarding/welcome.html'), 800);
         } else {
           show('We sent a code to your email. Enter it above.');
         }
@@ -136,8 +227,8 @@
       try {
         await callFn('/.netlify/functions/verify-code-check', { code });
         show('Verified! Redirecting…');
-        await currentUser.reload();
-        window.location.href = '/dashboard/dashboard.html';
+  await currentUser.reload();
+  window.location.href = '/onboarding/welcome.html';
       } catch (err) {
         show(err.message || 'Invalid code. Try again.');
       }

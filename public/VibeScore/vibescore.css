@@ -17,7 +17,113 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: -4rem auto -2rem auto;
+    margin: 4.5rem auto 0 auto;
+}
+
+.vibescore-toolbar {
+    position: absolute;
+    top: -4.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0 1.5rem;
+    pointer-events: none;
+    gap: 1.25rem;
+}
+
+.income-profile-launch {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.1rem;
+    border-radius: 999px;
+    background: rgba(18, 18, 26, 0.78);
+    border: 1px solid rgba(204, 255, 0, 0.18);
+    box-shadow: 0 22px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    pointer-events: auto;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.income-profile-launch--dismissed {
+    opacity: 0;
+    transform: translateY(-16px);
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.income-profile-launch__button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    border: none;
+    background: linear-gradient(135deg, rgba(204, 255, 0, 0.85), rgba(111, 76, 255, 0.4));
+    color: #0f0f12;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.55rem 1.15rem;
+    border-radius: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 16px 32px rgba(204, 255, 0, 0.25);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.income-profile-launch__button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 38px rgba(204, 255, 0, 0.34);
+}
+
+.income-profile-launch__button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.income-profile-launch__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 0.35rem;
+    background: rgba(15, 15, 18, 0.75);
+    color: rgba(204, 255, 0, 0.95);
+    font-size: 0.85rem;
+}
+
+.income-profile-launch__label {
+    white-space: nowrap;
+}
+
+.income-profile-status {
+    font-size: 0.8rem;
+    color: rgba(214, 223, 255, 0.72);
+    max-width: 280px;
+    line-height: 1.4;
+}
+
+@media (max-width: 1024px) {
+    .vibescore-wrapper {
+        margin-top: 2rem;
+    }
+
+    .vibescore-toolbar {
+        top: -5.5rem;
+        padding: 0 1rem;
+    }
+
+    .income-profile-launch {
+        flex-direction: column;
+        gap: 0.6rem;
+        align-items: flex-start;
+    }
+
+    .income-profile-status {
+        max-width: 100%;
+    }
 }
 
 /* --- CENTRAL GAUGE --- */

@@ -1,105 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>My Profile - Vibance</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #000; color: #FFF; font-family: 'Inter', sans-serif; }
-        .font-headline { font-family: 'Lora', serif; }
-        .btn-neon { background-color: #CCFF00; color: #000; font-weight: 700; transition: all 0.2s ease; }
-        .btn-neon:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(204, 255, 0, 0.2); }
-        button.btn-neon:disabled {
-            background-color: #3A3A3C;
-            color: #9CA3AF;
-            cursor: not-allowed;
-        }
-        .input-field, .select-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
-        .input-field:focus, .select-field:focus { border-color: #CCFF00; outline: none; }
-        .form-section { background-color: #121212; border: 1px solid #2d2d2d; border-radius: 0.5rem; padding: 1.5rem; }
-    </style>
-</head>
-<body class="bg-black">
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="../dashboard/dashboard.css" />
+    <link rel="stylesheet" href="profile.css" />
+</head>
+<body class="bg-black text-white font-['Inter']">
     <div id="header-placeholder"></div>
 
-    <main class="container mx-auto px-6 py-12 md:py-20 max-w-4xl">
-        <h1 class="font-headline text-4xl font-bold mb-8">My Financial Profile</h1>
-
-        <form id="profile-form" class="space-y-8">
-            <div class="form-section">
-                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Income</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label for="primaryIncome" class="text-sm">Primary Monthly Income ($)</label><input id="primaryIncome" type="number" placeholder="5000" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="additionalIncome" class="text-sm">Additional Monthly Income ($)</label><input id="additionalIncome" type="number" placeholder="500" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="incomeStability" class="text-sm">Income Stability</label><select id="incomeStability" class="w-full mt-1 p-3 rounded select-field"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
-                    <div><label for="incomeGrowth" class="text-sm">Income Growth Potential</label><select id="incomeGrowth" class="w-full mt-1 p-3 rounded select-field"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+    <main class="profile-shell">
+        <section class="profile-hero profile-card">
+            <div class="profile-hero__content">
+                <div class="profile-identity">
+                    <div class="profile-avatar" role="button" tabindex="0" aria-label="Upload profile photo">
+                        <img id="avatar-img" src="/images/logo_white.png" alt="Profile avatar" />
+                        <div class="profile-avatar__upload">
+                            <label for="avatar-input" class="profile-avatar__label">
+                                <svg class="profile-avatar__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span class="profile-avatar__text">Upload</span>
+                            </label>
+                            <input id="avatar-input" type="file" accept="image/jpeg,image/png,image/webp" />
+                        </div>
+                        <div id="avatar-progress" class="profile-avatar__progress" hidden>
+                            <div class="profile-avatar__progress-bar"></div>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-[240px]">
+                        <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight">My Profile</h1>
+                        <p id="profile-identity-blurb" class="mt-3 text-sm md:text-base text-neutral-300 max-w-2xl">
+                            We’ll use your responses to describe your income outlook here.
+                        </p>
+                        <div class="mt-4 space-y-3">
+                            <div class="profile-identity__username-block">
+                                <label for="profile-username-input" class="profile-identity__label">Username</label>
+                                <div class="profile-identity__username-editor">
+                                    <span class="profile-identity__username-prefix">@</span>
+                                    <input
+                                        id="profile-username-input"
+                                        name="profile-username"
+                                        type="text"
+                                        maxlength="20"
+                                        autocomplete="username"
+                                        inputmode="lowercase"
+                                        spellcheck="false"
+                                        placeholder="yourhandle"
+                                        class="profile-identity__username-input"
+                                    />
+                                </div>
+                                <p class="profile-identity__hint">3–20 lowercase letters, numbers, or underscores. We’ll check availability when you save.</p>
+                                <p id="profile-username-feedback" class="profile-username-feedback" aria-live="polite"></p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 text-sm text-neutral-300">
+                                <span id="email" class="font-medium"></span>
+                                <span id="email-verified" class="profile-status profile-status--pending">⚠ Pending verification</span>
+                            </div>
+                        </div>
+                        <div class="profile-actions mt-4">
+                            <button id="save-profile" type="button" class="btn-primary">Save profile</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-hero__cta">
+                    <div id="profile-progress-meta" class="text-sm text-neutral-300 leading-relaxed">
+                        Complete the income profile wizard to generate your personalized overview.
+                    </div>
+                    <div id="income-profile-launch-card" class="income-profile-launch" data-hide-when-complete="true">
+                        <button id="income-profile-launch" type="button" class="income-profile-launch__button">
+                            <span class="income-profile-launch__icon" aria-hidden="true">→</span>
+                            <span class="income-profile-launch__label">Complete income profile</span>
+                        </button>
+                        <span id="income-profile-status" class="income-profile-status">Boost accuracy by sharing a few quick details.</span>
+                    </div>
+                    <button type="button" class="income-profile-edit" data-income-profile-edit hidden>
+                        <span class="income-profile-edit__icon" aria-hidden="true">→</span>
+                        <span class="income-profile-edit__label">Review income profile</span>
+                    </button>
+                    <p class="profile-inline-note">
+                        We’ll nudge you when important income moments need a refresh.
+                    </p>
                 </div>
             </div>
+        </section>
 
-            <div class="form-section">
-                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Savings & Emergency Fund</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label for="monthlySavingsRate" class="text-sm">Monthly Savings Rate (%)</label><input id="monthlySavingsRate" type="number" placeholder="20" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="totalLiquidSavings" class="text-sm">Total Liquid Savings ($)</label><input id="totalLiquidSavings" type="number" placeholder="14000" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="emergencyFundGoal" class="text-sm">Emergency Fund Goal (Months)</label><input id="emergencyFundGoal" type="number" placeholder="6" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="emergencyFundCurrent" class="text-sm">Current Emergency Fund (Months)</label><input id="emergencyFundCurrent" type="number" placeholder="5" class="w-full mt-1 p-3 rounded input-field"></div>
+        <section id="profile-summary-section" class="profile-card hidden">
+                    <div class="profile-card__section">
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <article id="profile-card-completion" class="rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-6 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <span class="text-xs uppercase tracking-[0.24em] text-neutral-500">Completeness</span>
+                                        <p id="summary-completion-message" class="mt-2 text-lg font-semibold text-white">No responses recorded yet</p>
+                                    </div>
+                                    <span id="summary-completion-value" class="text-3xl font-semibold text-[var(--profile-accent,#94a3f5)]">0%</span>
+                                </div>
+                                <div class="mt-5 h-2 w-full rounded-full bg-neutral-900">
+                                    <div id="summary-completion-bar" class="h-full rounded-full bg-[var(--profile-accent,#94a3f5)] transition-all duration-500" style="width:0%"></div>
+                                </div>
+                                <p id="summary-completion-updated" class="mt-3 text-xs text-neutral-500">Not updated yet.</p>
+                            </article>
+
+                            <article id="profile-card-stability" class="rounded-2xl border border-neutral-900 bg-neutral-950/50 px-6 py-6">
+                                <span class="text-xs uppercase tracking-[0.24em] text-neutral-500">Income steadiness</span>
+                                <p id="summary-stability-text" class="mt-2 text-sm text-neutral-300 leading-relaxed">Add your role and industry details to see stability signals.</p>
+                                <ul id="summary-stability-list" class="mt-5 space-y-3 text-sm"></ul>
+                            </article>
+
+                            <article id="profile-card-opportunity" class="rounded-2xl border border-neutral-900 bg-neutral-950/50 px-6 py-6">
+                                <span class="text-xs uppercase tracking-[0.24em] text-neutral-500">Momentum &amp; opportunity</span>
+                                <p id="summary-opportunity-text" class="mt-2 text-sm text-neutral-300 leading-relaxed">Track promotion odds, skill demand, and satisfaction in one place.</p>
+                                <ul id="summary-opportunity-list" class="mt-5 space-y-3 text-sm"></ul>
+                            </article>
+
+                            <article id="profile-card-safety" class="rounded-2xl border border-neutral-900 bg-neutral-950/50 px-6 py-6">
+                                <span class="text-xs uppercase tracking-[0.24em] text-neutral-500">Safety nets</span>
+                                <p id="summary-safety-text" class="mt-2 text-sm text-neutral-300 leading-relaxed">Surface your emergency funds, coverage, and planned expenses.</p>
+                                <ul id="summary-safety-list" class="mt-5 space-y-3 text-sm"></ul>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="profile-details-section" class="profile-card hidden">
+                    <div class="profile-card__section">
+                        <div id="profile-sections" class="space-y-6"></div>
+                    </div>
+                </section>
+
+                <section id="profile-empty-state" class="profile-card">
+                    <div class="profile-card__section text-center">
+                        <h2 class="text-lg font-semibold text-white">Your overview will appear here</h2>
+                        <p class="mt-3 text-sm text-neutral-400">
+                            Launch the income profile wizard to tell Vibance about your pay structure, growth momentum, and safety nets. We’ll transform those answers into a living profile.
+                        </p>
+                        <button id="profile-empty-launch" type="button" class="mt-6 inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 px-5 py-2 text-sm font-medium text-neutral-200 hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--profile-accent,#94a3f5)]">
+                            <span>Open income profile</span>
+                            <span aria-hidden="true">→</span>
+                        </button>
+                        <p class="mt-6 text-xs text-neutral-600">
+                            Your responses stay private to your account and only inform Vibance insights.
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+    <div id="toast" class="profile-toast opacity-0 pointer-events-none"></div>
+
+    <div id="income-profile-modal" class="income-modal" aria-hidden="true">
+        <div id="income-modal-overlay" class="income-modal__overlay" tabindex="-1"></div>
+        <div id="income-modal-panel" class="income-modal__panel" role="dialog" aria-modal="true" aria-labelledby="income-modal-title">
+            <div class="income-modal__header">
+                <div class="income-modal__badge">Income profile</div>
+                <button id="income-modal-close" class="income-modal__close" type="button" aria-label="Close income profile wizard">×</button>
+            </div>
+            <div class="income-modal__body">
+                <div class="income-modal__progress">
+                    <div class="income-modal__progress-track">
+                        <div id="income-modal-progress" class="income-modal__progress-bar"></div>
+                    </div>
+                    <div id="income-modal-step-label" class="income-modal__step-label"></div>
+                </div>
+                <form id="income-modal-form" class="income-modal__form" novalidate>
+                    <div id="income-modal-step-container"></div>
+                </form>
+            </div>
+            <div class="income-modal__footer">
+                <div class="income-modal__status">
+                    <span id="income-modal-save-status" class="income-modal__save-status">Not saved yet</span>
+                </div>
+                <div class="income-modal__actions">
+                    <button id="income-modal-back" class="income-modal__btn income-modal__btn--ghost" type="button">Back</button>
+                    <button id="income-modal-next" class="income-modal__btn" type="button">Next</button>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="form-section">
-                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Budgeting & Cash Flow</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label for="avgMonthlyIncome" class="text-sm">Average Monthly Income ($)</label><input id="avgMonthlyIncome" type="number" placeholder="5500" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="avgMonthlySpending" class="text-sm">Average Monthly Spending ($)</label><input id="avgMonthlySpending" type="number" placeholder="4200" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="avgMonthlySurplus" class="text-sm">Average Monthly Surplus ($)</label><input id="avgMonthlySurplus" type="number" placeholder="1300" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="budgetAdherence" class="text-sm">Budget Adherence</label><select id="budgetAdherence" class="w-full mt-1 p-3 rounded select-field"><option value="loose">Loose</option><option value="flexible">Flexible</option><option value="strict">Strict</option></select></div>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Credit & Debt</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label for="creditScore" class="text-sm">Credit Score</label><input id="creditScore" type="number" placeholder="780" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="creditUtilization" class="text-sm">Credit Utilization (%)</label><input id="creditUtilization" type="number" placeholder="15" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="paymentHistory" class="text-sm">Payment History</label><select id="paymentHistory" class="w-full mt-1 p-3 rounded select-field"><option value="fair">Fair</option><option value="good">Good</option><option value="excellent">Excellent</option></select></div>
-                    <div><label for="totalDebt" class="text-sm">Total Debt ($)</label><input id="totalDebt" type="number" placeholder="25000" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="dtiRatio" class="text-sm">Debt-to-Income Ratio (%)</label><input id="dtiRatio" type="number" placeholder="25" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div class="flex items-center pt-6"><input id="hasHighInterestDebt" type="checkbox" class="h-4 w-4 rounded"><label for="hasHighInterestDebt" class="ml-2 text-sm">I have high-interest debt</label></div>
-                </div>
-            </div>
+    <div id="income-profile-toast" class="income-profile-toast" role="status" aria-live="polite"></div>
 
-            <div class="form-section">
-                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Investing & Retirement</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label for="totalInvested" class="text-sm">Total Invested ($)</label><input id="totalInvested" type="number" placeholder="25000" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="investingContribution" class="text-sm">Monthly Investment ($)</label><input id="investingContribution" type="number" placeholder="500" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="portfolioDiversity" class="text-sm">Portfolio Diversity</label><select id="portfolioDiversity" class="w-full mt-1 p-3 rounded select-field"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
-                    <div><label for="retirementValue" class="text-sm">Total Retirement Accounts ($)</label><input id="retirementValue" type="number" placeholder="75000" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="retirementContribution" class="text-sm">Monthly Retirement Contrib. (%)</label><input id="retirementContribution" type="number" placeholder="10" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div class="flex items-center pt-6"><input id="onTrackRetirement" type="checkbox" class="h-4 w-4 rounded"><label for="onTrackRetirement" class="ml-2 text-sm">I am on track for retirement goals</label></div>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h2 class="text-xl font-semibold text-white mb-4 border-b border-gray-700 pb-3">Net Worth</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label for="totalAssets" class="text-sm">Total Assets ($)</label><input id="totalAssets" type="number" placeholder="150000" class="w-full mt-1 p-3 rounded input-field"></div>
-                    <div><label for="totalLiabilities" class="text-sm">Total Liabilities ($)</label><input id="totalLiabilities" type="number" placeholder="30000" class="w-full mt-1 p-3 rounded input-field"></div>
-                </div>
-            </div>
-
-            <div class="pt-4">
-                <button type="submit" id="save-button" class="btn-neon px-8 py-3 rounded-full">Save Profile</button>
-            </div>
-        </form>
-    </main>
-
+    <script>
+        window.vibanceAI = window.vibanceAI || {};
+    </script>
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
+    <script type="module" src="../dashboard/income-profile.js"></script>
+    <script type="module" src="../dashboard/financial-profile.js"></script>
     <script type="module" src="profile.js"></script>
 </body>
 </html>

@@ -22,32 +22,21 @@
 
     <main class="pt-24">
         <section id="vibescore-section" class="vibescore-wrapper">
+            <div class="vibescore-toolbar">
+                <div id="income-profile-launch-card" class="income-profile-launch" data-hide-when-complete="true">
+                    <button id="income-profile-launch" type="button" class="income-profile-launch__button">
+                        <span class="income-profile-launch__icon" aria-hidden="true">→</span>
+                        <span class="income-profile-launch__label">Complete income profile</span>
+                    </button>
+                    <span id="income-profile-status" class="income-profile-status">Boost accuracy by sharing a few quick details.</span>
+                </div>
+            </div>
             <div id="vibescore-container" class="vibescore-gauge">
                 </div>
             <div id="hud-plane" class="hud-plane">
                 </div>
             <div id="insight-panel-container">
                 </div>
-        </section>
-
-        <section id="ai-copilot" class="content-section ai-copilot">
-            <div class="ai-card" id="ai-card">
-                <div class="ai-card-header">
-                    <span class="ai-chip" id="ai-chip">On-device AI</span>
-                    <span id="ai-status" class="ai-status">Standing by…</span>
-                </div>
-                <h2 class="ai-card-title">Spending Copilot</h2>
-                <p id="ai-summary" class="ai-summary">We’ll scan your latest transactions once they load.</p>
-                <ul id="ai-insights" class="ai-tips" style="display: none;"></ul>
-                <p id="ai-empty" class="ai-empty">Connect one or more accounts to unlock tailored guidance.</p>
-                <div class="ai-card-footer">
-                    <button id="ai-refresh-btn" class="ai-refresh-btn" type="button">
-                        <span class="ai-refresh-btn__label">Regenerate insight</span>
-                        <span class="ai-refresh-btn__spinner" aria-hidden="true"></span>
-                    </button>
-                    <p class="ai-footnote">Runs fully in your browser • powered by open-source transformers</p>
-                </div>
-            </div>
         </section>
 
         <section id="financial-news" class="content-section">
@@ -96,27 +85,17 @@
                 <div id="calendar-empty" class="mt-4 text-xs text-gray-500 hidden">No transaction data for this month yet.</div>
             </div>
         </section>
-
-        <section id="savings-goals" class="content-section">
-            <h2 class="section-header">Savings Goals</h2>
-            <div class="placeholder-box"><span>Savings Goals Content Here</span></div>
-        </section>
-        
-        <section id="achievements" class="content-section">
-            <h2 class="section-header">Achievements</h2>
-            <div class="placeholder-box"><span>Achievements Content Here</span></div>
-        </section>
     </main>
 
     <script>
         window.vibanceAI = window.vibanceAI || {};
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0/dist/transformers.min.js" defer></script>
     <script type="module" src="../api/firebase.js"></script>
     <script type="module" src="../auth/auth-check.js"></script>
     <script type="module" src="../components/header.js"></script>
     <script type="module" src="../VibeScore/vibescore.js"></script>
     <script type="module" src="dashboard.js"></script>
+    <script type="module" src="income-profile.js"></script>
     <script type="module" src="dashboard-calendar.js"></script>
 
     <div id="news-modal" class="news-modal" aria-hidden="true">
@@ -150,5 +129,37 @@
             <p id="news-modal-compliance" class="news-modal__compliance"></p>
         </div>
     </div>
+
+    <div id="income-profile-modal" class="income-modal" aria-hidden="true">
+        <div id="income-modal-overlay" class="income-modal__overlay" tabindex="-1"></div>
+        <div id="income-modal-panel" class="income-modal__panel" role="dialog" aria-modal="true" aria-labelledby="income-modal-title">
+            <div class="income-modal__header">
+                <div class="income-modal__badge">Income profile</div>
+                <button id="income-modal-close" class="income-modal__close" type="button" aria-label="Close income profile wizard">×</button>
+            </div>
+            <div class="income-modal__body">
+                <div class="income-modal__progress">
+                    <div class="income-modal__progress-track">
+                        <div id="income-modal-progress" class="income-modal__progress-bar"></div>
+                    </div>
+                    <div id="income-modal-step-label" class="income-modal__step-label"></div>
+                </div>
+                <form id="income-modal-form" class="income-modal__form" novalidate>
+                    <div id="income-modal-step-container"></div>
+                </form>
+            </div>
+            <div class="income-modal__footer">
+                <div class="income-modal__status">
+                    <span id="income-modal-save-status" class="income-modal__save-status">Not saved yet</span>
+                </div>
+                <div class="income-modal__actions">
+                    <button id="income-modal-back" class="income-modal__btn income-modal__btn--ghost" type="button">Back</button>
+                    <button id="income-modal-next" class="income-modal__btn" type="button">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="income-profile-toast" class="income-profile-toast" role="status" aria-live="polite"></div>
 </body>
 </html>

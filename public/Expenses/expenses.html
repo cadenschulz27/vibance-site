@@ -316,6 +316,48 @@
     .vb-badge--edit { background: rgba(236, 72, 153, 0.18); color: #fbcfe8; }
     .vb-badge--archived { background: rgba(148, 163, 184, 0.18); color: #e2e8f0; }
 
+    .inline-category-cell { min-width: 190px; }
+    .inline-category-input {
+      width: 100%;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: rgba(17,20,28,0.78);
+      color: #f8fafc;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.9rem;
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .inline-category-input:focus {
+      outline: none;
+      border-color: rgba(204,255,0,0.55);
+      box-shadow: 0 0 0 2px rgba(204,255,0,0.16);
+      background: rgba(10,12,18,0.92);
+    }
+    .inline-category-input--busy {
+      opacity: 0.65;
+      cursor: wait;
+    }
+    .inline-category-hint {
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      color: rgba(148, 163, 184, 0.78);
+    }
+    .inline-category-reset {
+      margin-top: 0.4rem;
+      padding: 0;
+      background: none;
+      border: none;
+      color: var(--neon);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+    .inline-category-reset:hover {
+      color: #fef08a;
+      text-decoration: underline;
+    }
+
     /* Sticky toolbar under the header */
     .toolbar-sticky { position: sticky; top: 64px; z-index: 30; backdrop-filter: blur(6px); }
     @supports (top: var(--vb-header-offset)) {

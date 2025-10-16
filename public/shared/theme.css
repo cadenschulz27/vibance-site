@@ -109,53 +109,53 @@
 
 [data-theme="light"] {
   --vb-bg-hue: 215;
-  --vb-bg-sat: 22%;
-  --vb-bg-light: 94%;
-  --vb-surface-0: #f4f6fb;
-  --vb-surface-1: rgba(255, 255, 255, 0.92);
-  --vb-surface-2: rgba(246, 249, 255, 0.94);
-  --vb-surface-3: rgba(238, 243, 255, 0.97);
-  --vb-surface-border: rgba(131, 150, 180, 0.18);
-  --vb-surface-border-strong: rgba(94, 111, 140, 0.26);
+  --vb-bg-sat: 16%;
+  --vb-bg-light: 84%;
+  --vb-surface-0: #cfd2dc;
+  --vb-surface-1: rgba(220, 224, 232, 0.94);
+  --vb-surface-2: rgba(208, 213, 224, 0.95);
+  --vb-surface-3: rgba(196, 201, 215, 0.97);
+  --vb-surface-border: rgba(62, 76, 104, 0.28);
+  --vb-surface-border-strong: rgba(48, 60, 86, 0.4);
 
-  --vb-text-primary: rgba(13, 23, 42, 0.96);
-  --vb-text-secondary: rgba(23, 36, 54, 0.78);
-  --vb-text-tertiary: rgba(50, 68, 94, 0.62);
-  --vb-text-muted: rgba(92, 108, 136, 0.52);
+  --vb-text-primary: rgba(16, 22, 32, 0.94);
+  --vb-text-secondary: rgba(30, 38, 52, 0.78);
+  --vb-text-tertiary: rgba(50, 62, 82, 0.64);
+  --vb-text-muted: rgba(86, 98, 122, 0.5);
 
   --vb-accent: rgba(33, 114, 255, 1);
-  --vb-accent-soft: rgba(33, 114, 255, 0.22);
+  --vb-accent-soft: rgba(33, 114, 255, 0.24);
   --vb-accent-strong: rgba(33, 114, 255, 0.78);
 
-  --vb-danger: rgba(218, 60, 89, 0.92);
-  --vb-warning: rgba(247, 181, 53, 0.94);
-  --vb-success: rgba(22, 160, 133, 0.94);
+  --vb-danger: rgba(218, 60, 89, 0.9);
+  --vb-warning: rgba(247, 181, 53, 0.92);
+  --vb-success: rgba(22, 160, 133, 0.92);
 
-  --vb-glow-primary: rgba(33, 114, 255, 0.22);
-  --vb-glow-secondary: rgba(159, 94, 255, 0.18);
-  --vb-glow-success: rgba(42, 188, 149, 0.24);
+  --vb-glow-primary: rgba(33, 114, 255, 0.2);
+  --vb-glow-secondary: rgba(159, 94, 255, 0.16);
+  --vb-glow-success: rgba(42, 188, 149, 0.22);
 
-  --vb-gradient-primary: linear-gradient(135deg, rgba(33, 114, 255, 0.75) 0%, rgba(159, 94, 255, 0.65) 38%, rgba(42, 220, 158, 0.72) 100%);
-  --vb-gradient-glass: linear-gradient(130deg, rgba(255, 255, 255, 0.88) 0%, rgba(246, 249, 255, 0.86) 42%, rgba(255, 255, 255, 0.92) 100%);
-  --vb-gradient-hero: radial-gradient(circle at 16% 12%, rgba(188, 221, 255, 0.54), transparent 48%), radial-gradient(circle at 78% 18%, rgba(255, 213, 198, 0.52), transparent 60%);
+  --vb-gradient-primary: linear-gradient(135deg, rgba(33, 114, 255, 0.68) 0%, rgba(149, 84, 245, 0.58) 38%, rgba(42, 220, 158, 0.64) 100%);
+  --vb-gradient-glass: linear-gradient(130deg, rgba(234, 236, 242, 0.94) 0%, rgba(214, 218, 228, 0.9) 45%, rgba(226, 230, 240, 0.94) 100%);
+  --vb-gradient-hero: radial-gradient(circle at 18% 14%, rgba(172, 186, 208, 0.42), transparent 52%), radial-gradient(circle at 76% 20%, rgba(188, 198, 216, 0.38), transparent 62%);
 
-  --vb-body-backdrop: radial-gradient(circle at 15% 10%, rgba(96, 167, 255, 0.18), transparent 46%), radial-gradient(circle at 82% 8%, rgba(255, 190, 152, 0.2), transparent 58%), linear-gradient(180deg, rgba(247, 250, 255, 0.9) 0%, rgba(241, 245, 252, 1) 100%);
-  --vb-body-overlay: linear-gradient(160deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 253, 255, 0.97) 54%, rgba(247, 250, 255, 1) 100%);
+  --vb-body-backdrop: radial-gradient(circle at 12% 8%, rgba(150, 166, 192, 0.28), transparent 46%), radial-gradient(circle at 84% 6%, rgba(180, 190, 208, 0.22), transparent 58%), linear-gradient(180deg, rgba(212, 216, 226, 0.94) 0%, rgba(204, 208, 220, 1) 100%);
+  --vb-body-overlay: linear-gradient(160deg, rgba(224, 226, 234, 0.95) 0%, rgba(214, 218, 228, 0.98) 58%, rgba(204, 208, 220, 1) 100%);
 
-  --vb-table-header: rgba(234, 242, 255, 0.92);
-  --vb-table-border: rgba(87, 112, 161, 0.25);
-  --vb-table-row-hover: rgba(223, 234, 255, 0.68);
+  --vb-table-header: rgba(204, 210, 224, 0.92);
+  --vb-table-border: rgba(70, 88, 118, 0.28);
+  --vb-table-row-hover: rgba(184, 194, 212, 0.7);
 
-  --vb-input-bg: rgba(255, 255, 255, 0.9);
-  --vb-input-border: rgba(51, 104, 204, 0.22);
-  --vb-input-border-focus: rgba(33, 114, 255, 0.54);
-  --vb-input-shadow-focus: 0 0 0 4px rgba(33, 114, 255, 0.16);
+  --vb-input-bg: rgba(226, 230, 238, 0.92);
+  --vb-input-border: rgba(58, 98, 168, 0.24);
+  --vb-input-border-focus: rgba(33, 114, 255, 0.48);
+  --vb-input-shadow-focus: 0 0 0 4px rgba(33, 114, 255, 0.12);
 
-  --vb-chart-grid: rgba(72, 102, 150, 0.18);
-  --vb-chart-fill: linear-gradient(180deg, rgba(33, 114, 255, 0.28) 0%, rgba(33, 114, 255, 0) 85%);
+  --vb-chart-grid: rgba(66, 84, 112, 0.22);
+  --vb-chart-fill: linear-gradient(180deg, rgba(33, 114, 255, 0.26) 0%, rgba(33, 114, 255, 0) 85%);
 
-  --vb-header-backdrop: rgba(246, 249, 255, 0.86);
-  --vb-header-border: rgba(51, 104, 204, 0.18);
+  --vb-header-backdrop: rgba(226, 231, 240, 0.88);
+  --vb-header-border: rgba(58, 104, 180, 0.2);
 }
 
 * {

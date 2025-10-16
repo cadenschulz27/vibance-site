@@ -4,12 +4,19 @@
  * This includes the orbiting data bubbles and all associated animations.
  */
 
+/* --- CUSTOM PROPERTIES --- */
+@property --orbit-rotation {
+    syntax: '<angle>';
+    inherits: true;
+    initial-value: 0deg;
+}
+
 /* --- HUD & BUBBLE VARIABLES --- */
 :root {
     /* Dimensions */
-    --hud-radius: 300px;
-    --bubble-width: 150px;
-    --bubble-height: 55px;
+    --hud-radius: 315px;
+    --bubble-width: 178px;
+    --bubble-height: 58px;
 
     /* Colors */
     --bubble-bg-color: rgba(28, 28, 30, 0.6);
@@ -28,6 +35,8 @@
     z-index: 5;
     transform-style: preserve-3d;
     transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: orbit-spin 48s linear infinite;
+    transform: rotate(var(--orbit-rotation));
 }
 
 /* --- HUD BUBBLE --- */
@@ -45,12 +54,8 @@
     /* The transform-origin is key for rotation */
     transform-origin: center;
     
-    /* * The transform is controlled by JS-injected CSS variables (--angle, --hud-radius).
-     * 1. Rotate the bubble to its designated spot on the circle.
-     * 2. Translate it outwards from the center by the radius.
-     * 3. Un-rotate the bubble itself so its text remains horizontal.
-    */
-    transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1));
+    /* Orbit positioning */
+    transform: rotate(calc(var(--angle) + var(--orbit-rotation))) translateY(calc(var(--hud-radius) * -1));
     
     /* Initial state for the fan-out animation */
     opacity: 0;
@@ -59,8 +64,12 @@
     animation: fan-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     animation-delay: var(--delay); /* Staggered animation for each bubble */
     
-    transition: opacity 0.3s ease;
+    transition: opacity 0.35s ease, transform 0.35s ease;
     pointer-events: auto; /* FIX: Explicitly make each bubble interactive. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform, opacity;
 }
 
 /* --- BUBBLE CORE & LINK --- */
@@ -68,28 +77,34 @@
 .bubble-core, .bubble-core-link {
     width: 100%;
     height: 100%;
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 1rem;
-    font-size: 0.95rem;
+    padding: 0.7rem 0.95rem;
+    font-size: 0.94rem;
     font-weight: 500;
-    color: var(--bubble-text-color);
-    border-radius: 10px;
-    background: var(--bubble-bg-color);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 0 20px -5px var(--glow-color);
-    transition: all 0.3s ease;
+    color: var(--text-color, var(--bubble-text-color));
+    border-radius: 18px;
+    background: var(--bubble-bg, rgba(17, 20, 28, 0.82));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--bubble-border, rgba(100, 116, 139, 0.38));
+    box-shadow: 0 22px 38px -24px rgba(8, 12, 18, 0.72);
+    transition: border-color 0.35s ease, background 0.35s ease, box-shadow 0.35s ease, filter 0.35s ease;
     cursor: pointer;
+    transform: rotate(calc(var(--angle) * -1 - var(--orbit-rotation)));
+    z-index: 1;
 }
 
 .bubble-core-link {
     text-decoration: none;
 }
 
-/* --- BUBBLE STATES --- */
+.hud-bubble:not(.is-nodata):hover .bubble-core {
+    box-shadow: 0 26px 46px -20px rgba(14, 20, 28, 0.86);
+    filter: saturate(1.12);
+}
+
 .hud-bubble.is-nodata .bubble-core {
     background: var(--bubble-nodata-bg-color);
     border-color: var(--bubble-nodata-border-color);
@@ -101,13 +116,61 @@
     opacity: 0.3;
 }
 
-/* --- BUBBLE SCORE TEXT --- */
-.bubble-score {
-    font-size: 0.75rem;
-    margin-left: 6px;
-    font-weight: 700;
-    color: var(--text-color);
+.bubble-info {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    min-width: 0;
 }
+
+.bubble-info__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.bubble-title {
+    font-size: 0.78rem;
+    letter-spacing: 0.11em;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--bubble-title-color, rgba(228, 233, 247, 0.86));
+    white-space: nowrap;
+    opacity: 0.96;
+}
+
+.bubble-score {
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--bubble-score-color, var(--text-color));
+    letter-spacing: 0.02em;
+}
+
+.hud-bubble.is-nodata .bubble-title,
+.hud-bubble.is-nodata .bubble-score {
+    color: var(--bubble-nodata-text-color);
+}
+
+
+@media (max-width: 1024px) {
+    :root {
+        --bubble-width: 160px;
+        --bubble-height: 54px;
+    }
+
+    .bubble-core, .bubble-core-link {
+        padding: 0.65rem 0.8rem;
+    }
+
+    .bubble-score {
+        font-size: 0.98rem;
+    }
+}
+
 
 /*
  * FIX: All CSS rules for the .tracer-line and its @keyframes animation
@@ -118,11 +181,20 @@
 @keyframes fan-out {
     from {
         opacity: 0;
-        transform: rotate(var(--angle)) translateY(-100px) rotate(calc(var(--angle) * -1)) scale(0.5);
+        transform: rotate(calc(var(--angle) + var(--orbit-rotation))) translateY(-100px) scale(0.5);
     }
     to {
         opacity: 1;
-        transform: rotate(var(--angle)) translateY(calc(var(--hud-radius) * -1)) rotate(calc(var(--angle) * -1)) scale(1);
+        transform: rotate(calc(var(--angle) + var(--orbit-rotation))) translateY(calc(var(--hud-radius) * -1)) scale(1);
+    }
+}
+
+@keyframes orbit-spin {
+    from {
+        --orbit-rotation: 0deg;
+    }
+    to {
+        --orbit-rotation: 360deg;
     }
 }
 

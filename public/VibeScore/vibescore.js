@@ -104,6 +104,76 @@ const calculationMap = {
     }
 };
 
+let currentUserId = null;
+let renderInFlight = false;
+let pendingRenderUid = null;
+
+async function renderVibeScore(uid) {
+    if (!uid) return;
+    if (currentUserId && uid !== currentUserId) return;
+    if (renderInFlight) {
+        pendingRenderUid = uid;
+        return;
+    }
+
+    renderInFlight = true;
+    try {
+        const userDocRef = doc(db, "users", uid);
+        const userDoc = await getDoc(userDocRef);
+        const userData = userDoc.exists() ? userDoc.data() : {};
+
+        if (currentUserId && uid !== currentUserId) {
+            return;
+        }
+
+        const dynamicFinancialData = await Promise.all(Object.keys(calculationMap).map(async (name) => {
+            const map = calculationMap[name];
+            let data = {};
+            if (typeof map.prepare === 'function') {
+                data = await map.prepare({ uid, userData, db }) || {};
+            } else {
+                data = userData[map.dataKey] || {};
+            }
+            const hasData = !!(data && typeof data === 'object' && Object.values(data).some((value) => {
+                if (typeof value === 'number') return !Number.isNaN(value) && value !== 0;
+                if (typeof value === 'boolean') return true;
+                if (typeof value === 'string') return value.trim().length > 0;
+                if (Array.isArray(value)) return value.length > 0;
+                if (value && typeof value === 'object') {
+                    return Object.keys(value).length > 0;
+                }
+                return false;
+            }));
+            const calcResult = hasData ? map.calc(data) : null;
+            const score = hasData
+                ? (typeof calcResult === 'number' ? calcResult : (calcResult?.score ?? 0))
+                : 0;
+            const analysis = (calcResult && typeof calcResult === 'object') ? calcResult : null;
+            const insight = hasData ? map.gen(data, score, analysis) : "No data found. Sync your financial tabs to populate this insight.";
+            return { name, score, insight, hasData, analysis };
+        }));
+
+        const itemsWithData = dynamicFinancialData.filter(item => item.hasData);
+        const totalScore = itemsWithData.reduce((acc, item) => acc + item.score, 0);
+        const userVibeScore = itemsWithData.length > 0 ? Math.round(totalScore / itemsWithData.length) : 0;
+
+        VibeScoreUI.init(userVibeScore, dynamicFinancialData);
+    } catch (error) {
+        console.error("Error initializing VibeScore:", error);
+    } finally {
+        renderInFlight = false;
+        if (pendingRenderUid) {
+            if (currentUserId && pendingRenderUid !== currentUserId) {
+                pendingRenderUid = null;
+                return;
+            }
+            const nextUid = pendingRenderUid;
+            pendingRenderUid = null;
+            renderVibeScore(nextUid);
+        }
+    }
+}
+
 
 // --- INITIALIZATION LOGIC ---
 
@@ -114,50 +184,11 @@ const calculationMap = {
 function initVibeScore() {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            try {
-                const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-                const userData = userDoc.exists() ? userDoc.data() : {};
-
-                const dynamicFinancialData = await Promise.all(Object.keys(calculationMap).map(async (name) => {
-                    const map = calculationMap[name];
-                    let data = {};
-                    if (typeof map.prepare === 'function') {
-                        data = await map.prepare({ uid: user.uid, userData, db }) || {};
-                    } else {
-                        data = userData[map.dataKey] || {};
-                    }
-                    const hasData = !!(data && typeof data === 'object' && Object.values(data).some((value) => {
-                        if (typeof value === 'number') return !Number.isNaN(value) && value !== 0;
-                        if (typeof value === 'boolean') return true;
-                        if (typeof value === 'string') return value.trim().length > 0;
-                        if (Array.isArray(value)) return value.length > 0;
-                        if (value && typeof value === 'object') {
-                            return Object.keys(value).length > 0;
-                        }
-                        return false;
-                    }));
-                    const calcResult = hasData ? map.calc(data) : null;
-                    const score = hasData
-                        ? (typeof calcResult === 'number' ? calcResult : (calcResult?.score ?? 0))
-                        : 0;
-                    const analysis = (calcResult && typeof calcResult === 'object') ? calcResult : null;
-                    const insight = hasData ? map.gen(data, score, analysis) : "No data found. Sync your financial tabs to populate this insight.";
-                    return { name, score, insight, hasData, analysis };
-                }));
-
-                // Calculate the overall VibeScore
-                const itemsWithData = dynamicFinancialData.filter(item => item.hasData);
-                const totalScore = itemsWithData.reduce((acc, item) => acc + item.score, 0);
-                const userVibeScore = itemsWithData.length > 0 ? Math.round(totalScore / itemsWithData.length) : 0;
-                
-                // Initialize the UI with the processed data
-                VibeScoreUI.init(userVibeScore, dynamicFinancialData);
-
-            } catch (error) {
-                console.error("Error initializing VibeScore:", error);
-                // You can add UI logic here to show an error state if needed
-            }
+            currentUserId = user.uid;
+            await renderVibeScore(user.uid);
+        } else {
+            currentUserId = null;
+            VibeScoreUI.hideInsight();
         }
     });
 }
@@ -189,3 +220,8 @@ function buildCashflowBreakdown(report = {}) {
 
 // Start the initialization process once the DOM is fully loaded.
 document.addEventListener('DOMContentLoaded', initVibeScore);
+
+document.addEventListener('income-profile:updated', () => {
+    if (!currentUserId) return;
+    renderVibeScore(currentUserId);
+});

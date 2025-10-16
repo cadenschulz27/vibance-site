@@ -1,7 +1,7 @@
 // public/pages/profile.js
 // ----------------------------------------------------
 // Profile controller
-//  - Display & update profile (displayName, avatar)
+//  - Display & update profile (avatar)
 //  - Email verification (resend)
 //  - Notification preferences (save/load)
 //  - Export data as JSON
@@ -33,7 +33,6 @@ import { auth, db, storage } from '../api/firebase.js';
 import {
   onAuthStateChanged,
   updateProfile,
-  sendEmailVerification,
   reauthenticateWithCredential,
   EmailAuthProvider,
   deleteUser,
@@ -52,10 +51,10 @@ import {
 const els = {
   avatarImg: document.getElementById('avatar-img'),
   avatarInput: document.getElementById('avatar-input'),
-  displayName: document.getElementById('display-name'),
+  profileUsernameInput: document.getElementById('profile-username-input'),
+  profileUsernameFeedback: document.getElementById('profile-username-feedback'),
   email: document.getElementById('email'),
   emailVerified: document.getElementById('email-verified'),
-  resendVerification: document.getElementById('resend-verification'),
   saveProfile: document.getElementById('save-profile'),
 
   prefWeekly: document.getElementById('pref-weekly'),
@@ -68,6 +67,9 @@ const els = {
 
   toast: document.getElementById('toast'),
 };
+
+let cachedProfileDoc = null;
+const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
 // -------------------- Utils --------------------
 function toast(msg) {
@@ -101,6 +103,46 @@ function downloadFile(filename, text, type='application/json') {
   URL.revokeObjectURL(url);
 }
 
+function normalizeUsernameValue(value) {
+  return String(value || '').trim().replace(/^@/, '').toLowerCase();
+}
+
+function setUsernameFeedback(message = '', tone = 'neutral') {
+  const el = els.profileUsernameFeedback;
+  if (!el) return;
+  el.textContent = message || '';
+  el.classList.remove('is-error', 'is-success');
+  if (tone === 'error') el.classList.add('is-error');
+  else if (tone === 'success') el.classList.add('is-success');
+}
+
+function validateUsernameInput(raw) {
+  const normalized = normalizeUsernameValue(raw);
+  const current = normalizeUsernameValue(cachedProfileDoc?.username || '');
+
+  if (!normalized) {
+    if (current) {
+      setUsernameFeedback('Leave blank to keep your current handle.', 'neutral');
+    } else {
+      setUsernameFeedback('Choose a handle to personalize your profile.', 'neutral');
+    }
+    return { valid: true, normalized: '' };
+  }
+
+  if (!USERNAME_RE.test(normalized)) {
+    setUsernameFeedback('Use 3–20 lowercase letters, numbers, or underscore.', 'error');
+    return { valid: false, normalized };
+  }
+
+  if (normalized === current) {
+    setUsernameFeedback('This is your current username.', 'neutral');
+  } else {
+    setUsernameFeedback('Format looks good. We’ll confirm availability when you save.', 'success');
+  }
+
+  return { valid: true, normalized };
+}
+
 // -------------------- Firestore helpers --------------------
 function userDocRef(uid) { return doc(db, 'users', uid); }
 function prefsDocRef(uid) { return doc(db, 'users', uid, 'settings', 'preferences'); }
@@ -132,19 +174,40 @@ async function savePrefs(uid, prefs) {
 // -------------------- Avatar upload --------------------
 async function uploadAvatar(uid, file) {
   if (!file) throw new Error('No file selected');
-  const path = `users/${uid}/profile/avatar.jpg`;
+  
+  // Determine file extension based on MIME type
+  let extension = 'jpg';
+  if (file.type === 'image/png') extension = 'png';
+  else if (file.type === 'image/webp') extension = 'webp';
+  
+  const path = `users/${uid}/profile/avatar.${extension}`;
   const r = sRef(storage, path);
-  await uploadBytes(r, file, { contentType: file.type || 'image/jpeg' });
+  
+  // Upload with custom metadata
+  const metadata = {
+    contentType: file.type,
+    customMetadata: {
+      uploadedAt: new Date().toISOString(),
+      originalName: file.name,
+      visibility: 'public' // Allow authenticated users to view
+    }
+  };
+  
+  await uploadBytes(r, file, metadata);
   const url = await getDownloadURL(r);
   return { url, path };
 }
 
 async function removeAvatarIfExists(uid) {
-  try {
-    const r = sRef(storage, `users/${uid}/profile/avatar.jpg`);
-    await deleteObject(r);
-  } catch (e) {
-    // ignore if not found
+  // Try deleting all possible avatar formats
+  const extensions = ['jpg', 'png', 'webp'];
+  for (const ext of extensions) {
+    try {
+      const r = sRef(storage, `users/${uid}/profile/avatar.${ext}`);
+      await deleteObject(r);
+    } catch (e) {
+      // Ignore if file doesn't exist
+    }
   }
 }
 
@@ -245,61 +308,153 @@ async function reauthPrompt(user) {
 
 // -------------------- Load & Save profile --------------------
 async function renderProfile(user) {
-  // Basics
   if (els.email) els.email.textContent = user.email || '';
-  if (els.displayName) els.displayName.value = user.displayName || '';
   if (els.avatarImg) els.avatarImg.src = user.photoURL || '/images/logo_white.png';
 
-  // Verified badge
   if (els.emailVerified) {
-    els.emailVerified.textContent = user.emailVerified ? 'Verified' : 'Not verified';
-    els.emailVerified.className = user.emailVerified
-      ? 'text-emerald-400 text-sm'
-      : 'text-amber-400 text-sm';
+    if (user.emailVerified) {
+      els.emailVerified.textContent = '✓ Verified';
+      els.emailVerified.className = 'profile-status profile-status--ok';
+    } else {
+      els.emailVerified.textContent = '⚠ Not verified';
+      els.emailVerified.className = 'profile-status profile-status--pending';
+    }
   }
 
-  // Pull extended profile doc (optional fields)
-  const docData = await loadUserDoc(user.uid);
-  if (docData?.displayName && els.displayName && !user.displayName) {
-    els.displayName.value = docData.displayName;
+  cachedProfileDoc = await loadUserDoc(user.uid) || {};
+
+  const storedUsername = String(cachedProfileDoc.username || '').trim().replace(/^@/, '');
+  const displayNameFallback = String(user.displayName || '').trim().replace(/^@/, '');
+  const emailFallback = (user.email || '').split('@')[0] || '';
+  const rawUsername = storedUsername || displayNameFallback || emailFallback;
+  if (els.profileUsernameInput) {
+    els.profileUsernameInput.value = rawUsername || '';
+    els.profileUsernameInput.dataset.original = normalizeUsernameValue(rawUsername);
+    if (!rawUsername && emailFallback) {
+      els.profileUsernameInput.placeholder = emailFallback;
+    }
   }
-  if (docData?.photoURL && els.avatarImg && !user.photoURL) {
-    els.avatarImg.src = docData.photoURL;
+  validateUsernameInput(rawUsername);
+
+  const preferredPhoto = cachedProfileDoc.photoURL || user.photoURL;
+  if (preferredPhoto && els.avatarImg) {
+    els.avatarImg.src = preferredPhoto;
   }
 }
 
 async function handleSaveProfile(user) {
-  const name = (els.displayName?.value || '').trim();
   const file = els.avatarInput?.files?.[0] || null;
+  const { valid, normalized: desiredUsername } = validateUsernameInput(els.profileUsernameInput?.value || '');
+  if (!valid) {
+    toast('Fix username format before saving');
+    els.profileUsernameInput?.focus();
+    return;
+  }
+
+  const currentUsername = normalizeUsernameValue(cachedProfileDoc?.username || '');
+  let usernameChanged = false;
+  let finalUsername = currentUsername;
+  let reservedNewHandleRef = null;
+  let createdNewHandleDoc = false;
 
   setBusy(els.saveProfile, 'Saving…', true);
+
+  const progressEl = document.getElementById('avatar-progress');
+
   try {
-    let photoURL = user.photoURL;
+    let photoURL = cachedProfileDoc?.photoURL || user.photoURL || null;
 
     if (file) {
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        throw new Error('Please upload a JPEG, PNG, or WebP image');
+      }
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        throw new Error('Image must be less than 5MB');
+      }
+
+      if (progressEl) progressEl.hidden = false;
       const { url } = await uploadAvatar(user.uid, file);
       photoURL = url;
+      if (els.avatarImg) els.avatarImg.src = url;
+      if (els.avatarInput) els.avatarInput.value = '';
     }
 
-    // Update Auth profile
-    await updateProfile(user, {
-      displayName: name || user.displayName || '',
-      photoURL: photoURL || user.photoURL || null,
-    });
+    if (desiredUsername && desiredUsername !== currentUsername) {
+      const newRef = doc(db, 'usernames', desiredUsername);
+      const newSnap = await getDoc(newRef);
+      if (newSnap.exists()) {
+        if (newSnap.data()?.uid !== user.uid) {
+          throw new Error('That username is already taken.');
+        }
+        // Username already reserved by this user; reuse without rewriting to avoid forbidden update.
+        createdNewHandleDoc = false;
+        reservedNewHandleRef = null;
+      } else {
+        await setDoc(newRef, { uid: user.uid, reservedAt: serverTimestamp() });
+        reservedNewHandleRef = newRef;
+        createdNewHandleDoc = true;
+      }
+      finalUsername = desiredUsername;
+      usernameChanged = true;
+    } else {
+      finalUsername = currentUsername;
+    }
 
-    // Mirror to Firestore user doc
-    await saveUserDoc(user.uid, {
-      displayName: user.displayName || name || '',
+    const profilePayload = {
       photoURL: user.photoURL || photoURL || null,
+    };
+    if (usernameChanged) {
+      profilePayload.username = finalUsername;
+    }
+
+    await updateProfile(user, {
+      photoURL: profilePayload.photoURL,
+      ...(finalUsername ? { displayName: finalUsername } : {}),
     });
 
-    // Update UI
+    await saveUserDoc(user.uid, profilePayload);
+
+    cachedProfileDoc = {
+      ...(cachedProfileDoc || {}),
+      ...profilePayload,
+      username: finalUsername || cachedProfileDoc?.username || '',
+    };
+
+    if (usernameChanged && currentUsername && currentUsername !== finalUsername) {
+      try {
+        await deleteDoc(doc(db, 'usernames', currentUsername));
+      } catch (cleanupErr) {
+        console.warn('Failed to release old username', cleanupErr);
+      }
+    }
+
     if (els.avatarImg && photoURL) els.avatarImg.src = photoURL;
+    if (els.profileUsernameInput) {
+      els.profileUsernameInput.value = finalUsername || '';
+      els.profileUsernameInput.dataset.original = normalizeUsernameValue(finalUsername);
+    }
+
+    if (usernameChanged) {
+      setUsernameFeedback('Username updated ✓', 'success');
+    } else {
+      validateUsernameInput(finalUsername || '');
+    }
+
     toast('Profile saved');
   } catch (e) {
     console.error(e);
+    if (e?.message?.toLowerCase().includes('username')) {
+      setUsernameFeedback(e.message, 'error');
+      els.profileUsernameInput?.focus();
+    }
+    if (reservedNewHandleRef && createdNewHandleDoc) {
+      try { await deleteDoc(reservedNewHandleRef); } catch (cleanupErr) { console.warn('Cleanup failed for reserved username', cleanupErr); }
+    }
     toast(e?.message || 'Failed to save profile');
   } finally {
+    if (progressEl) progressEl.hidden = true;
     setBusy(els.saveProfile, '', false);
     if (els.avatarInput) els.avatarInput.value = '';
   }
@@ -328,21 +483,6 @@ async function handleSavePrefs(uid) {
     toast('Failed to save preferences');
   } finally {
     setBusy(els.savePrefs, '', false);
-  }
-}
-
-// -------------------- Email verification --------------------
-async function handleResendVerification(user) {
-  if (user.emailVerified) { toast('Email already verified'); return; }
-  setBusy(els.resendVerification, 'Sending…', true);
-  try {
-    await sendEmailVerification(user);
-    toast('Verification email sent');
-  } catch (e) {
-    console.error(e);
-    toast('Failed to send verification');
-  } finally {
-    setBusy(els.resendVerification, '', false);
   }
 }
 
@@ -391,10 +531,8 @@ async function handleDeleteAccount(user) {
 // -------------------- Wiring --------------------
 function wire(user) {
   els.saveProfile?.addEventListener('click', () => handleSaveProfile(user));
-  els.resendVerification?.addEventListener('click', () => handleResendVerification(user));
-  els.savePrefs?.addEventListener('click', () => handleSavePrefs(user.uid));
-  els.exportData?.addEventListener('click', () => handleExport(user.uid));
-  els.deleteAccount?.addEventListener('click', () => handleDeleteAccount(user));
+  els.profileUsernameInput?.addEventListener('input', () => validateUsernameInput(els.profileUsernameInput.value));
+  els.profileUsernameInput?.addEventListener('blur', () => validateUsernameInput(els.profileUsernameInput.value));
 
   // Live avatar preview
   els.avatarInput?.addEventListener('change', () => {
@@ -413,7 +551,6 @@ function init() {
     if (!user) return; // auth-check.js likely redirects
     try {
       await renderProfile(user);
-      await renderPrefs(user.uid);
       wire(user);
     } catch (e) {
       console.error('Profile init failed', e);

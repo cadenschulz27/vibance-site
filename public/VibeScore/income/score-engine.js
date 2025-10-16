@@ -26,6 +26,7 @@ import {
   computeResilienceFactor,
   computeStabilityFactor
 } from './factors.js';
+import { deriveAgeIncomeTargets } from './age-utils.js';
 
 const toContribution = (weight, score) => ({
   weight,
@@ -41,12 +42,26 @@ export const computeIncomeScore = (rawData = {}, userOptions = {}) => {
   const history = analyzeIncomeHistory(rawData.incomeHistory || rawData.incomeTimeline || []);
   const quality = dataPresenceScore(rawData, DATA_IMPORTANCE_WEIGHTS);
 
+  const rawAge = safeNumber(rawData.age ?? rawData.ageYears, NaN);
+  const ageYears = Number.isFinite(rawAge) ? Math.max(0, Math.round(rawAge)) : null;
+  const ageTargets = deriveAgeIncomeTargets(ageYears, options);
+  const effectiveOptions = {
+    ...options,
+    baselineMonthlyIncome: ageTargets.baselineMonthlyIncome,
+    strongIncomeCap: ageTargets.strongIncomeCap
+  };
+
   const context = {
     totalIncome,
     adjustedIncome,
     history,
-    options,
-    dataGaps: quality.missing
+    options: effectiveOptions,
+    dataGaps: quality.missing,
+    age: {
+      years: ageYears,
+      expectation: ageTargets.expectation || null
+    },
+    ageTargets
   };
 
   const factors = {
@@ -94,6 +109,11 @@ export const computeIncomeScore = (rawData = {}, userOptions = {}) => {
     breakdown,
     quality,
     history,
+    demographics: {
+      ageYears,
+      ageBracket: ageTargets.expectation?.label || null,
+      ageExpectation: ageTargets.expectation || null
+    },
     diagnostics: {
       dataGaps: quality.missing,
       hasSufficientHistory: history.count >= 3,

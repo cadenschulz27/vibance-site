@@ -19,6 +19,11 @@ import {
   upsertOverride,
   normalizeExpenseRow,
 } from '../shared/transactions.js';
+import {
+  EXPENSE_CATEGORIES,
+  ensureCategoryDatalist,
+  normalizeCategoryInput,
+} from '../shared/categories.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   collection, getDocs, doc, getDoc, setDoc, addDoc,
@@ -29,12 +34,6 @@ import {
 const PER_ITEM_LIMIT = 500;    // how many tx to fetch per item from Firestore
 const PAGE_SIZE = 25;
 const AUTO_FIRST_SYNC = true;  // set false to disable auto-sync on first load
-const COMMON_CATEGORIES = [
-  'Groceries','Dining','Shopping','Rent/Mortgage','Utilities','Insurance','Transport','Travel',
-  'Health','Subscriptions','Entertainment','Education','Gifts','Fees','Taxes','Transfer',
-  'Salary','Refund','Investment','Interest','Other'
-];
-
 // -------------------- DOM --------------------
 const els = {
   syncAll: document.getElementById('sync-all-expenses'),
@@ -723,6 +722,90 @@ function render() {
   } catch {}
 }
 
+function attachInlineCategoryEditor(cell, row) {
+  if (!cell) return;
+  cell.classList.add('inline-category-cell');
+  cell.innerHTML = '';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'inline-category-input';
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.setAttribute('list', 'category-list');
+  input.setAttribute('aria-label', 'Edit category');
+  input.value = row.categoryUser || '';
+  input.placeholder = row.categoryAuto || 'Uncategorized';
+  cell.appendChild(input);
+
+  if (row.categoryAuto) {
+    const hint = document.createElement('div');
+    hint.className = 'inline-category-hint';
+    hint.textContent = row.categoryUser
+      ? `Auto: ${row.categoryAuto}`
+      : `Suggested: ${row.categoryAuto}`;
+    cell.appendChild(hint);
+  }
+
+  if (row.categoryUser) {
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'inline-category-reset';
+    resetBtn.textContent = 'Use auto';
+    resetBtn.addEventListener('click', () => {
+      if (input.disabled) return;
+      input.value = '';
+      applyInlineCategory(row, input);
+    });
+    cell.appendChild(resetBtn);
+  }
+
+  input.addEventListener('change', () => applyInlineCategory(row, input));
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      input.blur();
+    } else if (event.key === 'Escape') {
+      input.value = row.categoryUser || '';
+      input.blur();
+    }
+  });
+}
+
+async function applyInlineCategory(row, input) {
+  const next = normalizeCategoryInput(input.value);
+  const previous = normalizeCategoryInput(row.categoryUser || '');
+  if (next === previous) {
+    if (!next) input.placeholder = row.categoryAuto || 'Uncategorized';
+    return;
+  }
+  const revertValue = row.categoryUser || '';
+  input.disabled = true;
+  input.classList.add('inline-category-input--busy');
+  try {
+    if (row.manual) {
+      await updateManualTransaction(row.id, { category: next });
+    } else {
+      await upsertOverride({
+        itemId: row.itemId,
+        txId: row.id,
+        type: 'expense',
+        category: next,
+        original: row,
+      });
+    }
+    row.categoryUser = next;
+    toast(next ? 'Category updated' : 'Category reset');
+    render();
+  } catch (error) {
+    console.error('Inline category save failed', error);
+    toast('Could not update category');
+    input.value = revertValue;
+    input.disabled = false;
+    input.classList.remove('inline-category-input--busy');
+  }
+}
+
 function renderRow(r) {
   const tr = document.createElement('tr');
   tr.className = 'border-b border-neutral-800 hover:bg-neutral-900';
@@ -735,7 +818,6 @@ function renderRow(r) {
   const accountHtml = `<div class="flex flex-col gap-1"><span>${escapeHtml(r.institution_name || '')}</span>${badgeHtml}</div>`;
 
   const amountCls = 'text-red-400';
-  const categoryText = r.categoryUser || r.categoryAuto || '';
   const merchantHtml = r.merchant
     ? `<a class="hover:underline" href="/Merchants/merchant.html?name=${encodeURIComponent(r.merchant)}">${escapeHtml(r.merchant)}</a>`
     : '';
@@ -749,11 +831,14 @@ function renderRow(r) {
     <td class="px-4 py-3 align-top text-sm font-medium text-neutral-100">${escapeHtml(r.name || '')}${notesHtml}</td>
     <td class="px-4 py-3 align-top whitespace-nowrap text-sm ${amountCls} text-right">${escapeHtml(fmtMoney(Math.abs(r.amount), r.isoCurrency))}</td>
     <td class="px-4 py-3 align-top whitespace-nowrap text-sm text-neutral-300">${merchantHtml}</td>
-    <td class="px-4 py-3 align-top text-sm text-neutral-300">${escapeHtml(categoryText)}</td>
+    <td class="px-4 py-3 align-top text-sm text-neutral-300 tx-category"></td>
     <td class="px-4 py-3 align-top text-right">
       <button class="btn-edit px-3 py-1.5 rounded-lg border border-neutral-700 text-xs text-neutral-200 hover:bg-neutral-900">Edit</button>
     </td>
   `;
+
+  const catCell = tr.querySelector('.tx-category');
+  attachInlineCategoryEditor(catCell, r);
 
   const editBtn = tr.querySelector('.btn-edit');
   if (editBtn) {
@@ -797,14 +882,6 @@ function download(filename, text) {
 }
 
 // -------------------- Wiring --------------------
-function ensureCategoryDatalist() {
-  if (document.getElementById('category-list')) return;
-  const dl = document.createElement('datalist');
-  dl.id = 'category-list';
-  dl.innerHTML = COMMON_CATEGORIES.map(c => `<option value="${escapeAttr(c)}"></option>`).join('');
-  document.body.appendChild(dl);
-}
-
 function wireUI() {
   const rerun = () => applyFilters();
   els.account?.addEventListener('change', rerun);
@@ -837,7 +914,7 @@ function wireUI() {
     if (PAGE * PAGE_SIZE < total) { PAGE++; render(); }
   });
 
-  ensureCategoryDatalist();
+  ensureCategoryDatalist('category-list', EXPENSE_CATEGORIES);
   els.saveFilterBtn?.addEventListener('click', () => { if (UID) saveCurrentFilter(UID).catch(console.error); });
   els.savedFilterSelect?.addEventListener('change', () => { if (UID) applySavedFilter(UID, els.savedFilterSelect.value).catch(console.error); });
   els.presetThisMonth?.addEventListener('click', () => applyPreset('this'));

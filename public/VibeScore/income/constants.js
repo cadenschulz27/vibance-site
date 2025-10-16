@@ -93,3 +93,13 @@ export const DATA_IMPORTANCE_WEIGHTS = Object.freeze({
   emergencyFundMonths: 0.4,
   industryRisk: 0.3
 });
+
+export const AGE_INCOME_EXPECTATIONS = Object.freeze([
+  { min: 0, max: 9, label: 'Under 10', annualMin: 0, annualMax: 0 },
+  { min: 10, max: 17, label: '10-17', annualMin: 0, annualMax: 1000 },
+  { min: 18, max: 29, label: '18-29', annualMin: 30000, annualMax: 50000 },
+  { min: 30, max: 39, label: '30-39', annualMin: 60000, annualMax: 85000 },
+  { min: 40, max: 49, label: '40-49', annualMin: 65000, annualMax: 90000 },
+  { min: 50, max: 59, label: '50-59', annualMin: 65000, annualMax: 85000 },
+  { min: 60, max: 120, label: '60+', annualMin: 50000, annualMax: 70000 }
+]);

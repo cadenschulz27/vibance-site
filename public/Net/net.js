@@ -21,6 +21,7 @@ import {
   composeNarrative,
   buildInsights,
 } from './net-logic.mjs';
+import { computeMonthlyRollupsFromTransactions } from '../shared/rollup-fallback.js';
 
 const els = {
   range: document.getElementById('range-select'),
@@ -709,21 +710,53 @@ async function loadRange(rangeMonths) {
       };
     });
 
-    const hasData = rows.some((row) => row.income > 0 || row.expense > 0);
+    let workingRows = rows;
+    let workingCategoryTotals = categoryTotals;
+
+    let hasData = workingRows.some((row) => row.income > 0 || row.expense > 0);
+    if (!hasData) {
+      const fallback = await computeMonthlyRollupsFromTransactions(UID, { months: rangeMonths });
+      if (fallback && Array.isArray(fallback.monthSummaries) && fallback.monthSummaries.length) {
+        const fallbackMap = new Map(fallback.monthSummaries.map((entry) => [entry.month, entry]));
+        workingRows = monthKeys.map((key) => {
+          const entry = fallbackMap.get(key) || {};
+          const [year, month] = key.split('-').map((part) => Number(part) || 0);
+          const label = monthFormatter.format(new Date(year, Math.max(0, month - 1), 1));
+          const income = safeNumber(entry.incomeTotal, 0);
+          const expense = safeNumber(entry.expenseTotal, 0);
+          return {
+            key,
+            label,
+            income,
+            expense,
+            net: income - expense,
+          };
+        });
+        if (fallback.categoryTotals instanceof Map) {
+          workingCategoryTotals = fallback.categoryTotals;
+        } else if (fallback.categoryTotals && typeof fallback.categoryTotals === 'object') {
+          workingCategoryTotals = new Map(Object.entries(fallback.categoryTotals));
+        } else {
+          workingCategoryTotals = new Map();
+        }
+        hasData = workingRows.some((row) => row.income > 0 || row.expense > 0);
+      }
+    }
+
     if (!hasData) {
       showEmpty(rangeMonths);
       return;
     }
 
-    const stats = computeStats(rows, categoryTotals);
+    const stats = computeStats(workingRows, workingCategoryTotals);
     lastStats = stats;
-    lastRows = rows;
+    lastRows = workingRows;
     showMain();
-    renderHighlights(rows, stats, rangeMonths);
-    renderChart(rows);
-    renderTimeline(rows, stats);
+    renderHighlights(workingRows, stats, rangeMonths);
+    renderChart(workingRows);
+    renderTimeline(workingRows, stats);
     renderCategories(stats);
-    renderInsights(stats, rows);
+    renderInsights(stats, workingRows);
   } catch (error) {
     console.error('[Net] failed to load range', error);
     showEmpty(rangeMonths);

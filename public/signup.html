@@ -8,12 +8,53 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #FFF; font-family: 'Inter', sans-serif; }
+        :root {
+            --navy-950: #020617;
+            --navy-920: #050B1A;
+            --navy-880: #071327;
+            --navy-840: #0C1C35;
+            --navy-glass: rgba(11, 21, 41, 0.72);
+            --navy-glass-strong: rgba(11, 21, 41, 0.88);
+            --border-muted: rgba(78, 102, 158, 0.45);
+            --border-highlight: rgba(118, 155, 255, 0.55);
+            --accent-neon: #CCFF00;
+            --accent-neon-soft: #b8ff3b;
+            --text-primary: #F8FAFC;
+            --text-secondary: rgba(203, 213, 225, 0.82);
+            --text-muted: rgba(148, 163, 184, 0.75);
+        }
+        body {
+            background:
+                radial-gradient(120% 120% at 50% -10%, rgba(74, 115, 186, 0.32), transparent 55%),
+                radial-gradient(80% 80% at 85% 15%, rgba(62, 43, 137, 0.22), transparent 68%),
+                var(--navy-950);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
         .font-headline { font-family: 'Lora', serif; }
-        .btn-neon { background-color: #CCFF00; color: #000; font-weight: 700; transition: transform 0.2s ease; }
-        .btn-neon:hover { transform: translateY(-2px); }
-        .input-field { background-color: #1C1C1E; border: 1px solid #3A3A3C; }
-        .input-field:focus { border-color: #CCFF00; outline: none; }
+        .btn-neon {
+            background: linear-gradient(135deg, var(--accent-neon), var(--accent-neon-soft));
+            color: #041406;
+            font-weight: 700;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 18px 40px rgba(204, 255, 0, 0.24);
+        }
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 24px 52px rgba(204, 255, 0, 0.32);
+        }
+        .input-field {
+            background: rgba(10, 18, 34, 0.8);
+            border: 1px solid var(--border-muted);
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+        }
+        .input-field:focus {
+            border-color: var(--accent-neon);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(204, 255, 0, 0.14);
+        }
         #webgl-canvas {
             position: fixed;
             top: 0; left: 0;
@@ -21,9 +62,29 @@
             z-index: -1;
         }
         .form-card {
-            background-color: rgba(18, 18, 18, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(160deg, var(--navy-glass-strong), rgba(14, 27, 56, 0.82));
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(86, 107, 168, 0.45);
+            box-shadow: 0 28px 80px rgba(5, 11, 28, 0.65);
+        }
+        .form-title {
+            color: var(--text-primary);
+        }
+        .form-subtext {
+            color: var(--text-secondary);
+        }
+        .field-label {
+            color: rgba(215, 225, 245, 0.88);
+            letter-spacing: 0.02em;
+        }
+        .muted-text {
+            color: var(--text-muted);
+        }
+        .link-neon {
+            color: var(--accent-neon);
+        }
+        .link-neon:hover {
+            color: var(--accent-neon-soft);
         }
     </style>
 </head>
@@ -35,26 +96,26 @@
             <a href="index.html">
                 <img src="images/logo_white.png" alt="Vibance Logo" class="h-12 w-12 mx-auto mb-4">
             </a>
-            <h1 class="font-headline text-3xl font-bold">Create Your Account</h1>
-            <p class="text-gray-400 mt-2">Start your journey to financial empowerment.</p>
+            <h1 class="font-headline text-3xl font-bold form-title">Create Your Account</h1>
+            <p class="form-subtext mt-2">Start your journey to financial empowerment.</p>
         </div>
 
         <form id="signup-form" class="space-y-6">
             <!-- First / Last Name -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label for="signup-first-name" class="text-sm font-medium text-gray-300">First Name</label>
+                    <label for="signup-first-name" class="text-sm font-medium field-label">First Name</label>
                     <input id="signup-first-name" type="text" required class="w-full px-4 py-3 mt-1 text-white rounded-md input-field">
                 </div>
                 <div>
-                    <label for="signup-last-name" class="text-sm font-medium text-gray-300">Last Name</label>
+                    <label for="signup-last-name" class="text-sm font-medium field-label">Last Name</label>
                     <input id="signup-last-name" type="text" required class="w-full px-4 py-3 mt-1 text-white rounded-md input-field">
                 </div>
             </div>
 
             <!-- Username (NEW, themed like the rest) -->
             <div>
-                <label for="signup-username" class="text-sm font-medium text-gray-300">Username</label>
+                <label for="signup-username" class="text-sm font-medium field-label">Username</label>
                 <input
                   id="signup-username"
                   type="text"
@@ -70,13 +131,13 @@
 
             <!-- Email -->
             <div>
-                <label for="signup-email" class="text-sm font-medium text-gray-300">Email</label>
+                <label for="signup-email" class="text-sm font-medium field-label">Email</label>
                 <input id="signup-email" type="email" required class="w-full px-4 py-3 mt-1 text-white rounded-md input-field">
             </div>
 
             <!-- Password -->
             <div>
-                <label for="signup-password" class="text-sm font-medium text-gray-300">Password</label>
+                <label for="signup-password" class="text-sm font-medium field-label">Password</label>
                 <input id="signup-password" type="password" required class="w-full px-4 py-3 mt-1 text-white rounded-md input-field">
             </div>
 
@@ -87,8 +148,8 @@
             </div>
         </form>
 
-        <p class="text-sm text-center text-gray-500">
-            Already have an account? <a href="./login.html" class="font-medium text-[#CCFF00] hover:underline">Log in</a>
+        <p class="text-sm text-center muted-text">
+            Already have an account? <a href="./login.html" class="font-medium link-neon hover:underline">Log in</a>
         </p>
     </div>
 
