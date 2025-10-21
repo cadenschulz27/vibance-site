@@ -1687,23 +1687,19 @@ body.modal-open {
 }
 
 .vibescore-wrapper--compact {
-    margin-top: -1.35rem;
+    margin: 0.35rem auto 0 auto;
 }
 
 .vibescore-wrapper--compact .vibescore-toolbar {
-    top: -1.1rem;
+    display: none;
 }
 
 @media (max-width: 1024px) {
     .vibescore-wrapper--compact {
-        margin-top: -1rem;
-    }
-
-    .vibescore-wrapper--compact .vibescore-toolbar {
-        top: -0.85rem;
+        margin: 0.25rem auto 0 auto;
     }
 }
 
 main.dashboard-main--compact {
-    padding-top: 0.35rem !important;
+    padding-top: 0 !important;
 }

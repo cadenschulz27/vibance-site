@@ -172,39 +172,83 @@ export const VibeScoreUI = {
             console.error("VibeScore UI Error: Invalid or missing financial data provided.", data);
             return;
         }
-        if (plane) {
-            plane.innerHTML = '';
+        if (!plane) {
+            console.error("VibeScore UI Error: HUD plane element is missing from the DOM.");
+            return;
         }
+
+        plane.innerHTML = '';
+
         const angleStep = 360 / data.length;
         const startingAngle = -90;
 
         data.forEach((item, index) => {
             const angle = startingAngle + (index * angleStep);
-            
+
             let colors;
             if (!item.hasData) {
                 colors = {
-                    borderColor: 'rgba(148, 163, 184, 0.32)',
-                    textColor: '#9CA3AF',
-                    bubbleBg: 'rgba(26, 31, 40, 0.72)'
+                    borderColor: 'rgba(128, 140, 162, 0.12)',
+                    borderHover: 'rgba(150, 162, 182, 0.18)',
+                    textColor: '#94A3B8',
+                    bubbleBg: 'linear-gradient(150deg, rgba(38, 44, 56, 0.68), rgba(18, 22, 32, 0.78))',
+                    gradientStart: 'rgba(44, 52, 68, 0.35)',
+                    gradientMid: 'rgba(24, 28, 40, 0.42)',
+                    gradientEnd: 'rgba(12, 14, 22, 0.52)',
+                    hoverGradientStart: 'rgba(64, 76, 96, 0.48)',
+                    hoverGradientEnd: 'rgba(24, 28, 40, 0.58)',
+                    outline: 'rgba(84, 90, 110, 0.1)',
+                    outlineHover: 'rgba(118, 128, 148, 0.15)',
+                    animDuration: '32s',
+                    animHoverDuration: '20s'
                 };
             } else if (item.score < 50) {
                 colors = {
-                    borderColor: 'rgba(248, 113, 113, 0.42)',
-                    textColor: '#F87171',
-                    bubbleBg: 'linear-gradient(135deg, rgba(248, 113, 113, 0.24), rgba(127, 29, 29, 0.58))'
+                    borderColor: 'rgba(255, 112, 149, 0.2)',
+                    borderHover: 'rgba(255, 132, 170, 0.28)',
+                    textColor: '#FF8CA1',
+                    bubbleBg: 'linear-gradient(150deg, rgba(255, 112, 149, 0.22), rgba(92, 24, 54, 0.55))',
+                    gradientStart: 'rgba(170, 60, 92, 0.35)',
+                    gradientMid: 'rgba(92, 28, 58, 0.42)',
+                    gradientEnd: 'rgba(38, 16, 40, 0.52)',
+                    hoverGradientStart: 'rgba(255, 134, 176, 0.32)',
+                    hoverGradientEnd: 'rgba(120, 34, 72, 0.42)',
+                    outline: 'rgba(255, 120, 160, 0.15)',
+                    outlineHover: 'rgba(255, 150, 190, 0.22)',
+                    animDuration: '22s',
+                    animHoverDuration: '12s'
                 };
             } else if (item.score < 80) {
                 colors = {
-                    borderColor: 'rgba(253, 224, 71, 0.4)',
-                    textColor: '#FACC15',
-                    bubbleBg: 'linear-gradient(135deg, rgba(253, 224, 71, 0.28), rgba(161, 98, 7, 0.52))'
+                    borderColor: 'rgba(255, 196, 120, 0.18)',
+                    borderHover: 'rgba(255, 210, 150, 0.28)',
+                    textColor: '#FBD38D',
+                    bubbleBg: 'linear-gradient(150deg, rgba(255, 196, 120, 0.2), rgba(86, 58, 20, 0.52))',
+                    gradientStart: 'rgba(168, 112, 52, 0.32)',
+                    gradientMid: 'rgba(98, 62, 24, 0.4)',
+                    gradientEnd: 'rgba(46, 30, 16, 0.52)',
+                    hoverGradientStart: 'rgba(255, 206, 140, 0.3)',
+                    hoverGradientEnd: 'rgba(110, 72, 28, 0.4)',
+                    outline: 'rgba(255, 200, 140, 0.12)',
+                    outlineHover: 'rgba(255, 220, 160, 0.2)',
+                    animDuration: '24s',
+                    animHoverDuration: '14s'
                 };
             } else {
                 colors = {
-                    borderColor: 'rgba(110, 231, 183, 0.42)',
-                    textColor: '#86EFAC',
-                    bubbleBg: 'linear-gradient(135deg, rgba(110, 231, 183, 0.28), rgba(6, 95, 70, 0.52))'
+                    borderColor: 'rgba(204, 255, 0, 0.2)',
+                    borderHover: 'rgba(204, 255, 0, 0.32)',
+                    textColor: '#CCFF00',
+                    bubbleBg: 'linear-gradient(150deg, rgba(204, 255, 0, 0.22), rgba(80, 100, 0, 0.56))',
+                    gradientStart: 'rgba(120, 150, 20, 0.32)',
+                    gradientMid: 'rgba(100, 130, 10, 0.4)',
+                    gradientEnd: 'rgba(70, 90, 0, 0.52)',
+                    hoverGradientStart: 'rgba(204, 255, 0, 0.3)',
+                    hoverGradientEnd: 'rgba(100, 130, 10, 0.4)',
+                    outline: 'rgba(204, 255, 0, 0.15)',
+                    outlineHover: 'rgba(204, 255, 0, 0.25)',
+                    animDuration: '26s',
+                    animHoverDuration: '16s'
                 };
             }
 
@@ -216,11 +260,22 @@ export const VibeScoreUI = {
             const bubble = document.createElement('div');
             bubble.className = 'hud-bubble';
             if (!item.hasData) bubble.classList.add('is-nodata');
-            
+
             bubble.style.setProperty('--angle', `${angle}deg`);
             bubble.style.setProperty('--delay', `${index * 80}ms`);
             bubble.style.setProperty('--border-color', colors.borderColor);
-            
+            bubble.style.setProperty('--bubble-border', colors.borderColor);
+            bubble.style.setProperty('--bubble-hover-border', colors.borderHover || colors.borderColor);
+            bubble.style.setProperty('--bubble-outline-alpha', colors.outline);
+            bubble.style.setProperty('--bubble-outline-hover-alpha', colors.outlineHover || colors.outline);
+            bubble.style.setProperty('--bubble-hover-gradient-start', colors.hoverGradientStart || colors.gradientStart);
+            bubble.style.setProperty('--bubble-hover-gradient-end', colors.hoverGradientEnd || colors.gradientEnd);
+            bubble.style.setProperty('--bubble-anim-duration', colors.animDuration || '24s');
+            bubble.style.setProperty('--bubble-anim-hover-duration', colors.animHoverDuration || '14s');
+            bubble.style.setProperty('--text-color', colors.textColor);
+            bubble.style.setProperty('--bubble-title-color', colors.textColor);
+            bubble.style.setProperty('--bubble-score-color', colors.textColor);
+
             const scoreText = item.hasData ? item.score.toFixed(0) : 'N/A';
             const tooltipLines = [];
             if (item.analysis && item.analysis.breakdown) {
@@ -237,12 +292,10 @@ export const VibeScoreUI = {
             const ariaLabel = tooltipLines.length ? ` aria-label="${tooltipLines.join(' \u2022 ').replace(/"/g, "'")}"` : '';
 
             const coreContent = `
-                <div class="bubble-core"${ariaLabel} style="--text-color: ${colors.textColor}; --bubble-title-color: ${colors.textColor}; --bubble-score-color: ${colors.textColor}; --bubble-border: ${colors.borderColor}; --bubble-bg: ${colors.bubbleBg}">
+                <div class="bubble-core"${ariaLabel}>
                     <div class="bubble-info">
-                        <div class="bubble-info__header">
-                            <span class="bubble-title">${item.name}</span>
-                            <span class="bubble-score">${scoreText}</span>
-                        </div>
+                        <span class="bubble-title">${item.name}</span>
+                        <span class="bubble-score">${scoreText}</span>
                     </div>
                 </div>
             `.trim();

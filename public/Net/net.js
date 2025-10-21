@@ -22,6 +22,12 @@ import {
   buildInsights,
 } from './net-logic.mjs';
 import { computeMonthlyRollupsFromTransactions } from '../shared/rollup-fallback.js';
+import {
+  loadTransactionsForRange,
+  parseDate,
+  aggregateByMonth,
+  aggregateByCategory,
+} from '../shared/net-calculations.js';
 
 const els = {
   range: document.getElementById('range-select'),
@@ -42,6 +48,14 @@ const els = {
   categoryExpenses: document.getElementById('category-expense-list'),
   categoryIncome: document.getElementById('category-income-list'),
   insights: document.getElementById('insights-list'),
+  netStrengths: document.getElementById('metric-net-strengths'),
+  netImprovements: document.getElementById('metric-net-improvements'),
+  incomeStrengths: document.getElementById('metric-income-strengths'),
+  incomeImprovements: document.getElementById('metric-income-improvements'),
+  expenseStrengths: document.getElementById('metric-expense-strengths'),
+  expenseImprovements: document.getElementById('metric-expense-improvements'),
+  ratioStrengths: document.getElementById('metric-ratio-strengths'),
+  ratioImprovements: document.getElementById('metric-ratio-improvements'),
   main: document.getElementById('net-main'),
   empty: document.getElementById('net-empty'),
   heroSubtitle: document.getElementById('hero-subtitle'),
@@ -299,6 +313,7 @@ function clearVisuals() {
   if (els.categoryExpenses) els.categoryExpenses.innerHTML = '';
   if (els.categoryIncome) els.categoryIncome.innerHTML = '';
   if (els.insights) els.insights.innerHTML = '';
+  renderMetricInsights(null, []);
 }
 
 function setupPreferencesUI() {
@@ -388,6 +403,7 @@ function showEmpty(rangeMonths) {
   if (els.empty) els.empty.classList.remove('hidden');
   lastStats = null;
   lastRows = [];
+  renderMetricInsights(null, []);
   if (els.netValue) els.netValue.textContent = '—';
   if (els.netAverage) els.netAverage.textContent = '—';
   if (els.netChangeText) els.netChangeText.textContent = '—';
@@ -433,6 +449,7 @@ function renderHighlights(rows, stats, rangeMonths) {
   }
   applyTrendPill(stats.netChange);
 
+  // Core metrics: average net, income, expenses
   if (els.netAverage) {
     els.netAverage.textContent = formatCurrency(stats.avgNet, { maximumFractionDigits: 0 });
   }
@@ -448,17 +465,28 @@ function renderHighlights(rows, stats, rangeMonths) {
   if (els.expenseAverage) {
     els.expenseAverage.textContent = formatCurrency(stats.avgExpense, { maximumFractionDigits: 0 });
   }
+  
+  // Financial ratios: savings rate and expense ratio
   if (els.netMargin) {
-    els.netMargin.textContent = stats.netMargin !== null ? formatPercent(stats.netMargin, stats.netMargin > 0.25 ? 0 : 1) : '—';
+    // Show savings rate (what % of income you keep)
+    const savingsRate = stats.savingsRate;
+    els.netMargin.textContent = savingsRate !== null ? formatPercent(savingsRate, savingsRate > 0.25 ? 0 : 1) : '—';
   }
   if (els.ratio) {
-    if (stats.ratio === Infinity) els.ratio.textContent = '∞';
-    else if (stats.ratio !== null) els.ratio.textContent = `${stats.ratio.toFixed(stats.ratio >= 10 ? 0 : 2)}x`;
-    else els.ratio.textContent = '—';
+    // Show expense ratio (what % of income goes to expenses)
+    const expenseRatio = stats.expenseRatio;
+    if (expenseRatio !== null) {
+      els.ratio.textContent = formatPercent(expenseRatio, 0);
+    } else {
+      els.ratio.textContent = '—';
+    }
   }
+  
   if (els.heroSubtitle) {
     els.heroSubtitle.textContent = composeNarrative(stats, rows, rangeMonths, insightPrefs);
   }
+  
+  // Streak: positive months tracking
   if (els.streak) {
     if (stats.positiveStreak > 0) {
       els.streak.textContent = `${stats.positiveStreak} ${pluralize('month', stats.positiveStreak)} positive`;
@@ -468,6 +496,8 @@ function renderHighlights(rows, stats, rangeMonths) {
       els.streak.textContent = 'No positive months yet';
     }
   }
+
+  renderMetricInsights(stats, rows);
 }
 
 function renderChart(rows) {
@@ -615,6 +645,214 @@ function renderCategoryList(listEl, entries, total, type) {
   });
 }
 
+function dedupeItems(items = []) {
+  const seen = new Set();
+  return items
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter((item) => {
+      if (!item) return false;
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
+}
+
+function setMetricList(listEl, items, emptyText) {
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  const uniqueItems = dedupeItems(items).slice(0, 2);
+  if (!uniqueItems.length) {
+    if (emptyText) {
+      const li = document.createElement('li');
+      li.className = 'metric-insights__empty';
+      li.textContent = emptyText;
+      listEl.appendChild(li);
+    }
+    return;
+  }
+
+  uniqueItems.forEach((text) => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    listEl.appendChild(li);
+  });
+}
+
+function buildMetricBullets(stats, rows = []) {
+  const result = {
+    net: { strengths: [], improvements: [] },
+    income: { strengths: [], improvements: [] },
+    expense: { strengths: [], improvements: [] },
+    ratio: { strengths: [], improvements: [] },
+  };
+
+  if (!stats) return result;
+
+  const currentLabel = stats.current?.label || 'This month';
+  const previousLabel = stats.previous?.label || 'the prior month';
+  const windowLabel = rows.length > 1 ? `${rows.length}-month average` : 'range average';
+  const topExpense = stats.topExpenses?.[0];
+  const topIncome = stats.topIncomes?.[0];
+  const largestExpenseShare = typeof stats.largestExpensePct === 'number' ? stats.largestExpensePct : 0;
+  const expenseRatio = Number.isFinite(stats.expenseRatio) ? stats.expenseRatio : null;
+  const incomeShare = stats.totals?.income > 0 && topIncome ? topIncome.income / stats.totals.income : 0;
+  const expenseShare = stats.totals?.expense > 0 && topExpense ? topExpense.expense / stats.totals.expense : 0;
+
+  // Net strengths
+  if (stats.current?.net > 0) {
+    result.net.strengths.push(`${currentLabel} closed ${formatCurrency(stats.current.net, { maximumFractionDigits: 0 })} in surplus.`);
+  }
+  if (stats.avgNet > 0) {
+    result.net.strengths.push(`Averaging ${formatCurrency(stats.avgNet, { maximumFractionDigits: 0 })} in surplus across the window.`);
+  }
+  if (stats.positiveStreak >= 2) {
+    result.net.strengths.push(`${stats.positiveStreak}-month surplus streak intact.`);
+  }
+  if (stats.savingsRate !== null && stats.savingsRate > 0.1) {
+    result.net.strengths.push(`Saving ${formatPercent(stats.savingsRate, stats.savingsRate > 0.25 ? 0 : 1)} of income.`);
+  }
+  if (!result.net.strengths.length) {
+    result.net.strengths.push('Momentum is building—next surplus is within reach.');
+  }
+
+  // Net improvements
+  if (stats.current?.net < 0) {
+    result.net.improvements.push(`${currentLabel} ran ${formatCurrency(Math.abs(stats.current.net), { maximumFractionDigits: 0 })} short.`);
+  }
+  if (stats.netChange !== null && stats.netChange < 0 && stats.previous) {
+    result.net.improvements.push(`Net softened ${formatCurrency(Math.abs(stats.netChange), { maximumFractionDigits: 0 })} vs ${previousLabel}.`);
+  }
+  if (largestExpenseShare > 0.3 && topExpense) {
+    result.net.improvements.push(`${topExpense.name} is ${formatPercent(largestExpenseShare, largestExpenseShare > 0.35 ? 0 : 1)} of spend—trim it to lift surplus.`);
+  }
+  if (stats.savingsRate !== null && stats.savingsRate <= 0) {
+    result.net.improvements.push('No surplus captured—schedule an automatic savings transfer.');
+  }
+  if (!result.net.improvements.length) {
+    result.net.improvements.push('Guard the surplus by assigning it to a goal immediately.');
+  }
+
+  // Income strengths
+  if (stats.current?.income > 0) {
+    result.income.strengths.push(`${formatCurrency(stats.current.income, { maximumFractionDigits: 0 })} landed ${currentLabel}.`);
+  }
+  if (stats.incomeChange !== null && stats.incomeChange > 0 && stats.previous) {
+    result.income.strengths.push(`Income rose ${formatCurrency(stats.incomeChange, { maximumFractionDigits: 0 })} vs ${previousLabel}.`);
+  }
+  if (stats.avgIncome > 0) {
+    result.income.strengths.push(`${windowLabel} sits at ${formatCurrency(stats.avgIncome, { maximumFractionDigits: 0 })}.`);
+  }
+  if (!result.income.strengths.length) {
+    result.income.strengths.push('Income sources synced—monitoring for trends.');
+  }
+
+  // Income improvements
+  if (stats.current?.income === 0) {
+    result.income.improvements.push('No deposits tracked this month—sync payroll to fill the gap.');
+  }
+  if (stats.incomeChange !== null && stats.incomeChange < 0 && stats.previous) {
+    result.income.improvements.push(`Deposits dipped ${formatCurrency(Math.abs(stats.incomeChange), { maximumFractionDigits: 0 })} vs ${previousLabel}.`);
+  }
+  if (incomeShare > 0.55 && topIncome) {
+    result.income.improvements.push(`${topIncome.name} supplies ${formatPercent(incomeShare, incomeShare > 0.7 ? 0 : 1)} of income—plan a backup stream.`);
+  }
+  if (!result.income.improvements.length) {
+    result.income.improvements.push('Diversify income streams to keep momentum resilient.');
+  }
+
+  // Expense strengths
+  if (stats.expenseChange !== null && stats.expenseChange < 0 && stats.previous) {
+    result.expense.strengths.push(`Spending fell ${formatCurrency(Math.abs(stats.expenseChange), { maximumFractionDigits: 0 })} vs ${previousLabel}.`);
+  }
+  if (stats.avgExpense > 0 && stats.current?.expense <= stats.avgExpense) {
+    result.expense.strengths.push(`Stayed at or below the ${windowLabel} for expenses.`);
+  }
+  if (stats.current?.income > stats.current?.expense) {
+    result.expense.strengths.push(`Left ${formatCurrency(stats.current.income - stats.current.expense, { maximumFractionDigits: 0 })} after bills.`);
+  }
+  if (!result.expense.strengths.length) {
+    result.expense.strengths.push('Expense tracking active—ready to spot wins.');
+  }
+
+  // Expense improvements
+  if (stats.expenseChange !== null && stats.expenseChange > 0 && stats.previous) {
+    result.expense.improvements.push(`Outflows rose ${formatCurrency(Math.abs(stats.expenseChange), { maximumFractionDigits: 0 })} vs ${previousLabel}.`);
+  }
+  if (expenseShare > 0.3 && topExpense) {
+    result.expense.improvements.push(`${topExpense.name} is ${formatPercent(expenseShare, expenseShare > 0.4 ? 0 : 1)} of spend—set a tighter cap.`);
+  }
+  if (stats.current?.expense > stats.current?.income && stats.current?.income > 0) {
+    result.expense.improvements.push('Outflows topped income—trim variable categories next cycle.');
+  }
+  if (!result.expense.improvements.length) {
+    result.expense.improvements.push('Audit recurring charges to widen your surplus.');
+  }
+
+  // Ratio strengths
+  if (expenseRatio !== null && expenseRatio <= 0.75) {
+    result.ratio.strengths.push(`Only ${formatPercent(expenseRatio, 0)} of income going to expenses.`);
+  }
+  if (stats.savingsRate !== null && stats.savingsRate > 0.15) {
+    result.ratio.strengths.push(`Savings rate running ${formatPercent(stats.savingsRate, stats.savingsRate > 0.25 ? 0 : 1)} across the range.`);
+  }
+  if (stats.incomeToExpenseRatio !== null && stats.incomeToExpenseRatio > 1.1) {
+    const ratioLabel = stats.incomeToExpenseRatio === Infinity
+      ? '∞'
+      : `${stats.incomeToExpenseRatio.toFixed(stats.incomeToExpenseRatio >= 10 ? 0 : 2)}x`;
+    result.ratio.strengths.push(`Income covers expenses ${ratioLabel} this month.`);
+  }
+  if (!result.ratio.strengths.length) {
+    result.ratio.strengths.push('Tracking your spend-to-income ratio keeps budgets proactive.');
+  }
+
+  // Ratio improvements
+  if (expenseRatio !== null && expenseRatio > 0.85) {
+    result.ratio.improvements.push(`Expenses now absorb ${formatPercent(expenseRatio, 0)} of income—tighten variable costs.`);
+  }
+  if (stats.savingsRate !== null && stats.savingsRate <= 0.05) {
+    const label = stats.savingsRate < 0 ? formatPercent(stats.savingsRate, 1, { withSign: true }) : formatPercent(stats.savingsRate, 1);
+    result.ratio.improvements.push(`Savings rate at ${label}—carve out a fixed transfer.`);
+  }
+  if (stats.current?.net < 0) {
+    result.ratio.improvements.push('Aim for < 80% expense ratio to swing back to surplus next month.');
+  }
+  if (!result.ratio.improvements.length) {
+    result.ratio.improvements.push('Review recurring bills to keep expenses under 80% of income.');
+  }
+
+  return result;
+}
+
+function renderMetricInsights(stats, rows = []) {
+  if (!els.netStrengths || !els.netImprovements) return;
+
+  if (!stats) {
+    setMetricList(els.netStrengths, [], 'Connect accounts to surface wins.');
+    setMetricList(els.netImprovements, [], 'We’ll highlight opportunities once activity syncs.');
+    setMetricList(els.incomeStrengths, [], 'Link income streams to unlock takeaways.');
+    setMetricList(els.incomeImprovements, [], 'Fresh deposits will surface improvement ideas.');
+    setMetricList(els.expenseStrengths, [], 'Log expenses to see what’s working.');
+    setMetricList(els.expenseImprovements, [], 'More spend data will reveal focused nudges.');
+    setMetricList(els.ratioStrengths, [], 'Track a full month to benchmark ratios.');
+    setMetricList(els.ratioImprovements, [], 'We’ll flag ratios once activity flows.');
+    return;
+  }
+
+  const bulletMap = buildMetricBullets(stats, rows);
+
+  setMetricList(els.netStrengths, bulletMap.net.strengths, 'Connect accounts to surface wins.');
+  setMetricList(els.netImprovements, bulletMap.net.improvements, 'We’ll highlight opportunities once activity syncs.');
+
+  setMetricList(els.incomeStrengths, bulletMap.income.strengths, 'Link income streams to unlock takeaways.');
+  setMetricList(els.incomeImprovements, bulletMap.income.improvements, 'Fresh deposits will surface improvement ideas.');
+
+  setMetricList(els.expenseStrengths, bulletMap.expense.strengths, 'Log expenses to see what’s working.');
+  setMetricList(els.expenseImprovements, bulletMap.expense.improvements, 'More spend data will reveal focused nudges.');
+
+  setMetricList(els.ratioStrengths, bulletMap.ratio.strengths, 'Track a full month to benchmark ratios.');
+  setMetricList(els.ratioImprovements, bulletMap.ratio.improvements, 'We’ll flag ratios once activity flows.');
+}
+
 function renderCategories(stats) {
   renderCategoryList(
     els.categoryExpenses,
@@ -692,71 +930,104 @@ async function loadRange(rangeMonths) {
   updateRangeLabels(rangeMonths);
   try {
     const monthKeys = buildMonthKeys(rangeMonths);
-    const { monthData, categoryTotals } = await fetchRollupWindow(UID, monthKeys);
+    
+    // Calculate date range for lookback
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(today);
+    const startDate = new Date(today);
+    startDate.setMonth(startDate.getMonth() - (rangeMonths - 1));
+    startDate.setDate(1);
+    
+    // Load all transactions for the date range from Firestore
+    const allTransactions = await loadTransactionsForRange(UID, startDate, endDate);
+    
     if (token !== loadToken) return;
-
+    
+    if (allTransactions.length === 0) {
+      // Fallback to rollup data if no transactions found
+      const rollupData = await fetchRollupWindow(UID, monthKeys);
+      if (token !== loadToken) return;
+      
+      const { monthData, categoryTotals } = rollupData;
+      const rows = monthKeys.map((key) => {
+        const data = monthData[key] || { income: 0, expense: 0 };
+        const [year, month] = key.split('-').map((part) => Number(part) || 0);
+        const label = monthFormatter.format(new Date(year, Math.max(0, month - 1), 1));
+        const income = data.income || 0;
+        const expense = data.expense || 0;
+        return {
+          key,
+          label,
+          income,
+          expense,
+          net: income - expense,
+        };
+      });
+      
+      const hasData = rows.some((row) => row.income > 0 || row.expense > 0);
+      if (!hasData) {
+        showEmpty(rangeMonths);
+        return;
+      }
+      
+      const stats = computeStats(rows, categoryTotals);
+      lastStats = stats;
+      lastRows = rows;
+      showMain();
+      renderHighlights(rows, stats, rangeMonths);
+      renderChart(rows);
+      renderTimeline(rows, stats);
+      renderCategories(stats);
+      renderInsights(stats, rows);
+      return;
+    }
+    
+    // Use transaction data to calculate monthly aggregates
+    const monthlyData = aggregateByMonth(allTransactions);
+    const categoryTotals = aggregateByCategory(allTransactions);
+    
+    if (token !== loadToken) return;
+    
+    // Build rows for each month in the range
     const rows = monthKeys.map((key) => {
-      const data = monthData[key] || { income: 0, expense: 0 };
+      const monthRecord = monthlyData.find(m => m.month === key);
       const [year, month] = key.split('-').map((part) => Number(part) || 0);
       const label = monthFormatter.format(new Date(year, Math.max(0, month - 1), 1));
-      const income = data.income || 0;
-      const expense = data.expense || 0;
+      
       return {
         key,
         label,
-        income,
-        expense,
-        net: income - expense,
+        income: monthRecord?.income || 0,
+        expense: monthRecord?.expense || 0,
+        net: (monthRecord?.income || 0) - (monthRecord?.expense || 0),
       };
     });
-
-    let workingRows = rows;
-    let workingCategoryTotals = categoryTotals;
-
-    let hasData = workingRows.some((row) => row.income > 0 || row.expense > 0);
-    if (!hasData) {
-      const fallback = await computeMonthlyRollupsFromTransactions(UID, { months: rangeMonths });
-      if (fallback && Array.isArray(fallback.monthSummaries) && fallback.monthSummaries.length) {
-        const fallbackMap = new Map(fallback.monthSummaries.map((entry) => [entry.month, entry]));
-        workingRows = monthKeys.map((key) => {
-          const entry = fallbackMap.get(key) || {};
-          const [year, month] = key.split('-').map((part) => Number(part) || 0);
-          const label = monthFormatter.format(new Date(year, Math.max(0, month - 1), 1));
-          const income = safeNumber(entry.incomeTotal, 0);
-          const expense = safeNumber(entry.expenseTotal, 0);
-          return {
-            key,
-            label,
-            income,
-            expense,
-            net: income - expense,
-          };
-        });
-        if (fallback.categoryTotals instanceof Map) {
-          workingCategoryTotals = fallback.categoryTotals;
-        } else if (fallback.categoryTotals && typeof fallback.categoryTotals === 'object') {
-          workingCategoryTotals = new Map(Object.entries(fallback.categoryTotals));
-        } else {
-          workingCategoryTotals = new Map();
-        }
-        hasData = workingRows.some((row) => row.income > 0 || row.expense > 0);
-      }
-    }
-
+    
+    const hasData = rows.some((row) => row.income > 0 || row.expense > 0);
     if (!hasData) {
       showEmpty(rangeMonths);
       return;
     }
-
-    const stats = computeStats(workingRows, workingCategoryTotals);
+    
+    // Convert category aggregates to the format expected by computeStats
+    const categoryMap = new Map();
+    categoryTotals.forEach(cat => {
+      categoryMap.set(cat.name, {
+        income: cat.income,
+        expense: cat.expense,
+      });
+    });
+    
+    const stats = computeStats(rows, categoryMap);
     lastStats = stats;
-    lastRows = workingRows;
+    lastRows = rows;
     showMain();
-    renderHighlights(workingRows, stats, rangeMonths);
-    renderChart(workingRows);
-    renderTimeline(workingRows, stats);
+    renderHighlights(rows, stats, rangeMonths);
+    renderChart(rows);
+    renderTimeline(rows, stats);
     renderCategories(stats);
-    renderInsights(stats, workingRows);
+    renderInsights(stats, rows);
   } catch (error) {
     console.error('[Net] failed to load range', error);
     showEmpty(rangeMonths);
@@ -788,6 +1059,7 @@ function handleBackButton() {
 function init() {
   handleBackButton();
   setupPreferencesUI();
+  renderMetricInsights(null, []);
   updateRangeLabels(currentRange);
 
   els.range?.addEventListener('change', (event) => {

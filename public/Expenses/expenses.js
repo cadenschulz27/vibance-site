@@ -1136,4 +1136,32 @@ function init() {
     }
   });
 }
+
+// -------------------- Public API for other tabs --------------------
+// Exposes current expense/income totals and transactions for Net tab integration
+
+function getCurrentExpensesTotal() {
+  return FILTERED.reduce((s, r) => s + r.amount, 0);
+}
+
+function getCurrentIncome() {
+  return 0; // Expenses tab only shows expenses, income is 0
+}
+
+function getCurrentTransactions() {
+  return FILTERED || [];
+}
+
+function getAllTransactions() {
+  return ALL_TX || [];
+}
+
+// Make available globally for cross-tab access
+window.VIBANCE_EXPENSES_API = {
+  getCurrentExpensesTotal,
+  getCurrentIncome,
+  getCurrentTransactions,
+  getAllTransactions,
+};
+
 document.addEventListener('DOMContentLoaded', init);

@@ -55,14 +55,19 @@ function computeStats(rows, categoryTotals) {
 
   const current = rows[rows.length - 1] || { label: '', income: 0, expense: 0, net: 0 };
   const previous = rows.length > 1 ? rows[rows.length - 2] : null;
+  
+  // Core metrics
   const netChange = previous ? current.net - previous.net : null;
   const netChangePct = previous && previous.net !== 0 ? (current.net - previous.net) / Math.abs(previous.net) : null;
   const expenseChange = previous ? current.expense - previous.expense : null;
   const incomeChange = previous ? current.income - previous.income : null;
+  
+  // Averages
   const avgNet = rows.length ? totals.net / rows.length : 0;
   const avgIncome = rows.length ? totals.income / rows.length : 0;
   const avgExpense = rows.length ? totals.expense / rows.length : 0;
 
+  // Standard deviations for volatility
   const netStdDev = rows.length > 1
     ? Math.sqrt(rows.reduce((acc, row) => acc + ((row.net - avgNet) ** 2), 0) / rows.length)
     : 0;
@@ -73,42 +78,11 @@ function computeStats(rows, categoryTotals) {
     ? Math.sqrt(rows.reduce((acc, row) => acc + ((row.expense - avgExpense) ** 2), 0) / rows.length)
     : 0;
 
-  let trendSlope = 0;
-  let trendIntercept = avgNet;
-  let projectedNet = current.net;
-  if (rows.length >= 2) {
-    const nets = rows.map((row) => row.net);
-    const n = nets.length;
-    let sumX = 0;
-    let sumY = 0;
-    let sumXY = 0;
-    let sumXX = 0;
-    for (let i = 0; i < n; i += 1) {
-      const x = i;
-      const y = nets[i];
-      sumX += x;
-      sumY += y;
-      sumXY += x * y;
-      sumXX += x * x;
-    }
-    const denom = (n * sumXX) - (sumX * sumX);
-    if (denom !== 0) {
-      trendSlope = ((n * sumXY) - (sumX * sumY)) / denom;
-      trendIntercept = (sumY - (trendSlope * sumX)) / n;
-      projectedNet = (trendSlope * n) + trendIntercept;
-    } else {
-      trendSlope = 0;
-      trendIntercept = nets[0] || 0;
-      projectedNet = current.net;
-    }
-  }
+  // Volatility coefficients (normalized)
+  const incomeVolatility = avgIncome > 0 ? incomeStdDev / avgIncome : 0;
+  const expenseVolatility = avgExpense > 0 ? expenseStdDev / avgExpense : 0;
 
-  let ratio = null;
-  if (current.expense === 0 && current.income > 0) ratio = Infinity;
-  else if (current.expense > 0) ratio = current.income / current.expense;
-
-  const netMargin = totals.income > 0 ? totals.net / totals.income : null;
-
+  // Streak and positive month tracking
   let positiveStreak = 0;
   for (let idx = rows.length - 1; idx >= 0; idx -= 1) {
     if (rows[idx].net >= 0) positiveStreak += 1;
@@ -117,17 +91,50 @@ function computeStats(rows, categoryTotals) {
   let positiveMonths = 0;
   rows.forEach((row) => { if (row.net >= 0) positiveMonths += 1; });
 
+  // Highest/lowest months
   let highestIncomeMonth = null;
+  let lowestIncomeMonth = null;
   let highestExpenseMonth = null;
+  let lowestExpenseMonth = null;
+  let highestNetMonth = null;
+  let lowestNetMonth = null;
+  
   rows.forEach((row) => {
     if (!highestIncomeMonth || row.income > highestIncomeMonth.value) {
       highestIncomeMonth = { label: row.label, value: row.income };
     }
+    if (!lowestIncomeMonth || row.income < lowestIncomeMonth.value) {
+      lowestIncomeMonth = { label: row.label, value: row.income };
+    }
     if (!highestExpenseMonth || row.expense > highestExpenseMonth.value) {
       highestExpenseMonth = { label: row.label, value: row.expense };
     }
+    if (!lowestExpenseMonth || row.expense < lowestExpenseMonth.value) {
+      lowestExpenseMonth = { label: row.label, value: row.expense };
+    }
+    if (!highestNetMonth || row.net > highestNetMonth.value) {
+      highestNetMonth = { label: row.label, value: row.net };
+    }
+    if (!lowestNetMonth || row.net < lowestNetMonth.value) {
+      lowestNetMonth = { label: row.label, value: row.net };
+    }
   });
 
+  // Financial ratios
+  let incomeToExpenseRatio = null;
+  if (current.expense === 0 && current.income > 0) incomeToExpenseRatio = Infinity;
+  else if (current.expense > 0) incomeToExpenseRatio = current.income / current.expense;
+
+  // Net margin: net income as % of total income
+  const netMargin = totals.income > 0 ? totals.net / totals.income : null;
+  
+  // Savings rate: what % of income is left after expenses
+  const savingsRate = totals.income > 0 ? totals.net / totals.income : null;
+  
+  // Expense ratio: what % of income goes to expenses
+  const expenseRatio = totals.income > 0 ? totals.expense / totals.income : null;
+
+  // Categories analysis
   const categories = Array.from(categoryTotals.entries()).map(([name, values]) => ({
     name,
     income: values.income,
@@ -136,6 +143,15 @@ function computeStats(rows, categoryTotals) {
   }));
   const topExpenses = categories.filter((c) => c.expense > 0).sort((a, b) => b.expense - a.expense);
   const topIncomes = categories.filter((c) => c.income > 0).sort((a, b) => b.income - a.income);
+
+  // Largest expense category as % of total
+  const largestExpensePct = topExpenses.length && totals.expense > 0 
+    ? topExpenses[0].expense / totals.expense 
+    : 0;
+
+  // Consistency score (inverse of volatility, 0-100)
+  const maxVolatility = Math.max(incomeVolatility, expenseVolatility);
+  const consistencyScore = Math.max(0, Math.min(100, 100 - (maxVolatility * 100)));
 
   return {
     totals,
@@ -151,17 +167,24 @@ function computeStats(rows, categoryTotals) {
     netStdDev,
     incomeStdDev,
     expenseStdDev,
-    trendSlope,
-    trendIntercept,
-    projectedNet,
-    ratio,
+    incomeVolatility,
+    expenseVolatility,
+    consistencyScore,
+    incomeToExpenseRatio,
     netMargin,
+    savingsRate,
+    expenseRatio,
     positiveStreak,
     positiveMonths,
+    highestIncomeMonth,
+    lowestIncomeMonth,
+    highestExpenseMonth,
+    lowestExpenseMonth,
+    highestNetMonth,
+    lowestNetMonth,
     topExpenses,
     topIncomes,
-    highestIncomeMonth,
-    highestExpenseMonth,
+    largestExpensePct,
   };
 }
 
@@ -233,21 +256,21 @@ function composeNarrative(stats, rows, rangeMonths, preferences = {}) {
   }
 
   if (prefs.volatility && stats.netStdDev > 0) {
-    if (stats.netStdDev >= Math.max(200, Math.abs(stats.avgNet) * 0.6)) {
-      parts.push(`Cash flow swings by about ${formatCurrency(stats.netStdDev, { maximumFractionDigits: 0 })} from month to month.`);
-    } else if (stats.netStdDev <= Math.max(100, Math.abs(stats.avgNet) * 0.25)) {
-      parts.push('Variability stays muted, pointing to dependable pacing.');
+    const consistency = stats.consistencyScore;
+    if (consistency > 80) {
+      parts.push('Income and expense patterns are highly consistent—easy to budget.');
+    } else if (consistency > 60) {
+      parts.push('Moderate variability in cash flow; plan for swings.');
+    } else if (consistency < 40) {
+      parts.push('High cash flow volatility detected—set larger emergency buffers.');
     }
-  }
-
-  if (prefs.forecasts && Number.isFinite(stats.projectedNet)) {
-    const trendWord = stats.projectedNet >= 0 ? 'surplus trajectory' : 'shortfall risk';
-    parts.push(`Trajectory signals a ${trendWord} near ${formatCurrency(stats.projectedNet, { maximumFractionDigits: 0 })} next month.`);
   }
 
   if (prefs.actions && stats.topExpenses?.length) {
     const focusCategory = stats.topExpenses[0];
-    parts.push(`Consider preset caps for ${focusCategory.name} to stay ahead of the next cycle.`);
+    if (stats.largestExpensePct > 0.25) {
+      parts.push(`${focusCategory.name} is ${formatPercent(stats.largestExpensePct, 0)} of spending—consider reducing this category.`);
+    }
   }
 
   if (parts.length === 0) {
@@ -305,12 +328,12 @@ function buildInsights(stats, rows) {
     });
   }
 
-  if (stats.ratio !== null) {
-    const ratioTone = stats.ratio >= 1 ? 'positive' : 'warning';
-    const ratioLabel = stats.ratio === Infinity ? '∞' : `${stats.ratio.toFixed(stats.ratio >= 10 ? 0 : 2)}x`;
+  if (stats.incomeToExpenseRatio !== null) {
+    const ratioTone = stats.incomeToExpenseRatio >= 1 ? 'positive' : 'warning';
+    const ratioLabel = stats.incomeToExpenseRatio === Infinity ? '∞' : `${stats.incomeToExpenseRatio.toFixed(stats.incomeToExpenseRatio >= 10 ? 0 : 2)}x`;
     insights.push({
       title: 'Income to expense ratio',
-      body: `Current month is running at ${ratioLabel}, providing a net margin of ${stats.netMargin !== null ? formatPercent(stats.netMargin, stats.netMargin > 0.25 ? 0 : 1) : '—'}.`,
+      body: `Current month is running at ${ratioLabel}, with a savings rate of ${stats.savingsRate !== null ? formatPercent(stats.savingsRate, stats.savingsRate > 0.25 ? 0 : 1) : '—'}.`,
       tone: ratioTone,
       kind: 'summary',
     });
@@ -339,19 +362,23 @@ function buildInsights(stats, rows) {
     });
   }
 
-  if (Number.isFinite(stats.projectedNet)) {
-    const outlookDelta = stats.projectedNet - current.net;
-    const outlookTone = stats.projectedNet >= 0 ? 'positive' : 'warning';
-    const outlookDirection = stats.projectedNet >= 0 ? 'surplus' : 'shortfall';
-    const changeSnippet = Math.abs(outlookDelta) > 1
-      ? `, a ${outlookDelta >= 0 ? 'shift up' : 'slip'} of ${formatCurrency(outlookDelta, { maximumFractionDigits: 0, withSign: true })}`
-      : '';
-    insights.push({
-      title: 'Next month outlook',
-      body: `Trajectory points to a ${outlookDirection} near ${formatCurrency(stats.projectedNet, { maximumFractionDigits: 0 })}${changeSnippet}. Stay ready to adjust once the month opens.`,
-      tone: outlookTone,
-      kind: 'forecasts',
-    });
+  // Consistency insights
+  if (stats.consistencyScore !== undefined) {
+    if (stats.consistencyScore > 80) {
+      insights.push({
+        title: 'Highly predictable cash flow',
+        body: 'Your income and expenses are consistent. This makes budgeting easier and more reliable.',
+        tone: 'positive',
+        kind: 'volatility',
+      });
+    } else if (stats.consistencyScore < 40) {
+      insights.push({
+        title: 'Variable cash flow detected',
+        body: 'Income or expenses swing significantly month-to-month. Keep a larger emergency fund.',
+        tone: 'warning',
+        kind: 'volatility',
+      });
+    }
   }
 
   if (stats.avgExpense > 0) {
