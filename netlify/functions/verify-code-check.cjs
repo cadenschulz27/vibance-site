@@ -7,6 +7,7 @@ const crypto = require('crypto');
 /* ─── Env ──────────────────────────────────────────────────────────────── */
 const HMAC_SECRET = process.env.VERIFY_CODE_SECRET || 'change-me';
 const MAX_ATTEMPTS = parseInt(process.env.VERIFY_MAX_ATTEMPTS || '6', 10);
+const VERIFICATION_DISABLED = String(process.env.VERIFY_DISABLED || '').toLowerCase() === 'true';
 
 /* ─── Helpers ──────────────────────────────────────────────────────────── */
 const CORS_HEADERS = {
@@ -38,7 +39,17 @@ exports.handler = async (event) => {
     const decoded = await auth.verifyIdToken(idToken, true);
     const uid = decoded.uid;
 
-    // Parse body
+    if (VERIFICATION_DISABLED) {
+      // Auto verify without needing code.
+      try {
+        await auth.updateUser(uid, { emailVerified: true });
+      } catch (e) {
+        console.warn('[verify-code-check] failed to auto-verify user while disabled', e);
+      }
+      return json(200, { ok: true, verified: true, disabled: true, message: 'Verification bypassed (temporarily disabled).' });
+    }
+
+    // Parse body only when verification is active
     let body = {};
     try { body = JSON.parse(event.body || '{}'); } catch {}
     const code = String(body.code || '').trim();

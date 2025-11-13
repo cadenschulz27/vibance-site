@@ -12,6 +12,7 @@ const HMAC_SECRET = process.env.VERIFY_CODE_SECRET || 'change-me';
 const CODE_TTL_MIN = parseInt(process.env.VERIFY_CODE_TTL_MIN || '10', 10);           // default 10 min
 const RESEND_COOLDOWN_SEC = parseInt(process.env.VERIFY_RESEND_COOLDOWN_SEC || '30', 10); // default 30s
 const MAX_ATTEMPTS = parseInt(process.env.VERIFY_MAX_ATTEMPTS || '6', 10);
+const VERIFICATION_DISABLED = String(process.env.VERIFY_DISABLED || '').toLowerCase() === 'true';
 
 if (SENDGRID_KEY) sgMail.setApiKey(SENDGRID_KEY);
 
@@ -59,6 +60,22 @@ exports.handler = async (event) => {
         const wait = Math.ceil((RESEND_COOLDOWN_SEC * 1000 - (now - lastSent)) / 1000);
         return json(429, { ok: false, error: `Please wait ${wait}s before requesting another code.` });
       }
+    }
+
+    if (VERIFICATION_DISABLED) {
+      // Skip code generation & email; mark as verified immediately.
+      try {
+        await auth.updateUser(uid, { emailVerified: true });
+      } catch (e) {
+        console.warn('[verify-code-create] failed to auto-verify user while disabled', e);
+      }
+      return json(200, {
+        ok: true,
+        disabled: true,
+        emailed: false,
+        verified: true,
+        message: 'Email verification temporarily disabled; user auto-verified.'
+      });
     }
 
     // Generate a 6-digit code
