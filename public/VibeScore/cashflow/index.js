@@ -12,6 +12,16 @@ import { readPreferences, writePreferences } from './services/preferences.js';
 import { readCachedSnapshot, writeCachedSnapshot, clearCachedSnapshot } from './services/cache.js';
 import { triggerCashflowSync } from './services/sync.js';
 
+const formatCurrency = (value) => {
+  const amount = Number(value) || 0;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
 
 /**
  * Loads everything needed for the cash-flow module and optionally renders the UI.
@@ -83,17 +93,54 @@ export function calculateScore(profile) {
   return buildScoreReport(profile);
 }
 
+const normalizeBullet = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const buildInsightPayload = ({ summary = '', strengths = [], improvements = [] } = {}) => ({
+  summary: normalizeBullet(summary),
+  strengths: strengths.map(normalizeBullet).filter(Boolean).slice(0, 3),
+  improvements: improvements.map(normalizeBullet).filter(Boolean).slice(0, 3),
+});
+
 export function getCashflowInsight(report) {
-  if (!report) return 'Connect accounts to calculate your cash flow score.';
+  if (!report) {
+    return buildInsightPayload({
+      summary: '',
+      strengths: ['Connect cash-flow accounts so we can surface wins.'],
+      improvements: ['Sync transactions to unlock monthly surplus guidance.'],
+    });
+  }
+
   const breakdown = buildFactorBreakdown(report);
   const sorted = [...breakdown].sort((a, b) => b.value - a.value);
   const strongest = sorted[0];
   const weakest = sorted.at(-1);
-  const base = `Cash Flow Score: ${Math.round(report.score)}. `;
-  if (!strongest || !weakest) {
-    return `${base}We’re analyzing your factors—check back soon.`;
+  const summary = `Cash Flow Score: ${Math.round(report.score)}.`;
+
+  const strengths = [];
+  const improvements = [];
+
+  if (strongest) {
+    strengths.push(`${strongest.label} is leading at ${strongest.value}/100.`);
   }
-  return `${base}${strongest.label} is leading the way, while ${weakest.label.toLowerCase()} has the biggest upside.`;
+  if (report.diagnostics?.latestSnapshot) {
+    const snap = report.diagnostics.latestSnapshot;
+    const income = Number(snap.income) || 0;
+    const expense = Number(snap.expense) || 0;
+    const surplus = income - expense;
+    if (surplus > 0) {
+      strengths.push(`Latest month cleared ${formatCurrency(surplus)} beyond expenses.`);
+    }
+  }
+
+  if (weakest) {
+    improvements.push(`Focus on ${weakest.label.toLowerCase()} to unlock the next score band.`);
+  }
+
+  if (!improvements.length) {
+    improvements.push('Keep monitoring cash streaks—we’ll flag drift if it appears.');
+  }
+
+  return buildInsightPayload({ summary, strengths, improvements });
 }
 
 export async function prefetchCashflow(options) {

@@ -21,6 +21,116 @@ import {
   safeNumber
 } from './metrics.js';
 
+const flag = (value) => {
+  if (value === true) return true;
+  if (value === false) return false;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', 'yes', 'y', '1'].includes(normalized)) return true;
+    if (['false', 'no', 'n', '0'].includes(normalized)) return false;
+  }
+  return Boolean(value);
+};
+
+const resolveYouthStatus = (data, context) => {
+  const ageYears = Number.isFinite(context?.age?.years) ? context.age.years : NaN;
+  if (Number.isFinite(ageYears) && ageYears <= 17) return true;
+  return Object.prototype.hasOwnProperty.call(data || {}, 'youthHasIncome') ||
+    Object.prototype.hasOwnProperty.call(data || {}, 'youthTypicalMonthlyIncome');
+};
+
+const youthBalanceFrequencyScore = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  switch (normalized) {
+    case 'daily':
+      return 1;
+    case 'few-days':
+      return 0.85;
+    case 'weekly':
+      return 0.7;
+    case 'monthly':
+      return 0.45;
+    case 'rarely':
+      return 0.2;
+    default:
+      return 0.45;
+  }
+};
+
+const youthSpendingApproachWeight = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  switch (normalized) {
+    case 'plan-ahead':
+      return 0.85;
+    case 'mix':
+      return 0.55;
+    case 'as-needed':
+      return 0.25;
+    default:
+      return 0.5;
+  }
+};
+
+const youthConfidenceWeight = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  switch (normalized) {
+    case 'very-confident':
+      return 0.9;
+    case 'somewhat-confident':
+      return 0.65;
+    case 'not-yet-confident':
+      return 0.35;
+    default:
+      return 0.55;
+  }
+};
+
+const youthIncomeFrequencyMomentum = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  switch (normalized) {
+    case 'weekly':
+      return 6;
+    case 'biweekly':
+      return 5;
+    case 'monthly':
+      return 3;
+    case 'occasionally':
+      return -5;
+    default:
+      return 0;
+  }
+};
+
+const youthSavingsContributionBoost = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  switch (normalized) {
+    case 'weekly':
+      return 6;
+    case 'monthly':
+      return 4;
+    case 'rarely':
+      return 1;
+    case 'never':
+      return -6;
+    default:
+      return 2;
+  }
+};
+
+const youthSavingsLocationBonus = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  switch (normalized) {
+    case 'bank':
+      return 6;
+    case 'cash':
+      return 2;
+    case 'other':
+      return 1;
+    default:
+      return 0;
+  }
+};
+
 const normalizeEmploymentType = (type) => {
   if (!type) return 'contract';
   const normalized = String(type).toLowerCase();
@@ -133,18 +243,32 @@ export const computeExpenseCoverageFactor = (data, context) => {
   const bufferRatio = essentialExpenses <= 0 ? 0 : Math.max(0, totalIncome - essentialExpenses) / essentialExpenses;
   const coverageComponent = ratioScore(coverageRatio, 1.25, 0.4) / 100;
   const bufferComponent = logistic(bufferRatio, 0.4, 5);
-  const score = clampScore((coverageComponent * 60 + bufferComponent * 40));
+  let score = clampScore((coverageComponent * 60 + bufferComponent * 40));
+  const details = {
+    totalIncome,
+    totalExpenses,
+    essentialExpenses,
+    coverageRatio,
+    bufferRatio
+  };
+
+  if (resolveYouthStatus(data, context)) {
+    let youthAdjust = 0;
+    youthAdjust += (youthSpendingApproachWeight(data.youthSpendingApproach) - 0.5) * 22;
+    if (flag(data.youthTracksSpending ?? data.youthTracksSpendingFlag)) youthAdjust += 4;
+    if (flag(data.youthPaysRecurringExpenses)) youthAdjust += 3;
+    if (flag(data.youthRanOutOfMoney ?? data.youthRanOutOfMoneyRecently)) youthAdjust -= 6;
+    const guardianSupport = flag(data.youthGetsGuardianHelp ?? data.youthHasGuardianSupport) ? 1.5 : 0;
+    youthAdjust += guardianSupport;
+    score = clampScore(score + youthAdjust);
+    details.youthAdjust = youthAdjust;
+  }
+
   return {
     id: 'expenseCoverage',
     label: 'Expense Coverage',
     score,
-    details: {
-      totalIncome,
-      totalExpenses,
-      essentialExpenses,
-      coverageRatio,
-      bufferRatio
-    }
+    details
   };
 };
 
@@ -166,22 +290,39 @@ export const computeStabilityFactor = (data, context) => {
   const insurance = percentToUnit(data.incomeInsuranceCoverage, 0);
   const insuranceAdjust = insurance * 8;
 
-  const score = clampScore(base + tenureBoost + volatilityAdjust + payAdjust + layoffAdjust + benefitAdjust + reliabilityAdjust + insuranceAdjust);
+  let score = clampScore(base + tenureBoost + volatilityAdjust + payAdjust + layoffAdjust + benefitAdjust + reliabilityAdjust + insuranceAdjust);
+  const details = {
+    employmentType,
+    industryRisk,
+    tenureMonths,
+    volatilityAdjust,
+    payAdjust,
+    layoffHistory,
+    benefitCoverage,
+    reliability,
+    insuranceCoverage: insurance
+  };
+
+  if (resolveYouthStatus(data, context)) {
+    let youthAdjust = 0;
+    const balanceDiscipline = youthBalanceFrequencyScore(data.youthBalanceCheckFrequency);
+    youthAdjust += (balanceDiscipline - 0.45) * 14;
+    if (flag(data.youthHasCheckingAccount)) youthAdjust += 4;
+    if (flag(data.youthHasSavingsAccount)) youthAdjust += 5;
+    if (flag(data.youthHasDebitCard)) youthAdjust += 2;
+    if (flag(data.youthUsesMoneyApps)) youthAdjust += 1.5;
+    if (flag(data.youthHeldPartTimeJob)) youthAdjust += 3;
+    if (!flag(data.youthHasIncome)) youthAdjust -= 10;
+    if (flag(data.youthGetsGuardianHelp ?? data.youthHasGuardianSupport)) youthAdjust += 2;
+    score = clampScore(score + youthAdjust);
+    details.youthAdjust = youthAdjust;
+  }
+
   return {
     id: 'stability',
     label: 'Income Stability',
     score,
-    details: {
-      employmentType,
-      industryRisk,
-      tenureMonths,
-      volatilityAdjust,
-      payAdjust,
-      layoffHistory,
-      benefitCoverage,
-      reliability,
-      insuranceCoverage: insurance
-    }
+    details
   };
 };
 
@@ -225,35 +366,63 @@ export const computeDiversityFactor = (data, context) => {
 export const computeMomentumFactor = (data, context) => {
   const { history } = context;
   if (!history || history.count === 0) {
+    let score = 48;
+    const details = {
+      slope: 0,
+      slopePercent: 0,
+      rSquared: 0,
+      volatility: 0,
+      recentChangePct: 0
+    };
+
+    if (resolveYouthStatus(data, context)) {
+      let youthAdjust = youthIncomeFrequencyMomentum(data.youthIncomeFrequency) * 0.6;
+      if (flag(data.youthHasSavingsGoal ?? data.youthHasSavingsGoalFlag)) youthAdjust += 3;
+      if (flag(data.youthUsesMoneyApps)) youthAdjust += 1.5;
+      if (flag(data.youthRanOutOfMoney ?? data.youthRanOutOfMoneyRecently)) youthAdjust -= 3;
+      const approach = youthSpendingApproachWeight(data.youthSpendingApproach);
+      youthAdjust += (approach - 0.5) * 8;
+      score = clampScore(score + youthAdjust);
+      details.youthAdjust = youthAdjust;
+    }
+
     return {
       id: 'momentum',
       label: 'Trajectory',
-      score: 48,
-      details: {
-        slope: 0,
-        slopePercent: 0,
-        rSquared: 0,
-        volatility: 0,
-        recentChangePct: 0
-      }
+      score,
+      details
     };
   }
   const slopeComponent = clampScore(history.slopePercent * 180 + 50, 0, 100);
   const r2Component = clampScore(history.rSquared * 40 + 40, 0, 100);
   const volatilityPenalty = Math.min(35, history.volatility * 60);
   const recentMomentum = clampScore(history.recentChangePct * 140 + 50, 0, 100);
-  const score = clampScore((slopeComponent * 0.35 + r2Component * 0.25 + recentMomentum * 0.25) - volatilityPenalty * 0.35);
+  let score = clampScore((slopeComponent * 0.35 + r2Component * 0.25 + recentMomentum * 0.25) - volatilityPenalty * 0.35);
+  const details = {
+    slope: history.slope,
+    slopePercent: history.slopePercent,
+    rSquared: history.rSquared,
+    volatility: history.volatility,
+    recentChangePct: history.recentChangePct
+  };
+
+  if (resolveYouthStatus(data, context)) {
+    let youthAdjust = youthIncomeFrequencyMomentum(data.youthIncomeFrequency);
+    if (flag(data.youthHasSavingsGoal ?? data.youthHasSavingsGoalFlag)) youthAdjust += 3;
+    const contributionFrequency = String(data.youthSavingsContributionFrequency || '').toLowerCase();
+    if (['weekly', 'monthly', 'biweekly'].includes(contributionFrequency)) youthAdjust += 2;
+    if (flag(data.youthUsesMoneyApps)) youthAdjust += 1.5;
+    if (flag(data.youthRanOutOfMoney ?? data.youthRanOutOfMoneyRecently)) youthAdjust -= 4;
+    if (youthSpendingApproachWeight(data.youthSpendingApproach) > 0.75) youthAdjust += 2;
+    score = clampScore(score + youthAdjust);
+    details.youthAdjust = youthAdjust;
+  }
+
   return {
     id: 'momentum',
     label: 'Income Momentum',
     score,
-    details: {
-      slope: history.slope,
-      slopePercent: history.slopePercent,
-      rSquared: history.rSquared,
-      volatility: history.volatility,
-      recentChangePct: history.recentChangePct
-    }
+    details
   };
 };
 
@@ -266,17 +435,31 @@ export const computeResilienceFactor = (data, context) => {
   const emergencyComponent = Math.min(1, emergencyMonths / Math.max(1, options.idealEmergencyMonths)) * 35;
   const dtiComponent = clampScore((1 - Math.min(0.65, dti)) * 25, 0, 25);
   const insuranceComponent = percentToUnit(data.incomeProtectionCoverage || data.disabilityCoverage, 0) * 8;
-  const score = clampScore(savingsComponent + emergencyComponent + dtiComponent + insuranceComponent);
+  let score = clampScore(savingsComponent + emergencyComponent + dtiComponent + insuranceComponent);
+  const details = {
+    savingsRate,
+    emergencyMonths,
+    dti,
+    insuranceComponent
+  };
+
+  if (resolveYouthStatus(data, context)) {
+    let youthAdjust = 0;
+    if (!flag(data.youthHasCurrentSavings)) youthAdjust -= 12;
+    if (flag(data.youthHasEmergencyBuffer ?? data.youthHasEmergencyBufferFlag)) youthAdjust += 6;
+    youthAdjust += youthSavingsLocationBonus(data.youthSavingsLocation);
+    youthAdjust += youthSavingsContributionBoost(data.youthSavingsContributionFrequency);
+    if (flag(data.youthGetsGuardianHelp ?? data.youthHasGuardianSupport)) youthAdjust += 2;
+    if (flag(data.youthHasSavingsGoal ?? data.youthHasSavingsGoalFlag)) youthAdjust += 3;
+    score = clampScore(score + youthAdjust);
+    details.youthAdjust = youthAdjust;
+  }
+
   return {
     id: 'resilience',
     label: 'Shock Resilience',
     score,
-    details: {
-      savingsRate,
-      emergencyMonths,
-      dti,
-      insuranceComponent
-    }
+    details
   };
 };
 
@@ -291,18 +474,31 @@ export const computeOpportunityFactor = (data, context) => {
   const hiringBoost = HIRING_TREND_ADJUSTMENT[hiringTrend] ?? 0;
   const satisfaction = percentToUnit(data.roleSatisfaction, 0.6);
   const satisfactionBoost = satisfaction * 6;
-  const score = clampScore(demandBase + promotionBoost + credentialBoost + hiringBoost + satisfactionBoost);
+  let score = clampScore(demandBase + promotionBoost + credentialBoost + hiringBoost + satisfactionBoost);
+  const details = {
+    skillDemand,
+    promotionPipeline,
+    upskillingMomentum,
+    hiringTrend,
+    satisfaction
+  };
+
+  if (resolveYouthStatus(data, context)) {
+    let youthAdjust = 0;
+    youthAdjust += (youthConfidenceWeight(data.youthMoneyConfidence) - 0.55) * 18;
+    if (flag(data.youthHasSavingsGoal ?? data.youthHasSavingsGoalFlag)) youthAdjust += 4;
+    youthAdjust += (youthSpendingApproachWeight(data.youthSpendingApproach) - 0.5) * 10;
+    if (flag(data.youthTracksSpending ?? data.youthTracksSpendingFlag)) youthAdjust += 2;
+    if (flag(data.youthSharesMoneyWithOthers ?? data.youthSharesMoneyFlag)) youthAdjust += 1;
+    score = clampScore(score + youthAdjust);
+    details.youthAdjust = youthAdjust;
+  }
+
   return {
     id: 'opportunity',
     label: 'Future Opportunity',
     score,
-    details: {
-      skillDemand,
-      promotionPipeline,
-      upskillingMomentum,
-      hiringTrend,
-      satisfaction
-    }
+    details
   };
 };
 
@@ -380,6 +576,34 @@ export const computePenaltyAdjustments = (data, context) => {
           amount: 3 * severity
         });
       }
+    }
+  }
+
+  if (resolveYouthStatus(data, context)) {
+    if (flag(data.youthRanOutOfMoney ?? data.youthRanOutOfMoneyRecently)) {
+      let amount = 5;
+      if (flag(data.youthGetsGuardianHelp ?? data.youthHasGuardianSupport)) {
+        amount = Math.max(2, amount - 2);
+      }
+      items.push({
+        id: 'youthCashCrunch',
+        label: 'Recently ran out of money',
+        amount
+      });
+    }
+    if (!flag(data.youthHasEmergencyBuffer ?? data.youthHasEmergencyBufferFlag) && !flag(data.youthHasCurrentSavings)) {
+      items.push({
+        id: 'youthNoBuffer',
+        label: 'No savings cushion established',
+        amount: 3
+      });
+    }
+    if (youthBalanceFrequencyScore(data.youthBalanceCheckFrequency) <= 0.25) {
+      items.push({
+        id: 'youthRarelyChecks',
+        label: 'Rarely checks balances',
+        amount: 2
+      });
     }
   }
 

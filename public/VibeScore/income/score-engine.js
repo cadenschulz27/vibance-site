@@ -34,6 +34,14 @@ const toContribution = (weight, score) => ({
   contribution: weight * score
 });
 
+const QUESTIONNAIRE_WEIGHT = 0.85;
+const PLAID_WEIGHT = 0.15;
+const PLAID_SIGNAL_WEIGHTS = Object.freeze({
+  expenseCoverage: 0.45,
+  resilience: 0.35,
+  momentum: 0.2
+});
+
 export const computeIncomeScore = (rawData = {}, userOptions = {}) => {
   const options = { ...DEFAULT_OPTIONS, ...userOptions };
   const totalIncome = sumIncomeStreams(rawData);
@@ -83,7 +91,29 @@ export const computeIncomeScore = (rawData = {}, userOptions = {}) => {
   const penaltyItems = computePenaltyAdjustments(rawData, context);
   const penaltyTotal = Math.min(MAX_PENALTY, penaltyItems.reduce((sum, item) => sum + item.amount, 0));
   const baseScore = clampScore(weightedScore);
-  const finalScore = clampScore(baseScore - penaltyTotal);
+  const questionnaireScore = clampScore(baseScore - penaltyTotal);
+
+  const questionnaireContribution = Math.min(
+    QUESTIONNAIRE_WEIGHT * 100,
+    Math.max(0, questionnaireScore * QUESTIONNAIRE_WEIGHT)
+  );
+
+  const plaidAvailable = Boolean(rawData?.dataSources?.plaid) || (context.history?.count ?? 0) >= 3;
+  const plaidWeightSum = Object.values(PLAID_SIGNAL_WEIGHTS).reduce((sum, weight) => sum + weight, 0) || 1;
+  let plaidScore = 0;
+  if (plaidAvailable) {
+    let composite = 0;
+    Object.entries(PLAID_SIGNAL_WEIGHTS).forEach(([key, weight]) => {
+      const factorScore = factors[key]?.score ?? 0;
+      composite += factorScore * weight;
+    });
+    plaidScore = clampScore(composite / plaidWeightSum);
+  }
+  const plaidContribution = plaidAvailable
+    ? Math.min(PLAID_WEIGHT * 100, Math.max(0, plaidScore * PLAID_WEIGHT))
+    : 0;
+
+  const finalScore = clampScore(questionnaireContribution + plaidContribution);
 
   const breakdown = Object.entries(INCOME_WEIGHTS).reduce((acc, [key, weight]) => {
     const factor = factors[key];
@@ -109,6 +139,22 @@ export const computeIncomeScore = (rawData = {}, userOptions = {}) => {
     breakdown,
     quality,
     history,
+    questionnaire: {
+      score: questionnaireScore,
+      weight: QUESTIONNAIRE_WEIGHT,
+      contribution: questionnaireContribution
+    },
+    plaid: {
+      score: plaidScore,
+      weight: PLAID_WEIGHT,
+      contribution: plaidContribution,
+      available: plaidAvailable,
+      signals: plaidAvailable ? {
+        expenseCoverage: factors.expenseCoverage.score,
+        resilience: factors.resilience.score,
+        momentum: factors.momentum.score
+      } : null
+    },
     demographics: {
       ageYears,
       ageBracket: ageTargets.expectation?.label || null,

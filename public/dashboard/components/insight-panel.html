@@ -1,9 +1,21 @@
 <div id="insight-panel" class="insight-panel">
-    <div class="flex justify-between items-center mb-2">
-        <h3 id="insight-title" class="font-headline text-lg font-semibold">Category</h3>
-        <p id="insight-score" class="font-bold text-lg">0</p>
+    <div class="insight-panel__header">
+        <h3 id="insight-title" class="insight-title font-headline text-lg font-semibold">Category</h3>
+        <p id="insight-score" class="insight-score font-bold text-lg">0</p>
     </div>
-    <p id="insight-text" class="text-gray-400 text-sm leading-relaxed">
-        Insight text will appear here.
-    </p>
+    <p id="insight-summary" class="insight-summary">Hover over a bubble to explore the details.</p>
+    <div class="insight-panel__columns">
+        <section class="insight-column" data-kind="strengths">
+            <p class="insight-column__title">What’s working</p>
+            <ul class="insight-column__list" id="insight-strengths">
+                <li class="insight-column__empty">We’ll surface highlights once activity loads.</li>
+            </ul>
+        </section>
+        <section class="insight-column" data-kind="improve">
+            <p class="insight-column__title">Where to improve</p>
+            <ul class="insight-column__list" id="insight-improvements">
+                <li class="insight-column__empty">We’ll outline focus areas as data syncs.</li>
+            </ul>
+        </section>
+    </div>
 </div>

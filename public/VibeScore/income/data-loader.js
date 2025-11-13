@@ -175,6 +175,21 @@ const sumEssentialExpenses = (categoryTotals) => {
   return total;
 };
 
+const hasMeaningfulProfileData = (profile) => {
+  if (!profile || typeof profile !== 'object') return false;
+  const ignoredKeys = new Set(['version', 'completedSteps', 'updatedAt']);
+  return Object.entries(profile).some(([key, value]) => {
+    if (ignoredKeys.has(key)) return false;
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'number') return !Number.isNaN(value);
+    if (typeof value === 'boolean') return true;
+    if (Array.isArray(value)) return value.length > 0;
+    if (value && typeof value === 'object') return Object.keys(value).length > 0;
+    return false;
+  });
+};
+
 const buildProfileOnlyDataset = (profile = {}, userData = {}) => {
   if (!profile || typeof profile !== 'object' || !Object.keys(profile).length) return null;
   const dataset = {
@@ -363,10 +378,20 @@ export const loadIncomeDataFromTabs = async (uid, userData = {}) => {
         ...(userData?.income || {}),
         ...profileFallback
       };
+      combined.dataSources = {
+        plaid: false,
+        manualProfile: true
+      };
       applyAgeMetadata(combined);
       return combined;
     }
     const incomeFallback = userData?.income ? { ...(userData.income) } : null;
+    if (incomeFallback && !incomeFallback.dataSources) {
+      incomeFallback.dataSources = {
+        plaid: false,
+        manualProfile: hasMeaningfulProfileData(userData?.income?.profile)
+      };
+    }
     return applyAgeMetadata(incomeFallback);
   }
 
@@ -383,6 +408,9 @@ export const loadIncomeDataFromTabs = async (uid, userData = {}) => {
   const { streamTotals, streamEntries, primaryCategory } = buildIncomeStreams(categoryTotals, monthsCount);
   const essentialExpenseTotal = sumEssentialExpenses(categoryTotals);
   const emergencyFundMonths = computeEmergencyFundMonths(userData, avgExpenses);
+
+  const profileOverrides = userData?.income?.profile;
+  const manualProfileActive = hasMeaningfulProfileData(profileOverrides);
 
   const result = {
     ...streamTotals,
@@ -416,7 +444,11 @@ export const loadIncomeDataFromTabs = async (uid, userData = {}) => {
     averageMonthlySurplus: avgIncome - avgExpenses
   };
 
-  const profileOverrides = userData?.income?.profile;
+  result.dataSources = {
+    plaid: true,
+    manualProfile: manualProfileActive
+  };
+
   if (profileOverrides && typeof profileOverrides === 'object') {
     Object.entries(profileOverrides).forEach(([key, value]) => {
       if (value === undefined || value === null) return;

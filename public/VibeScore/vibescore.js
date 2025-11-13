@@ -108,6 +108,45 @@ let currentUserId = null;
 let renderInFlight = false;
 let pendingRenderUid = null;
 
+function normalizeInsightPayload(value, { hasData, category } = {}) {
+    const trim = (text) => (typeof text === 'string' ? text.trim() : '');
+    const mapBullets = (items = []) => items
+        .map((item) => trim(item))
+        .filter(Boolean)
+        .slice(0, 3);
+
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const summary = trim(value.summary);
+        const strengths = mapBullets(value.strengths);
+        const improvements = mapBullets(value.improvements);
+
+        if (!strengths.length && hasData) {
+            strengths.push(`We’re still crunching ${category || 'this score'}—check back for highlights.`);
+        }
+        if (!improvements.length) {
+            improvements.push(hasData
+                ? 'We’ll surface targeted next moves as new data lands.'
+                : 'Add data to unlock tailored next steps.');
+        }
+
+        return { summary, strengths, improvements };
+    }
+
+    if (typeof value === 'string' && value.trim().length) {
+        return {
+            summary: value.trim(),
+            strengths: hasData ? [] : ['Sync this category to surface wins.'],
+            improvements: ['Add data to unlock tailored next steps.'],
+        };
+    }
+
+    return {
+        summary: '',
+        strengths: hasData ? [`We’re still crunching ${category || 'this score'}—check back for highlights.`] : ['Sync this category to surface wins.'],
+        improvements: ['Add data to unlock tailored next steps.'],
+    };
+}
+
 async function renderVibeScore(uid) {
     if (!uid) return;
     if (currentUserId && uid !== currentUserId) return;
@@ -149,7 +188,17 @@ async function renderVibeScore(uid) {
                 ? (typeof calcResult === 'number' ? calcResult : (calcResult?.score ?? 0))
                 : 0;
             const analysis = (calcResult && typeof calcResult === 'object') ? calcResult : null;
-            const insight = hasData ? map.gen(data, score, analysis) : "No data found. Sync your financial tabs to populate this insight.";
+            let rawInsight;
+            if (hasData) {
+                rawInsight = map.gen(data, score, analysis);
+            } else if (typeof VibeScoreInsights.default === 'function') {
+                rawInsight = VibeScoreInsights.default();
+            } else {
+                rawInsight = null;
+            }
+
+            const insight = normalizeInsightPayload(rawInsight, { hasData, category: name });
+
             return { name, score, insight, hasData, analysis };
         }));
 

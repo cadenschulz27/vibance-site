@@ -42,6 +42,9 @@ function _createGaugeLayers(container) {
 
 export const VibeScoreUI = {
     insightPanelEl: null,
+    insightSummaryEl: null,
+    insightStrengthsEl: null,
+    insightImprovementsEl: null,
     wrapperEl: null,
 
     _createLocalInsightPanel() {
@@ -53,15 +56,56 @@ export const VibeScoreUI = {
         panel.id = 'insight-panel';
         panel.className = 'insight-panel';
         panel.innerHTML = `
-            <div class="flex justify-between items-center mb-2">
+            <div class="insight-panel__header">
                 <h3 class="insight-title text-lg font-semibold"></h3>
                 <p class="insight-score font-bold text-lg"></p>
             </div>
-            <p class="insight-text text-gray-400 text-sm leading-relaxed"></p>
+            <p class="insight-summary">Hover over a bubble to explore the details.</p>
+            <div class="insight-panel__columns">
+                <section class="insight-column" data-kind="strengths">
+                    <p class="insight-column__title">What’s working</p>
+                    <ul class="insight-column__list" data-insight="strengths">
+                        <li class="insight-column__empty">We’ll surface highlights once activity loads.</li>
+                    </ul>
+                </section>
+                <section class="insight-column" data-kind="improve">
+                    <p class="insight-column__title">Where to improve</p>
+                    <ul class="insight-column__list" data-insight="improvements">
+                        <li class="insight-column__empty">We’ll outline focus areas as data syncs.</li>
+                    </ul>
+                </section>
+            </div>
         `;
         // FIX: Append the panel to the correct container.
         container.appendChild(panel);
         this.insightPanelEl = panel;
+        this.insightSummaryEl = panel.querySelector('.insight-summary');
+        this.insightStrengthsEl = panel.querySelector('.insight-column__list[data-insight="strengths"]');
+        this.insightImprovementsEl = panel.querySelector('.insight-column__list[data-insight="improvements"]');
+    },
+
+    _renderInsightList(listEl, items, fallbackText) {
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        const normalized = Array.isArray(items)
+            ? items.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean)
+            : [];
+
+        if (!normalized.length) {
+            if (fallbackText) {
+                const li = document.createElement('li');
+                li.className = 'insight-column__empty';
+                li.textContent = fallbackText;
+                listEl.appendChild(li);
+            }
+            return;
+        }
+
+        normalized.slice(0, 3).forEach((text) => {
+            const li = document.createElement('li');
+            li.textContent = text;
+            listEl.appendChild(li);
+        });
     },
     
     init(vibeScore, financialData) {
@@ -309,10 +353,38 @@ export const VibeScoreUI = {
 
     showInsight(item, colors) {
         if (!this.insightPanelEl || !this.wrapperEl) return;
-        
+
         this.insightPanelEl.querySelector('.insight-title').textContent = item.name;
         this.insightPanelEl.querySelector('.insight-score').textContent = item.hasData ? item.score.toFixed(0) : 'N/A';
-        this.insightPanelEl.querySelector('.insight-text').textContent = item.insight;
+
+        const insightPayload = (item && typeof item.insight === 'object' && item.insight !== null)
+            ? item.insight
+            : {
+                summary: typeof item.insight === 'string' ? item.insight : '',
+                strengths: [],
+                improvements: [],
+            };
+
+        if (this.insightSummaryEl) {
+            if (insightPayload.summary) {
+                this.insightSummaryEl.textContent = insightPayload.summary;
+                this.insightSummaryEl.classList.remove('is-hidden');
+            } else {
+                this.insightSummaryEl.textContent = '';
+                this.insightSummaryEl.classList.add('is-hidden');
+            }
+        }
+
+        const strengthsFallback = item.hasData
+            ? 'We’re still compiling highlights for this score.'
+            : 'Sync more data to unlock highlights.';
+        const improvementsFallback = item.hasData
+            ? 'We’ll surface next moves as we analyze more data.'
+            : 'Add details to reveal tailored next steps.';
+
+        this._renderInsightList(this.insightStrengthsEl, insightPayload.strengths, strengthsFallback);
+        this._renderInsightList(this.insightImprovementsEl, insightPayload.improvements, improvementsFallback);
+
         this.insightPanelEl.style.setProperty('--border-color', colors.borderColor);
         this.insightPanelEl.querySelector('.insight-score').style.color = colors.textColor;
 

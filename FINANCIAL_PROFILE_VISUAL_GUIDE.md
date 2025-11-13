@@ -7,7 +7,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │ [FINANCIAL PROFILE]                                          │
 │                                                               │
-│ Your income story, summarized                                │
+│ Your financial story, personalized                           │
 │                                                               │
 │ [Dynamic identity blurb about the user's work situation]     │
 │                                                               │
@@ -15,7 +15,7 @@
 │ Last updated: Oct 14, 2025, 2:30 PM                         │
 │                                                               │
 │ ┌───────────────────────────────────────────────────────┐   │
-│ │ [★ Complete income profile]  Boost accuracy by...    │   │
+│ │ [★ Complete financial profile]  Share a few basics…  │   │
 │ └───────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -105,12 +105,12 @@
 │                                                               │
 │                  Your overview will appear here               │
 │                                                               │
-│     Launch the income profile wizard above to tell Vibance   │
+│     Launch the financial profile wizard above to tell Vibance │
 │     about your pay structure, growth momentum, and safety    │
 │     nets. We'll transform those answers into a living        │
 │     profile.                                                  │
 │                                                               │
-│              [ Open income profile ]                         │
+│              [ Open financial profile ]                      │
 │                                                               │
 │     Your responses stay private to your account and only     │
 │     inform Vibance insights.                                 │
@@ -176,7 +176,7 @@
 - Percentage text dynamically updates
 
 ### Real-Time Updates
-- Listen for `income-profile:updated` event
+- Listen for `financial-profile:updated` (and legacy `income-profile:updated`) event
 - Smooth fade transition when data changes
 - Toast notification on wizard completion
 - Confetti animation on 100% completion

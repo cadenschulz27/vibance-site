@@ -26,20 +26,20 @@
     <section class="px-4">
       <div class="max-w-4xl mx-auto rounded-3xl border border-neutral-900 bg-neutral-950/70 backdrop-blur px-6 sm:px-10 py-12 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.65)]">
         <p class="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900/70 px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-neutral-400">Financial Profile</p>
-        <h1 class="mt-6 text-3xl sm:text-4xl md:text-5xl font-semibold leading-tight text-white">Your income story, summarized</h1>
-        <p id="profile-identity-blurb" class="mt-4 text-base sm:text-lg text-neutral-300 max-w-3xl">We&rsquo;ll use your responses to describe your income outlook here.</p>
-        <p id="profile-progress-meta" class="mt-3 text-sm text-neutral-400 max-w-2xl">Complete the income profile wizard to generate your personalized overview.</p>
+        <h1 class="mt-6 text-3xl sm:text-4xl md:text-5xl font-semibold leading-tight text-white">Your financial story, personalized</h1>
+        <p id="profile-identity-blurb" class="mt-4 text-base sm:text-lg text-neutral-300 max-w-3xl">We&rsquo;ll use your responses to describe your financial outlook here.</p>
+        <p id="profile-progress-meta" class="mt-3 text-sm text-neutral-400 max-w-2xl">Complete the financial profile wizard to generate your personalized overview.</p>
         <div class="mt-10 flex flex-col gap-4">
           <div id="income-profile-launch-card" class="income-profile-launch" data-hide-when-complete="true">
             <button id="income-profile-launch" type="button" class="income-profile-launch__button">
               <span class="income-profile-launch__icon" aria-hidden="true">→</span>
-              <span class="income-profile-launch__label">Complete income profile</span>
+              <span class="income-profile-launch__label">Complete financial profile</span>
             </button>
-            <span id="income-profile-status" class="income-profile-status">Boost accuracy by sharing a few quick details.</span>
+            <span id="income-profile-status" class="income-profile-status">Share a few quick basics to unlock your personalized financial profile.</span>
           </div>
           <button type="button" class="income-profile-edit" data-income-profile-edit hidden>
             <span class="income-profile-edit__icon" aria-hidden="true">→</span>
-            <span class="income-profile-edit__label">Review income profile</span>
+            <span class="income-profile-edit__label">Review financial profile</span>
           </button>
         </div>
       </div>
@@ -88,9 +88,9 @@
     <section id="profile-empty-state" class="mt-16 px-4">
       <div class="max-w-4xl mx-auto rounded-3xl border border-dashed border-neutral-800 bg-neutral-950/40 px-8 py-10 text-center text-neutral-300">
         <h2 class="text-xl font-semibold text-white">Your overview will appear here</h2>
-        <p class="mt-3 text-sm sm:text-base text-neutral-400">Launch the income profile wizard above to tell Vibance about your pay structure, growth momentum, and safety nets. We&rsquo;ll transform those answers into a living profile.</p>
+        <p class="mt-3 text-sm sm:text-base text-neutral-400">Launch the financial profile wizard above to tell Vibance about your pay structure, growth momentum, and safety nets. We&rsquo;ll transform those answers into a living profile.</p>
         <button id="profile-empty-launch" type="button" class="mt-8 inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 px-5 py-2 text-sm font-medium text-neutral-200 hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon,#CCFF00)]">
-          <span>Open income profile</span>
+          <span>Open financial profile</span>
         </button>
         <p class="mt-6 text-xs text-neutral-600">Your responses stay private to your account and only inform Vibance insights.</p>
       </div>
@@ -101,8 +101,8 @@
     <div id="income-modal-overlay" class="income-modal__overlay" tabindex="-1"></div>
     <div id="income-modal-panel" class="income-modal__panel" role="dialog" aria-modal="true" aria-labelledby="income-modal-title">
       <div class="income-modal__header">
-        <div class="income-modal__badge">Income profile</div>
-        <button id="income-modal-close" class="income-modal__close" type="button" aria-label="Close income profile wizard">×</button>
+  <div class="income-modal__badge">Financial profile</div>
+  <button id="income-modal-close" class="income-modal__close" type="button" aria-label="Close financial profile wizard">×</button>
       </div>
       <div class="income-modal__body">
         <div class="income-modal__progress">

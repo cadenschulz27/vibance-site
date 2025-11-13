@@ -3,7 +3,7 @@
 ## Status: **COMPLETE**
 
 ## Overview
-The "My Financial Profile" page has been fully implemented. It provides users with a comprehensive overview of their financial identity based on the inputs they've entered in the Income Profile wizard.
+The "My Financial Profile" page has been fully implemented. It provides users with a comprehensive overview of their financial identity based on the inputs they've entered in the financial profile wizard.
 
 ## Files Created/Modified
 
@@ -43,8 +43,8 @@ This module handles all the logic for displaying the user's financial profile:
 
 #### Data Structure:
 The module reads from the Firestore path: `users/{uid}/income/profile`
-- Syncs automatically with the Income Profile wizard
-- Listens for the `income-profile:updated` event to refresh in real-time
+- Syncs automatically with the financial profile wizard
+- Listens for the `financial-profile:updated` event (and legacy `income-profile:updated`) to refresh in real-time
 
 ### 2. Updated: `dashboard.css`
 **Location:** `/public/dashboard/dashboard.css`
@@ -68,7 +68,7 @@ The HTML structure was already in place and includes:
 
 ### Initial State (No Profile Data)
 1. User sees an empty state with a call-to-action
-2. Prompt to complete the Income Profile wizard
+2. Prompt to complete the financial profile wizard
 3. Launch button opens the wizard modal
 
 ### With Profile Data
@@ -88,9 +88,10 @@ The HTML structure was already in place and includes:
    - Growth & Opportunity (promotion pipeline, upskilling, skill demand)
    - Safety Net (emergency fund, major expenses)
    - Additional Context (user notes)
+   - Next Steps & Preferences (milestones, support style, advisor interest)
 
 ### Real-Time Updates
-- When user updates their Income Profile, the Financial Profile page automatically refreshes
+- When user updates their financial profile, the page automatically refreshes
 - Visual feedback with completion percentage updates
 - Insights dynamically adjust based on new data
 
@@ -118,7 +119,7 @@ The HTML structure was already in place and includes:
 ## Technical Details
 
 ### Event Communication
-- Income Profile wizard fires: `income-profile:updated`
+- Financial profile wizard fires: `financial-profile:updated` (and legacy `income-profile:updated`)
 - Financial Profile listens and reloads data automatically
 
 ### Firestore Structure
@@ -126,17 +127,52 @@ The HTML structure was already in place and includes:
 users/{uid}/
   income/
     profile/
-      employmentType: string
+   firstName: string
+   birthday: string (ISO date)
+   age: number
+   locationCity: string
+   locationState: string
+   locationCitySelect: string
+   locationCountry: string
+   educationStatus: string
+   guardianSupport: boolean
+   dependentsCount: number
+   retirementHorizon: string
+   youthIncomeStatus: string
+   weeklyWorkHours: number
+   studentWorkIntent: string
+   studentInternshipSearch: boolean
+   youthIncomeNotes: string
+   supportReliability: string
+   housingStability: string
+   campusJobStability: string
+   supportFallbackPlan: string
+   employmentType: string
       roleTitle: string
       companyName: string
-      tenureMonths: { years: number, months: number }
+   tenureMonths: number
       industryRisk: string
       regionalUnemploymentRate: { state: string, city: string }
       layoffHistory: number
       upcomingContractRenewal: boolean
+   allowanceReliability: string
+   studentFundingReliability: string
+   youthSavingsBehavior: string
+  youthGrowthFocus: string
+  youthGrowthConfidence: number
+  studentOpportunityFocus: string
+  studentOpportunityConfidence: number
+   youthGoalMilestone: string
+   youthSupportPreference: string
+   studentCareerSupportChannel: string
+   studentCheckInFrequency: string
+   profileCheckInFrequency: string
+   advisorConversationInterest: string
+   shareProfileInsights: boolean
+   profileNextStepsNotes: string
       bonusReliability: string
       savingsRateOverride: number
-      incomeProtectionCoverage: string[]
+   incomeProtectionCoverage: number
       promotionPipeline: number
       upskillingProgress: number
       skillDemand: string
@@ -170,7 +206,7 @@ Potential additions for future iterations:
 ## Testing
 To test the implementation:
 1. Navigate to `/dashboard/financial-profile.html`
-2. Click "Complete income profile" or "Open income profile"
-3. Fill out the Income Profile wizard steps
+2. Click "Complete financial profile" or "Open financial profile"
+3. Fill out the financial profile wizard steps
 4. Watch the profile page update in real-time with insights
 5. Check responsive behavior on mobile/tablet

@@ -6,6 +6,7 @@ import {
   setDoc,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { computeAgeFromBirthday } from '../VibeScore/income/age-utils.js';
 
 const els = {
   welcomeName: document.getElementById('welcome-name'),
@@ -125,6 +126,8 @@ async function saveBasics() {
   const birthdayRaw = (els.birthday?.value || '').trim();
   const birthday = birthdayRaw ? birthdayRaw : null;
   const fullName = `${firstName} ${lastName}`.trim();
+  const derivedAge = birthday ? computeAgeFromBirthday(birthday) : NaN;
+  const normalizedAge = Number.isFinite(derivedAge) ? Math.max(0, Math.round(derivedAge)) : null;
 
   setSavingBasics(true);
   clearBanner();
@@ -137,15 +140,30 @@ async function saveBasics() {
     updatedAt: serverTimestamp()
   };
 
-  try {
-    await setDoc(userRef, {
-      firstName,
-      lastName,
-      name: fullName,
+  const userPayload = {
+    firstName,
+    lastName,
+    name: fullName,
+    birthday,
+    updatedAt: serverTimestamp(),
+    onboarding: onboardingPayload
+  };
+
+  if (birthday) {
+    userPayload.age = normalizedAge !== null ? normalizedAge : null;
+  } else {
+    userPayload.age = null;
+  }
+
+  userPayload.income = {
+    profile: {
       birthday,
-      updatedAt: serverTimestamp(),
-      onboarding: onboardingPayload
-    }, { merge: true });
+      age: normalizedAge !== null ? normalizedAge : null
+    }
+  };
+
+  try {
+    await setDoc(userRef, userPayload, { merge: true });
 
     onboardingState = {
       ...onboardingState,

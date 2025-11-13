@@ -7,15 +7,14 @@ import {
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { dataPresenceScore } from '../VibeScore/income/metrics.js';
+import { computeAgeFromBirthday } from '../VibeScore/income/age-utils.js';
 import {
   REQUIRED_PROFILE_WEIGHTS,
   UNEMPLOYMENT_DATA,
   INCOME_COVERAGE_OPTIONS,
-  EMPLOYMENT_OPTIONS,
-  INDUSTRY_RISK_OPTIONS,
-  BONUS_RELIABILITY_OPTIONS,
-  SKILL_DEMAND_OPTIONS,
-  STEPS
+  FIELD_VISIBILITY_RULES,
+  STEPS,
+  deriveAgeBandKey
 } from './income-profile-constants.js';
 
 const elements = {
@@ -56,6 +55,70 @@ const state = {
   onboardingCompletionMarked: false
 };
 
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const SUPPORTS_DATE_INPUT = (() => {
+  if (typeof document === 'undefined') return false;
+  const input = document.createElement('input');
+  input.setAttribute('type', 'date');
+  if (input.type !== 'date') return false;
+  input.value = '2024-05-05';
+  return input.value === '2024-05-05';
+})();
+
+const STATE_VALUE_LOOKUP = (() => {
+  const map = new Map();
+  UNEMPLOYMENT_DATA.forEach((entry) => {
+    if (entry?.state) {
+      map.set(String(entry.state).trim().toUpperCase(), entry.state);
+    }
+    if (entry?.label) {
+      map.set(String(entry.label).trim().toUpperCase(), entry.state);
+    }
+  });
+  return map;
+})();
+
+const OTHER_STATE_ALIASES = new Set([
+  'OTHER',
+  'INTERNATIONAL',
+  'NON-US',
+  'NON US',
+  'OUTSIDE US',
+  'OUTSIDE UNITED STATES',
+  'FOREIGN',
+  'WORLDWIDE'
+]);
+
+const normalizeStateValue = (value) => {
+  if (!value || typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const upper = trimmed.toUpperCase();
+  if (STATE_VALUE_LOOKUP.has(upper)) {
+    return STATE_VALUE_LOOKUP.get(upper);
+  }
+  if (OTHER_STATE_ALIASES.has(upper)) {
+    return 'OTHER';
+  }
+  if (/^[A-Z]{2}$/.test(upper)) {
+    return upper;
+  }
+  return trimmed;
+};
+
+const deriveActiveWeights = (profile = {}) => {
+  const active = {};
+  Object.entries(REQUIRED_PROFILE_WEIGHTS).forEach(([fieldId, weight]) => {
+    const predicate = FIELD_VISIBILITY_RULES[fieldId];
+    if (typeof predicate === 'function' && !predicate(profile)) {
+      return;
+    }
+    active[fieldId] = weight;
+  });
+  return active;
+};
+
 function setWrapperCompact(compact) {
   if (!elements.launchCard) return;
   const wrapper = elements.launchCard.closest('.vibescore-wrapper');
@@ -90,7 +153,8 @@ function consumeAutoLaunchFlag() {
 }
 
 function getProfileCompletionScore() {
-  const presence = dataPresenceScore(state.profileData, REQUIRED_PROFILE_WEIGHTS) || { score: 0 };
+  const weights = deriveActiveWeights(state.profileData);
+  const presence = dataPresenceScore(state.profileData, weights) || { score: 0 };
   const raw = Number.isFinite(presence.score) ? presence.score : 0;
   return {
     raw,
@@ -99,7 +163,9 @@ function getProfileCompletionScore() {
 }
 
 function hasCompletedAllSteps() {
-  return (state.profileMeta.completedSteps || 0) >= STEPS.length;
+  const activeSteps = getActiveSteps(state.profileData || {});
+  if (!activeSteps.length) return false;
+  return (state.profileMeta.completedSteps || 0) >= activeSteps.length;
 }
 
 function isProfileComplete(roundedScore) {
@@ -136,7 +202,7 @@ function hideCompletionToast() {
 function showCompletionToast() {
   if (!elements.toast) return;
   elements.toast.innerHTML = `
-    <div class="income-profile-toast__title">Income profile locked in</div>
+    <div class="income-profile-toast__title">Financial profile locked in</div>
     <div class="income-profile-toast__meta">We&rsquo;ll keep tuning your VibeScore with the new details.</div>
   `;
   elements.toast.classList.add('is-visible');
@@ -212,6 +278,79 @@ const escapeHtml = (input = '') => String(input)
 
 const escapeAttr = (input = '') => escapeHtml(input).replace(/`/g, '&#96;');
 
+const resolveAgeCopyOverrides = (ageCopyMap, ageKey) => {
+  if (!ageCopyMap || !ageKey) return null;
+  const searchOrder = [ageKey];
+  if (ageKey === 'teen' && !ageCopyMap[ageKey]) {
+    searchOrder.push('student');
+  }
+  if (ageKey !== 'adult') {
+    searchOrder.push('adult');
+  }
+  for (let i = 0; i < searchOrder.length; i += 1) {
+    const candidate = ageCopyMap[searchOrder[i]];
+    if (candidate) return candidate;
+  }
+  return null;
+};
+
+const resolveStepPresentation = (step, profile) => {
+  if (!step) {
+    return { title: '', description: '' };
+  }
+  const ageKey = deriveAgeBandKey(profile);
+  const overrides = resolveAgeCopyOverrides(step.ageCopy, ageKey);
+  return {
+    title: overrides?.title || step.title,
+    description: overrides?.description || step.description
+  };
+};
+
+const decorateFieldForAge = (field, profile) => {
+  if (!field) return field;
+  const ageKey = deriveAgeBandKey(profile);
+  const overrides = resolveAgeCopyOverrides(field.ageCopy, ageKey);
+  if (!overrides) return field;
+  return {
+    ...field,
+    ...overrides
+  };
+};
+
+const isFieldVisible = (field, profile) => {
+  if (!field) return false;
+  if (typeof field.shouldDisplay === 'function') {
+    try {
+      return Boolean(field.shouldDisplay(profile));
+    } catch (error) {
+      console.warn('[IncomeProfile] Failed to evaluate field visibility', field.id, error);
+      return false;
+    }
+  }
+  return true;
+};
+
+const getVisibleFieldsForStep = (step, profile) => {
+  if (!step || !Array.isArray(step.fields)) return [];
+  return step.fields.filter((field) => isFieldVisible(field, profile));
+};
+
+const shouldStepDisplay = (step, profile) => {
+  if (!step) return false;
+  if (typeof step.shouldDisplay === 'function' && !step.shouldDisplay(profile)) {
+    return false;
+  }
+  if (step.includeWhenEmpty) {
+    return true;
+  }
+  return getVisibleFieldsForStep(step, profile).length > 0;
+};
+
+const getActiveSteps = (profile = state.profileData || {}) => {
+  const snapshot = profile || {};
+  return STEPS.filter((step) => shouldStepDisplay(step, snapshot));
+};
+
 const buildLabelMarkup = (field) => {
   const labelText = escapeHtml(field.label || '');
   const badgeText = field.required ? 'Required' : 'Optional';
@@ -227,32 +366,49 @@ const buildLabelMarkup = (field) => {
 };
 
 const buildFieldNotes = (field) => {
-  const meta = [];
-  if (field.info) {
-    meta.push(`
-      <div class="income-field__support">
-        <span class="income-field__support-eyebrow">Why this matters</span>
-        <p class="income-field__support-text">${escapeHtml(field.info)}</p>
-      </div>
-    `);
-  }
+  const notes = [];
   if (field.hint) {
-    meta.push(`
-      <div class="income-field__support">
-        <span class="income-field__support-eyebrow">How to answer</span>
-        <p class="income-field__support-text">${escapeHtml(field.hint)}</p>
-      </div>
-    `);
+    notes.push(`<p class="income-field__note">${escapeHtml(field.hint)}</p>`);
+  }
+  if (field.info) {
+    notes.push(`<p class="income-field__note income-field__note--secondary">${escapeHtml(field.info)}</p>`);
   }
   if (field.clarification) {
-    meta.push(`
-      <div class="income-field__support income-field__support--sub">
-        <p class="income-field__support-subtext">${escapeHtml(field.clarification)}</p>
-      </div>
-    `);
+    notes.push(`<p class="income-field__note income-field__note--muted">${escapeHtml(field.clarification)}</p>`);
   }
-  if (!meta.length) return '';
-  return `<div class="income-field__meta">${meta.join('')}</div>`;
+  if (!notes.length) return '';
+  return `<div class="income-field__meta">${notes.join('')}</div>`;
+};
+
+const formatDateInputValue = (date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getDateBoundsForField = (field) => {
+  if (field.type !== 'date') return { min: '', max: '' };
+  const today = new Date();
+  let min = '';
+  let max = '';
+
+  if (typeof field.maxAge === 'number') {
+    const maxYears = Math.max(0, Math.floor(field.maxAge));
+    const minDate = new Date(today.getTime());
+    minDate.setFullYear(today.getFullYear() - maxYears);
+    min = formatDateInputValue(minDate);
+  }
+
+  if (typeof field.minAge === 'number') {
+    const minYears = Math.max(0, Math.floor(field.minAge));
+    const maxDate = new Date(today.getTime());
+    maxDate.setFullYear(today.getFullYear() - minYears);
+    max = formatDateInputValue(maxDate);
+  }
+
+  return { min, max };
 };
 
 const getUnemploymentStateData = (stateCode) => UNEMPLOYMENT_DATA.find((entry) => entry.state === stateCode) || null;
@@ -396,49 +552,102 @@ function closeModal() {
 }
 
 function determineStartingStep() {
-  const incomplete = STEPS.findIndex((step) => step.fields.some((field) => !hasValue(state.profileData[field.id])));
+  const profile = state.profileData || {};
+  const activeSteps = getActiveSteps(profile);
+  if (!activeSteps.length) return 0;
+  const incomplete = activeSteps.findIndex((step) => {
+    const visibleFields = getVisibleFieldsForStep(step, profile);
+    return visibleFields.some((field) => !hasValue(profile[field.id]));
+  });
   if (incomplete >= 0) {
     return incomplete;
   }
-  const completed = state.profileMeta.completedSteps || 0;
+  const completed = Math.min(state.profileMeta.completedSteps || 0, activeSteps.length);
   if (completed > 0) {
-    return Math.min(completed - 1, STEPS.length - 1);
+    return Math.min(completed - 1, activeSteps.length - 1);
   }
   return 0;
 }
 
 function goToStep(index) {
-  const safeIndex = Math.max(0, Math.min(STEPS.length - 1, index));
+  const activeSteps = getActiveSteps(state.profileData || {});
+  if (!activeSteps.length) {
+    state.currentStep = 0;
+    refreshCurrentStep();
+    return;
+  }
+  const safeIndex = Math.max(0, Math.min(activeSteps.length - 1, index));
   state.currentStep = safeIndex;
-  renderStep();
-  updateProgress();
-  updateNavigationButtons();
+  refreshCurrentStep();
 }
 
-function renderStep() {
+function refreshCurrentStep() {
+  const activeSteps = getActiveSteps(state.profileData || {});
+  if (!activeSteps.length) {
+    if (elements.stepContainer) {
+      elements.stepContainer.innerHTML = '<p class="income-step__empty">No questions available for your profile yet.</p>';
+    }
+    updateProgress(activeSteps);
+    updateNavigationButtons(activeSteps);
+    return;
+  }
+  if (state.currentStep >= activeSteps.length) {
+    state.currentStep = activeSteps.length - 1;
+  }
+  renderStep(activeSteps);
+  updateProgress(activeSteps);
+  updateNavigationButtons(activeSteps);
+}
+
+function renderStep(activeSteps = getActiveSteps(state.profileData || {})) {
   if (!elements.stepContainer) return;
-  const step = STEPS[state.currentStep];
+  const step = activeSteps[state.currentStep];
   if (!step) return;
   const stepNumber = state.currentStep + 1;
-  const totalSteps = STEPS.length;
+  const totalSteps = activeSteps.length;
+  const stepFields = Array.isArray(step.fields) ? step.fields : [];
+  const profileSnapshot = state.profileData || {};
+  const stepPresentation = resolveStepPresentation(step, profileSnapshot);
+
+  const visibleFields = getVisibleFieldsForStep(step, profileSnapshot);
+
+  const hiddenFields = stepFields.filter((field) => !isFieldVisible(field, profileSnapshot));
+
+  if (hiddenFields.length) {
+    const resetPayload = {};
+    hiddenFields.forEach((field) => {
+      if (field?.preserveValue) return;
+      if (Object.prototype.hasOwnProperty.call(state.profileData, field.id) && state.profileData[field.id] !== null) {
+        resetPayload[field.id] = null;
+      }
+    });
+    if (Object.keys(resetPayload).length) {
+      applyProfileChange(resetPayload);
+    }
+  }
+
+  const decoratedVisibleFields = visibleFields.map((field) => decorateFieldForAge(field, profileSnapshot));
+  const fieldsMarkup = decoratedVisibleFields.length
+    ? decoratedVisibleFields.map(renderField).join('')
+    : '<p class="income-step__empty">No questions on this step for your profile. Continue when you&rsquo;re ready.</p>';
 
   const html = `
     <div class="income-step" data-step="${step.id}">
       <div class="income-step__header">
         <span class="income-step__eyebrow">Step ${stepNumber} of ${totalSteps}</span>
-        <h3 class="income-step__title">${step.title}</h3>
-        <p class="income-step__description">${step.description}</p>
+        <h3 class="income-step__title">${stepPresentation.title}</h3>
+        <p class="income-step__description">${stepPresentation.description}</p>
       </div>
       <div class="income-step__body">
         <div class="income-fields">
-          ${step.fields.map(renderField).join('')}
+          ${fieldsMarkup}
         </div>
       </div>
     </div>
   `;
   elements.stepContainer.innerHTML = html;
 
-  step.fields.forEach((field) => {
+  decoratedVisibleFields.forEach((field) => {
     switch (field.type) {
       case 'tenure':
         initTenureField(field);
@@ -450,11 +659,36 @@ function renderStep() {
         initCoverageField(field);
         break;
       default: {
+        if (field.type === 'date' && field.id === 'birthday') {
+          initBirthdayField(field);
+          return;
+        }
         const input = elements.stepContainer.querySelector(`[data-field="${field.id}"]`);
         if (!input) return;
         applyFieldValue(field, input, state.profileData[field.id]);
-        const eventName = field.type === 'select' || field.type === 'toggle' ? 'change' : 'input';
-        input.addEventListener(eventName, () => handleFieldChange(field, input));
+        if (field.type === 'date') {
+          if (SUPPORTS_DATE_INPUT) {
+            input.addEventListener('change', (event) => handleFieldChange(field, input, event));
+            input.addEventListener('blur', (event) => handleFieldChange(field, input, event));
+          } else {
+            input.addEventListener('blur', (event) => handleFieldChange(field, input, event));
+            input.addEventListener('change', (event) => handleFieldChange(field, input, event));
+            input.addEventListener('keydown', (event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleFieldChange(field, input, event);
+              }
+            });
+          }
+        } else {
+          const eventName = field.type === 'select' || field.type === 'toggle' ? 'change' : 'input';
+          input.addEventListener(eventName, (event) => handleFieldChange(field, input, event));
+        }
+        if (field.type === 'toggle') {
+          // Initialize and sync the gray yes/no note next to the toggle.
+          updateToggleStateNote(field, input);
+          input.addEventListener('change', () => updateToggleStateNote(field, input));
+        }
         if (field.type === 'textarea') {
           input.addEventListener('input', autoResizeTextarea);
           autoResizeTextarea({ target: input });
@@ -519,6 +753,104 @@ function renderField(field) {
           ${notesBlock}
         </div>
       `;
+    case 'date': {
+      if (field.id === 'birthday') {
+        const baseId = escapeAttr(field.id);
+        return `
+          <div class="income-field" data-field-wrapper="${field.id}">
+            ${labelRow}
+            <div class="income-field__control">
+              <div class="income-birthday" data-birthday="${field.id}">
+                <div class="income-birthday__group">
+                  <label class="income-birthday__label" for="${baseId}-month">Month</label>
+                  <input
+                    class="income-field__input income-birthday__input"
+                    type="text"
+                    id="${baseId}-month"
+                    data-birthday-part="month"
+                    inputmode="numeric"
+                    pattern="\\d{1,2}"
+                    maxlength="2"
+                    placeholder="MM"
+                    autocomplete="bday-month"
+                  />
+                </div>
+                <div class="income-birthday__group">
+                  <label class="income-birthday__label" for="${baseId}-day">Day</label>
+                  <input
+                    class="income-field__input income-birthday__input"
+                    type="text"
+                    id="${baseId}-day"
+                    data-birthday-part="day"
+                    inputmode="numeric"
+                    pattern="\\d{1,2}"
+                    maxlength="2"
+                    placeholder="DD"
+                    autocomplete="bday-day"
+                  />
+                </div>
+                <div class="income-birthday__group income-birthday__group--year">
+                  <label class="income-birthday__label" for="${baseId}-year">Year</label>
+                  <input
+                    class="income-field__input income-birthday__input"
+                    type="text"
+                    id="${baseId}-year"
+                    data-birthday-part="year"
+                    inputmode="numeric"
+                    pattern="\\d{4}"
+                    maxlength="4"
+                    placeholder="YYYY"
+                    autocomplete="bday-year"
+                  />
+                </div>
+              </div>
+            </div>
+            ${error}
+            ${notesBlock}
+          </div>
+        `;
+      }
+      const { min, max } = getDateBoundsForField(field);
+      const minAttr = min ? ` min="${min}"` : '';
+      const maxAttr = max ? ` max="${max}"` : '';
+      const autocompleteAttr = ' autocomplete="bday"';
+      if (SUPPORTS_DATE_INPUT) {
+        return `
+          <div class="income-field" data-field-wrapper="${field.id}">
+            ${labelRow}
+            <div class="income-field__control">
+              <input
+                class="income-field__input"
+                type="date"
+                data-field="${field.id}"${minAttr}${maxAttr}${autocompleteAttr}
+              />
+            </div>
+            ${error}
+            ${notesBlock}
+          </div>
+        `;
+      }
+      const minDataAttr = min ? ` data-date-min="${min}"` : '';
+      const maxDataAttr = max ? ` data-date-max="${max}"` : '';
+      return `
+        <div class="income-field" data-field-wrapper="${field.id}">
+          ${labelRow}
+          <div class="income-field__control">
+            <input
+              class="income-field__input"
+              type="text"
+              data-field="${field.id}"
+              inputmode="numeric"
+              pattern="\\d{4}-\\d{2}-\\d{2}"
+              maxlength="10"
+              placeholder="YYYY-MM-DD"${autocompleteAttr}${minDataAttr}${maxDataAttr}
+            />
+          </div>
+          ${error}
+          ${notesBlock}
+        </div>
+      `;
+    }
     case 'toggle':
       return `
         <div class="income-field" data-field-wrapper="${field.id}">
@@ -527,8 +859,8 @@ function renderField(field) {
             <label class="income-toggle">
               <input type="checkbox" data-field="${field.id}" />
               <span class="income-toggle__track"><span class="income-toggle__thumb"></span></span>
-              <span class="income-toggle__text">${escapeHtml(field.toggleText || 'Yes')}</span>
             </label>
+            <span class="income-toggle__note" data-toggle-note="${field.id}"></span>
           </div>
           ${error}
           ${notesBlock}
@@ -618,7 +950,29 @@ function renderField(field) {
   }
 }
 
+function updateToggleStateNote(field, input) {
+  if (!field || !input) return;
+  const noteEl = elements.stepContainer?.querySelector(`[data-toggle-note="${field.id}"]`);
+  if (!noteEl) return;
+  const affirmative = field.toggleText || 'Yes';
+  let negative;
+  if (/^Yes[,\s]/i.test(affirmative)) {
+    negative = affirmative.replace(/^Yes/i, 'No');
+  } else if (/^Yes$/i.test(affirmative)) {
+    negative = 'No';
+  } else if (/^Yes/i.test(affirmative)) {
+    negative = affirmative.replace(/^Yes/i, 'No');
+  } else {
+    negative = 'No';
+  }
+  noteEl.textContent = input.checked ? affirmative : negative;
+}
+
 function applyFieldValue(field, input, value) {
+  if (field.type === 'date' && field.id === 'birthday') {
+    setBirthdayInputs(field.id, value);
+    return;
+  }
   if (value === undefined || value === null) {
     if (field.type === 'toggle') {
       input.checked = false;
@@ -638,6 +992,7 @@ function applyFieldValue(field, input, value) {
     case 'number':
       input.value = typeof value === 'number' ? value : Number(value) || '';
       break;
+    case 'date':
     case 'textarea':
     case 'text':
       input.value = value || '';
@@ -647,10 +1002,65 @@ function applyFieldValue(field, input, value) {
   }
 }
 
-function handleFieldChange(field, input) {
-  clearFieldError(field.id);
-  const value = getFieldValue(field, input);
-  applyProfileChange({ [field.id]: value });
+function handleFieldChange(field, input, event) {
+  const eventType = event?.type || 'input';
+  const isEnterKey = eventType === 'keydown' && event?.key === 'Enter';
+  const shouldCommit = isEnterKey || eventType === 'change' || eventType === 'blur';
+
+  if (field.type !== 'date' || SUPPORTS_DATE_INPUT || shouldCommit || isEnterKey) {
+    clearFieldError(field.id);
+  }
+
+  const rawInputValue = typeof input?.value === 'string' ? input.value.trim() : '';
+  let value = getFieldValue(field, input);
+  const isDateField = field.type === 'date';
+  const usingDateFallback = isDateField && !SUPPORTS_DATE_INPUT;
+
+  if (usingDateFallback) {
+    if (!shouldCommit && !isEnterKey) {
+      return;
+    }
+
+    if (!rawInputValue) {
+      value = null;
+    } else if (!ISO_DATE_PATTERN.test(rawInputValue)) {
+      const message = field.id === 'birthday'
+        ? `Enter a valid date. ${buildBirthdayAgeRequirementMessage(field)}`
+        : 'Enter a valid date (YYYY-MM-DD).';
+      setFieldError(field.id, message);
+      return;
+    } else {
+      value = rawInputValue;
+    }
+  }
+
+  if (isDateField && typeof value === 'string' && value && !ISO_DATE_PATTERN.test(value)) {
+    if (!shouldCommit && !isEnterKey) {
+      return;
+    }
+    const derived = computeAgeFromBirthday(value);
+    if (!Number.isFinite(derived)) {
+      const message = field.id === 'birthday'
+        ? `Enter a valid date. ${buildBirthdayAgeRequirementMessage(field)}`
+        : 'Enter a valid date.';
+      setFieldError(field.id, message);
+      return;
+    }
+  }
+
+  const currentValue = state.profileData[field.id];
+  if (!valuesAreEqual(currentValue, value)) {
+    applyProfileChange({ [field.id]: value });
+  }
+  if (field.id === 'birthday') {
+    const isoValue = typeof value === 'string' && ISO_DATE_PATTERN.test(value) ? value : null;
+    syncAgeFromBirthdayIso(isoValue);
+  }
+  if (field.triggersRerender) {
+    window.requestAnimationFrame(() => {
+      refreshCurrentStep();
+    });
+  }
 }
 
 function getFieldValue(field, input) {
@@ -677,6 +1087,12 @@ function getFieldValue(field, input) {
       const rate = state.profileData[field.id];
       return Number.isFinite(rate) ? rate : null;
     }
+    case 'date':
+      if (field.id === 'birthday') {
+        const evaluation = evaluateBirthdayInputs(field, getBirthdayInputParts(field.id));
+        return evaluation.complete && !evaluation.error ? evaluation.iso : null;
+      }
+      return input.value.trim() ? input.value.trim() : null;
     case 'text':
     default:
       return input.value.trim() ? input.value.trim() : null;
@@ -773,6 +1189,244 @@ function initTenureField(field) {
   monthsInput.addEventListener('input', handler);
   yearsInput.addEventListener('blur', () => normalizeTenureInputs(yearsInput, monthsInput));
   monthsInput.addEventListener('blur', () => normalizeTenureInputs(yearsInput, monthsInput));
+}
+
+function getBirthdayInputs(fieldId) {
+  const container = elements.stepContainer?.querySelector(`[data-birthday="${fieldId}"]`);
+  if (!container) {
+    return {
+      monthInput: null,
+      dayInput: null,
+      yearInput: null
+    };
+  }
+  return {
+    monthInput: container.querySelector('[data-birthday-part="month"]'),
+    dayInput: container.querySelector('[data-birthday-part="day"]'),
+    yearInput: container.querySelector('[data-birthday-part="year"]')
+  };
+}
+
+function getBirthdayInputParts(fieldId) {
+  const { monthInput, dayInput, yearInput } = getBirthdayInputs(fieldId);
+  return {
+    month: monthInput ? monthInput.value.trim() : '',
+    day: dayInput ? dayInput.value.trim() : '',
+    year: yearInput ? yearInput.value.trim() : ''
+  };
+}
+
+function setBirthdayInputs(fieldId, isoValue) {
+  const { monthInput, dayInput, yearInput } = getBirthdayInputs(fieldId);
+  if (!monthInput || !dayInput || !yearInput) return;
+  if (typeof isoValue !== 'string' || !ISO_DATE_PATTERN.test(isoValue)) {
+    monthInput.value = '';
+    dayInput.value = '';
+    yearInput.value = '';
+    return;
+  }
+  const [year, month, day] = isoValue.split('-');
+  monthInput.value = month;
+  dayInput.value = day;
+  yearInput.value = year;
+}
+
+function buildBirthdayAgeRequirementMessage(field) {
+  const { minAge, maxAge } = field;
+  const hasMin = typeof minAge === 'number';
+  const hasMax = typeof maxAge === 'number';
+  if (hasMin && hasMax) {
+    return `Birthday must make you between ${minAge} and ${maxAge} years old.`;
+  }
+  if (hasMin) {
+    return `Must be at least ${minAge} years old.`;
+  }
+  if (hasMax) {
+    return `Must be ${maxAge} or younger.`;
+  }
+  return 'Enter a valid date.';
+}
+
+function evaluateBirthdayInputs(field, parts) {
+  const monthRaw = parts.month || '';
+  const dayRaw = parts.day || '';
+  const yearRaw = parts.year || '';
+  const allEmpty = !monthRaw && !dayRaw && !yearRaw;
+
+  if (allEmpty) {
+    return { iso: null, complete: false, error: field.required ? 'Enter month, day, and year.' : null, age: null };
+  }
+
+  if (!monthRaw || !dayRaw || !yearRaw) {
+    return { iso: null, complete: false, error: 'Enter month, day, and year.', age: null };
+  }
+
+  if (!/^\d{1,2}$/.test(monthRaw)) {
+    return { iso: null, complete: true, error: 'Use a valid month (1-12).', age: null };
+  }
+  const month = Number.parseInt(monthRaw, 10);
+  if (!Number.isFinite(month) || month < 1 || month > 12) {
+    return { iso: null, complete: true, error: 'Use a valid month (1-12).', age: null };
+  }
+
+  if (!/^\d{1,2}$/.test(dayRaw)) {
+    return { iso: null, complete: true, error: 'Use a valid day (1-31).', age: null };
+  }
+  const day = Number.parseInt(dayRaw, 10);
+  if (!Number.isFinite(day) || day < 1 || day > 31) {
+    return { iso: null, complete: true, error: 'Use a valid day (1-31).', age: null };
+  }
+
+  if (!/^\d{4}$/.test(yearRaw)) {
+    return { iso: null, complete: true, error: 'Use a 4-digit year.', age: null };
+  }
+  const year = Number.parseInt(yearRaw, 10);
+  if (!Number.isFinite(year)) {
+    return { iso: null, complete: true, error: 'Use a 4-digit year.', age: null };
+  }
+
+  const iso = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const testDate = new Date(iso);
+  if (
+    Number.isNaN(testDate.getTime())
+    || testDate.getUTCFullYear() !== year
+    || testDate.getUTCMonth() + 1 !== month
+    || testDate.getUTCDate() !== day
+  ) {
+    const rangeMessage = buildBirthdayAgeRequirementMessage(field);
+    return { iso: null, complete: true, error: `Enter a valid date. ${rangeMessage}`, age: null };
+  }
+
+  const derivedAge = computeAgeFromBirthday(iso);
+  if (!Number.isFinite(derivedAge)) {
+    const rangeMessage = buildBirthdayAgeRequirementMessage(field);
+    return { iso: null, complete: true, error: `Enter a valid date. ${rangeMessage}`, age: null };
+  }
+
+  if (typeof field.minAge === 'number' && derivedAge < field.minAge) {
+    return { iso: null, complete: true, error: buildBirthdayAgeRequirementMessage(field), age: null };
+  }
+  if (typeof field.maxAge === 'number' && derivedAge > field.maxAge) {
+    return { iso: null, complete: true, error: buildBirthdayAgeRequirementMessage(field), age: null };
+  }
+
+  return { iso, complete: true, error: null, age: derivedAge };
+}
+
+function syncAgeFromBirthdayIso(isoValue) {
+  const derivedAge = isoValue ? computeAgeFromBirthday(isoValue) : NaN;
+  const normalizedAge = Number.isFinite(derivedAge) ? Math.max(0, Math.round(derivedAge)) : null;
+  const existingAgeRaw = state.profileData.age;
+  let existingAge = null;
+  const isEmptyString = typeof existingAgeRaw === 'string' && existingAgeRaw.trim() === '';
+  if (existingAgeRaw !== null && existingAgeRaw !== undefined && !isEmptyString) {
+    const numericExisting = Number(existingAgeRaw);
+    existingAge = Number.isFinite(numericExisting) ? numericExisting : existingAgeRaw;
+  }
+  if (existingAge !== normalizedAge) {
+    applyProfileChange({ age: normalizedAge });
+  }
+}
+
+function resetProfileForNewBirthday(isoValue) {
+  const keepKeys = new Set(['birthday', 'age']);
+  const resetPayload = {};
+  const snapshot = state.profileData || {};
+  Object.keys(snapshot).forEach((key) => {
+    if (!keepKeys.has(key)) {
+      resetPayload[key] = null;
+    }
+  });
+
+  resetPayload.birthday = isoValue;
+  const derivedAge = isoValue ? computeAgeFromBirthday(isoValue) : NaN;
+  resetPayload.age = Number.isFinite(derivedAge) ? Math.max(0, Math.round(derivedAge)) : null;
+
+  state.profileMeta.completedSteps = 0;
+  state.profileMeta.lastUpdated = null;
+  state.hasCelebrated = false;
+  hideCompletionToast();
+
+  applyProfileChange(resetPayload);
+  state.currentStep = 0;
+  refreshCurrentStep();
+  updateStatusBadge();
+}
+
+function handleBirthdayInputsChange(field, event) {
+  const eventType = event?.type || 'input';
+  const isEnterKey = eventType === 'keydown' && event?.key === 'Enter';
+  const shouldValidate = isEnterKey || eventType === 'blur' || eventType === 'change';
+
+  if (eventType === 'input') {
+    clearFieldError(field.id);
+  }
+
+  const parts = getBirthdayInputParts(field.id);
+  const evaluation = evaluateBirthdayInputs(field, parts);
+
+  if (!shouldValidate) {
+    return;
+  }
+
+  if (!evaluation.complete) {
+    if (field.required) {
+      setFieldError(field.id, evaluation.error || 'Enter month, day, and year.');
+    }
+    const currentValue = state.profileData[field.id];
+    if (currentValue !== null && currentValue !== undefined) {
+      applyProfileChange({ [field.id]: null });
+    }
+    syncAgeFromBirthdayIso(null);
+    return;
+  }
+
+  if (evaluation.error) {
+    setFieldError(field.id, evaluation.error);
+    const currentValue = state.profileData[field.id];
+    if (currentValue !== null && currentValue !== undefined) {
+      applyProfileChange({ [field.id]: null });
+    }
+    syncAgeFromBirthdayIso(null);
+    return;
+  }
+
+  const iso = evaluation.iso;
+  if (!ISO_DATE_PATTERN.test(iso)) {
+    setFieldError(field.id, 'Enter a valid date.');
+    return;
+  }
+
+  setBirthdayInputs(field.id, iso);
+  clearFieldError(field.id);
+  const previousBirthday = state.profileData[field.id] || null;
+  if (previousBirthday !== iso) {
+    resetProfileForNewBirthday(iso);
+  } else if (state.profileData[field.id] !== iso) {
+    applyProfileChange({ [field.id]: iso });
+    syncAgeFromBirthdayIso(iso);
+  } else {
+    syncAgeFromBirthdayIso(iso);
+  }
+}
+
+function initBirthdayField(field) {
+  setBirthdayInputs(field.id, state.profileData[field.id]);
+  const { monthInput, dayInput, yearInput } = getBirthdayInputs(field.id);
+  if (!monthInput || !dayInput || !yearInput) return;
+
+  const handler = (event) => handleBirthdayInputsChange(field, event);
+  [monthInput, dayInput, yearInput].forEach((input) => {
+    input.addEventListener('input', handler);
+    input.addEventListener('blur', handler);
+    input.addEventListener('change', handler);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handler(event);
+      }
+    });
+  });
 }
 
 function initUnemploymentField(field) {
@@ -873,9 +1527,9 @@ function initCoverageField(field) {
     if (stored !== null && numericValue === stored) {
       radio.checked = true;
     }
-    radio.addEventListener('change', () => {
+    radio.addEventListener('change', (event) => {
       clearFieldError(field.id);
-      handleFieldChange(field, radio);
+      handleFieldChange(field, radio, event);
     });
   });
 }
@@ -901,22 +1555,40 @@ async function saveProfile(options = {}) {
     state.saveTimer = null;
   }
 
-  const completedSteps = Math.max(state.profileMeta.completedSteps || 0, state.currentStep + 1);
-  state.profileMeta.completedSteps = completedSteps;
+  const activeSteps = getActiveSteps(state.profileData || {});
+  const activeLength = activeSteps.length;
+  const completedSteps = activeLength
+    ? Math.max(state.profileMeta.completedSteps || 0, state.currentStep + 1)
+    : 0;
+  const boundedCompleted = activeLength ? Math.min(completedSteps, activeLength) : 0;
+  state.profileMeta.completedSteps = boundedCompleted;
 
   const profilePayload = {};
   Object.entries(state.profileData).forEach(([key, value]) => {
     profilePayload[key] = value === undefined ? null : value;
   });
-  profilePayload.version = 1;
-  profilePayload.completedSteps = completedSteps;
+  profilePayload.version = 2;
+  profilePayload.completedSteps = boundedCompleted;
   profilePayload.updatedAt = serverTimestamp();
 
   const userRef = doc(db, 'users', state.userId);
+  const rootUpdates = {};
+  if (Object.prototype.hasOwnProperty.call(profilePayload, 'birthday')) {
+    const rawBirthday = profilePayload.birthday;
+    rootUpdates.birthday = rawBirthday;
+    if (typeof rawBirthday === 'string' && rawBirthday) {
+      const derivedAge = computeAgeFromBirthday(rawBirthday);
+      rootUpdates.age = Number.isFinite(derivedAge) ? Math.max(0, Math.round(derivedAge)) : null;
+    } else {
+      rootUpdates.age = null;
+    }
+  }
+
   const payload = {
     income: {
       profile: profilePayload,
     },
+    ...(Object.keys(rootUpdates).length ? rootUpdates : {})
   };
 
   try {
@@ -938,23 +1610,46 @@ async function saveProfile(options = {}) {
   state.profileMeta.lastUpdated = new Date();
   setSaveStatus('Saved just now');
   updateStatusBadge();
-  document.dispatchEvent(new CustomEvent('income-profile:updated', { detail: { reason, fields: Object.keys(profilePayload) } }));
+  const updatedFields = Object.keys(profilePayload);
+  const detail = { reason, fields: updatedFields };
+  document.dispatchEvent(new CustomEvent('income-profile:updated', { detail }));
+  document.dispatchEvent(new CustomEvent('financial-profile:updated', { detail: { ...detail } }));
 }
 
-function updateProgress() {
-  const progress = ((state.currentStep + 1) / STEPS.length) * 100;
+function updateProgress(activeSteps = getActiveSteps(state.profileData || {})) {
+  if (!activeSteps.length) {
+    if (elements.progressBar) {
+      elements.progressBar.style.width = '0%';
+    }
+    if (elements.stepLabel) {
+      elements.stepLabel.textContent = 'No steps available yet';
+    }
+    return;
+  }
+  const progress = ((state.currentStep + 1) / activeSteps.length) * 100;
   if (elements.progressBar) {
     elements.progressBar.style.width = `${progress}%`;
   }
   if (elements.stepLabel) {
-    elements.stepLabel.textContent = `Step ${state.currentStep + 1} of ${STEPS.length} • ${STEPS[state.currentStep].title}`;
+    const step = activeSteps[state.currentStep];
+    const copy = resolveStepPresentation(step, state.profileData || {});
+    elements.stepLabel.textContent = `Step ${state.currentStep + 1} of ${activeSteps.length} • ${copy.title}`;
   }
 }
 
-function updateNavigationButtons() {
+function updateNavigationButtons(activeSteps = getActiveSteps(state.profileData || {})) {
   if (!elements.nextBtn || !elements.backBtn) return;
+  const total = activeSteps.length;
+  if (!total) {
+    elements.backBtn.textContent = 'Cancel';
+    elements.nextBtn.textContent = 'Next';
+    elements.backBtn.disabled = false;
+    elements.nextBtn.disabled = true;
+    return;
+  }
+
   const isFirst = state.currentStep === 0;
-  const isLast = state.currentStep === STEPS.length - 1;
+  const isLast = state.currentStep === total - 1;
 
   elements.backBtn.textContent = isFirst ? 'Cancel' : 'Back';
   elements.nextBtn.textContent = isLast ? 'Finish' : 'Next';
@@ -971,7 +1666,13 @@ function handleBackClick() {
 }
 
 async function handleNextClick() {
-  const valid = validateCurrentStep();
+  const activeSteps = getActiveSteps(state.profileData || {});
+  if (!activeSteps.length) {
+    closeModal();
+    return;
+  }
+
+  const valid = validateCurrentStep(activeSteps);
   if (!valid) return;
 
   try {
@@ -981,21 +1682,28 @@ async function handleNextClick() {
     return;
   }
 
-  if (state.currentStep === STEPS.length - 1) {
+  if (state.currentStep === activeSteps.length - 1) {
     closeModal();
     return;
   }
   goToStep(state.currentStep + 1);
 }
 
-function validateCurrentStep() {
-  const step = STEPS[state.currentStep];
+function validateCurrentStep(activeSteps = getActiveSteps(state.profileData || {})) {
+  const step = activeSteps[state.currentStep];
   if (!step) return true;
   let valid = true;
   step.fields.forEach((field) => {
+    const isVisible = isFieldVisible(field, state.profileData || {});
+    if (!isVisible) {
+      clearFieldError(field.id);
+      return;
+    }
+
     const wrapper = elements.stepContainer?.querySelector(`[data-field-wrapper="${field.id}"]`);
     let value = null;
     let input = null;
+    let customError = null;
 
     switch (field.type) {
       case 'tenure': {
@@ -1012,10 +1720,39 @@ function validateCurrentStep() {
         input = elements.stepContainer?.querySelector(`input[data-field="${field.id}"]`);
         value = getFieldValue(field, input || {});
         break;
+      case 'date':
+        if (field.id === 'birthday') {
+          const evaluation = evaluateBirthdayInputs(field, getBirthdayInputParts(field.id));
+          if (!evaluation.complete) {
+            value = null;
+            customError = evaluation.error || (field.required ? 'Enter month, day, and year.' : null);
+          } else if (evaluation.error) {
+            value = null;
+            customError = evaluation.error;
+          } else {
+            value = evaluation.iso;
+          }
+          break;
+        }
+        input = elements.stepContainer?.querySelector(`[data-field="${field.id}"]`);
+        if (!input) return;
+        value = getFieldValue(field, input);
+        break;
       default:
         input = elements.stepContainer?.querySelector(`[data-field="${field.id}"]`);
         if (!input) return;
         value = getFieldValue(field, input);
+    }
+
+    if (customError) {
+      valid = false;
+      setFieldError(field.id, customError);
+      if (field.id === 'birthday') {
+        persistFieldState(field, null);
+        syncAgeFromBirthdayIso(null);
+      }
+      if (wrapper) wrapper.classList.add('has-error');
+      return;
     }
 
     if (field.required && !hasValue(value)) {
@@ -1038,7 +1775,29 @@ function validateCurrentStep() {
           return;
         }
       }
+      if (field.type === 'date') {
+        const derivedAge = computeAgeFromBirthday(value);
+        if (!Number.isFinite(derivedAge)) {
+          valid = false;
+          setFieldError(field.id, 'Enter a valid date.');
+          return;
+        }
+        if (field.minAge !== undefined && derivedAge < field.minAge) {
+          valid = false;
+          setFieldError(field.id, buildBirthdayAgeRequirementMessage(field));
+          return;
+        }
+        if (field.maxAge !== undefined && derivedAge > field.maxAge) {
+          valid = false;
+          setFieldError(field.id, buildBirthdayAgeRequirementMessage(field));
+          return;
+        }
+        if (field.id === 'birthday') {
+          syncAgeFromBirthdayIso(value);
+        }
+      }
     }
+    persistFieldState(field, value);
     clearFieldError(field.id);
   });
   return valid;
@@ -1050,6 +1809,27 @@ function hasValue(value) {
   if (typeof value === 'number') return !Number.isNaN(value);
   if (typeof value === 'boolean') return true;
   return true;
+}
+
+function valuesAreEqual(a, b) {
+  if (Object.is(a, b)) return true;
+  if (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null) {
+    try {
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch (error) {
+      console.warn('[IncomeProfile] Failed to compare field values', error);
+      return false;
+    }
+  }
+  return false;
+}
+
+function persistFieldState(field, value) {
+  if (!field) return;
+  if (value === undefined) return;
+  const current = state.profileData[field.id];
+  if (valuesAreEqual(current, value)) return;
+  applyProfileChange({ [field.id]: value });
 }
 
 function setFieldError(fieldId, message) {
@@ -1086,10 +1866,27 @@ async function loadProfile(uid, options = {}) {
     const profile = data?.income?.profile || {};
     const { updatedAt, completedSteps, version, ...rest } = profile;
     state.profileData = sanitizeProfile(rest);
+    if (!state.profileData.birthday && typeof data?.birthday === 'string' && data.birthday) {
+      state.profileData.birthday = data.birthday;
+    }
+    if (!Number.isFinite(Number(state.profileData.age)) && Number.isFinite(Number(data?.age))) {
+      state.profileData.age = Number(data.age);
+    }
+    hydrateLegacyLocation(state.profileData);
+    if (!Number.isFinite(Number(state.profileData.age)) && state.profileData.birthday) {
+      const derivedAge = computeAgeFromBirthday(state.profileData.birthday);
+      if (Number.isFinite(derivedAge)) {
+        state.profileData.age = Math.max(0, Math.round(derivedAge));
+      }
+    }
     state.profileMeta = {
       completedSteps: typeof completedSteps === 'number' ? completedSteps : 0,
       lastUpdated: updatedAt?.toDate ? updatedAt.toDate() : null
     };
+    const activeSteps = getActiveSteps(state.profileData || {});
+    if (state.profileMeta.completedSteps > activeSteps.length) {
+      state.profileMeta.completedSteps = activeSteps.length;
+    }
     const { rounded } = getProfileCompletionScore();
     state.hasCelebrated = isProfileComplete(rounded);
     updateStatusBadge();
@@ -1118,14 +1915,36 @@ function sanitizeProfile(profile) {
   return cleaned;
 }
 
+function hydrateLegacyLocation(profile) {
+  if (!profile || typeof profile !== 'object') return;
+  if (profile.locationState) {
+    const normalized = normalizeStateValue(profile.locationState);
+    if (normalized) {
+      profile.locationState = normalized;
+    }
+  }
+
+  if (!profile.locationState) {
+    const fromRegion = normalizeStateValue(profile.locationRegion);
+    if (fromRegion) {
+      profile.locationState = fromRegion;
+    } else {
+      const country = profile.locationCountry ? String(profile.locationCountry).trim() : '';
+      if (country && country.toLowerCase() !== 'united states') {
+        profile.locationState = 'OTHER';
+      }
+    }
+  }
+}
+
 function updateStatusBadge() {
   if (!elements.status) return;
   if (!state.userId) {
     hideCompletionToast();
     state.hasCelebrated = false;
     showLaunchCard();
-    elements.status.textContent = 'Sign in to complete your income profile.';
-    if (elements.launch) elements.launch.textContent = 'Income profile';
+    elements.status.textContent = 'Sign in to complete your financial profile.';
+    if (elements.launch) elements.launch.textContent = 'Financial profile';
     return;
   }
 
@@ -1135,17 +1954,17 @@ function updateStatusBadge() {
 
   let message;
   if (!rounded) {
-    message = 'Boost accuracy by sharing a few quick details.';
-    if (elements.launch) elements.launch.textContent = 'Complete income profile';
+    message = 'Share a few quick basics to unlock your personalized financial profile.';
+    if (elements.launch) elements.launch.textContent = 'Complete financial profile';
   } else if (rounded < 60) {
-    message = `Income profile is ${rounded}% complete. A few answers unlock sharper VibeScore tuning.`;
-    if (elements.launch) elements.launch.textContent = 'Continue income profile';
+    message = `Financial profile is ${rounded}% complete. A few answers unlock sharper VibeScore tuning.`;
+    if (elements.launch) elements.launch.textContent = 'Continue financial profile';
   } else if (rounded < 95) {
-    message = `Nice! Income profile ${rounded}% complete. Finish it to unlock richer guidance.`;
-    if (elements.launch) elements.launch.textContent = 'Review income profile';
+    message = `Nice! Financial profile ${rounded}% complete. Finish it to unlock richer guidance.`;
+    if (elements.launch) elements.launch.textContent = 'Review financial profile';
   } else {
-    message = `Income profile dialed in${lastUpdatedLabel ? ` • updated ${lastUpdatedLabel}` : ''}.`;
-    if (elements.launch) elements.launch.textContent = 'Review income profile';
+    message = `Financial profile dialed in${lastUpdatedLabel ? ` • updated ${lastUpdatedLabel}` : ''}.`;
+    if (elements.launch) elements.launch.textContent = 'Review financial profile';
   }
   elements.status.textContent = message;
 

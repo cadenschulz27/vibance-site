@@ -217,7 +217,7 @@ This document details the sophisticated animation system and visual enhancements
 - **Shadow**: Deep multi-layer on hover
 - **Icon Animation**: Bouncy transform with ripple
 
-### Income Profile Launch Card
+### Financial Profile Launch Card
 - **Entry**: fade-in-scale with 0.6s + 0.4s delay
 - **Radial Glow**: Top-left positioned gradient
 - **Conic Overlay**: Rotating gradient (4s spin)

@@ -124,6 +124,7 @@ function computeStats(rows, categoryTotals) {
   let incomeToExpenseRatio = null;
   if (current.expense === 0 && current.income > 0) incomeToExpenseRatio = Infinity;
   else if (current.expense > 0) incomeToExpenseRatio = current.income / current.expense;
+  const ratio = incomeToExpenseRatio;
 
   // Net margin: net income as % of total income
   const netMargin = totals.income > 0 ? totals.net / totals.income : null;
@@ -133,6 +134,9 @@ function computeStats(rows, categoryTotals) {
   
   // Expense ratio: what % of income goes to expenses
   const expenseRatio = totals.income > 0 ? totals.expense / totals.income : null;
+
+  // Simple projection using recent delta to anticipate next period net
+  const projectedNet = netChange !== null ? current.net + netChange : current.net;
 
   // Categories analysis
   const categories = Array.from(categoryTotals.entries()).map(([name, values]) => ({
@@ -171,9 +175,11 @@ function computeStats(rows, categoryTotals) {
     expenseVolatility,
     consistencyScore,
     incomeToExpenseRatio,
+  ratio,
     netMargin,
     savingsRate,
     expenseRatio,
+  projectedNet,
     positiveStreak,
     positiveMonths,
     highestIncomeMonth,
@@ -305,6 +311,18 @@ function buildInsights(stats, rows) {
       body: `${current.label} net ${stats.netChange > 0 ? 'improved' : 'declined'} by ${formatCurrency(stats.netChange, { maximumFractionDigits: 0, withSign: true })} versus ${stats.previous?.label || 'last month'}.`,
       tone: stats.netChange > 0 ? 'positive' : 'warning',
       kind: 'momentum',
+    });
+  }
+
+  if (stats.projectedNet !== undefined && stats.projectedNet !== null && stats.previous) {
+    const outlookTone = stats.projectedNet >= 0 ? 'positive' : 'warning';
+    const outlookDirection = stats.projectedNet >= 0 ? 'surplus' : 'shortfall';
+    const trendDelta = stats.netChange || 0;
+    insights.push({
+      title: 'Next month outlook',
+      body: `Trajectory points to a ${outlookDirection} near ${formatCurrency(stats.projectedNet, { maximumFractionDigits: 0 })}. That reflects a ${formatCurrency(trendDelta, { maximumFractionDigits: 0, withSign: true })} swing versus ${stats.previous?.label || 'last month'}.`,
+      tone: outlookTone,
+      kind: 'forecasts',
     });
   }
 
